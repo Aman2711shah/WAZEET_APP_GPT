@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../../providers/user_profile_provider.dart';
 import '../theme.dart';
 
@@ -16,6 +18,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   late TextEditingController _titleController;
   late TextEditingController _bioController;
   late TextEditingController _phoneController;
+  bool _isUploadingImage = false;
 
   @override
   void initState() {
@@ -34,6 +37,82 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     _bioController.dispose();
     _phoneController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAndUploadImage() async {
+    try {
+      // Pick image file
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final file = result.files.first;
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Image size must be less than 5MB'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      setState(() => _isUploadingImage = true);
+
+      final profile = ref.read(userProfileProvider);
+      if (profile == null) return;
+
+      // Upload to Firebase Storage
+      final fileName = '${profile.id}_${DateTime.now().millisecondsSinceEpoch}.${file.extension}';
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('profile_pictures/$fileName');
+
+      // Upload file bytes
+      if (file.bytes != null) {
+        await storageRef.putData(
+          file.bytes!,
+          SettableMetadata(contentType: 'image/${file.extension}'),
+        );
+
+        // Get download URL
+        final downloadUrl = await storageRef.getDownloadURL();
+
+        // Update profile with new photo URL
+        await ref.read(userProfileProvider.notifier).updateProfile(
+              photoUrl: downloadUrl,
+            );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile picture updated successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to upload image: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingImage = false);
+      }
+    }
   }
 
   Future<void> _saveProfile() async {
@@ -85,6 +164,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                 children: [
                   CircleAvatar(
                     radius: 50,
+                    backgroundColor: AppColors.purple.withOpacity(0.1),
                     backgroundImage: profile?.photoUrl != null
                         ? NetworkImage(profile!.photoUrl!)
                         : null,
@@ -97,6 +177,16 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                           )
                         : null,
                   ),
+                  if (_isUploadingImage)
+                    Positioned.fill(
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.black54,
+                        child: const CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   Positioned(
                     right: 0,
                     bottom: 0,
@@ -104,19 +194,12 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       radius: 18,
                       backgroundColor: AppColors.purple,
                       child: IconButton(
-                        icon: const Icon(
-                          Icons.camera_alt,
+                        icon: Icon(
+                          _isUploadingImage ? Icons.hourglass_empty : Icons.camera_alt,
                           size: 16,
                           color: Colors.white,
                         ),
-                        onPressed: () {
-                          // TODO: Implement image picker
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Image picker coming soon!'),
-                            ),
-                          );
-                        },
+                        onPressed: _isUploadingImage ? null : _pickAndUploadImage,
                         padding: EdgeInsets.zero,
                       ),
                     ),

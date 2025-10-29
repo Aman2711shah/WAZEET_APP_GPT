@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/services_provider.dart';
 import 'service_type_page.dart';
 import '../theme.dart';
-import '../widgets/gradient_header.dart';
 
 class ServicesPage extends ConsumerStatefulWidget {
   const ServicesPage({super.key});
@@ -29,7 +28,67 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          const GradientHeader(title: 'Services'),
+          // Custom Header with Background Image
+          Container(
+            height: 300,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: NetworkImage(
+                  'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1600&h=800&fit=crop',
+                ),
+                fit: BoxFit.cover,
+                onError: (exception, stackTrace) {
+                  // Fallback handled by gradient overlay
+                },
+              ),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.3),
+                    AppColors.purple.withOpacity(0.8),
+                  ],
+                ),
+              ),
+              padding: const EdgeInsets.fromLTRB(16, 54, 16, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  const Text(
+                    'Services',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 34,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                      shadows: [
+                        Shadow(
+                          offset: Offset(0, 2),
+                          blurRadius: 4,
+                          color: Colors.black38,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Professional business services in Dubai',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.95),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
