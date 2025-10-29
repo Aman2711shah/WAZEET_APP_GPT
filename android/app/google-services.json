@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "350415177061",
+    "project_id": "business-setup-application",
+    "storage_bucket": "business-setup-application.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:350415177061:android:1c45ff3565a672d4408d8c",
+        "android_client_info": {
+          "package_name": "com.wazeet.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBIxAfwEQ5kqPBiPr3Zf5B0oWYdEcKJhZo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

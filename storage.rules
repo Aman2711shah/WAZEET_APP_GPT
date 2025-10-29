@@ -1,0 +1,17 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() { return request.auth != null; }
+
+    match /applications/{applicationId}/{allPaths=**} {
+      allow read, write: if signedIn() && 
+        exists(/databases/(default)/documents/applications/$(applicationId)) &&
+        get(/databases/(default)/documents/applications/$(applicationId)).data.user_id == request.auth.uid;
+    }
+
+    // Block everything else by default
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
