@@ -84,6 +84,33 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
               ),
             ),
           ),
+          // Compliance Seals
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  _ComplianceSeal(
+                    label: 'Built on UAE Standards',
+                    icon: Icons.verified,
+                    color: Colors.green,
+                  ),
+                  const SizedBox(width: 12),
+                  _ComplianceSeal(
+                    label: 'GDPR-ready',
+                    icon: Icons.shield,
+                    color: Colors.blue,
+                  ),
+                  const SizedBox(width: 12),
+                  _ComplianceSeal(
+                    label: 'Secure Payments',
+                    icon: Icons.lock,
+                    color: Colors.deepPurple,
+                  ),
+                ],
+              ),
+            ),
+          ),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -221,5 +248,59 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
         ],
       ),
     );
+  }
+}
+
+// ---------------------- Helper Widgets ----------------------
+
+// Compliance Seal Widget
+class _ComplianceSeal extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+
+  const _ComplianceSeal({
+    required this.label,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Verified Badge Widget (for future use)
+class VerifiedBadge extends StatelessWidget {
+  final double size;
+
+  const VerifiedBadge({super.key, this.size = 16});
+
+  @override
+  Widget build(BuildContext context) {
+    return Icon(Icons.verified, color: Colors.blue, size: size);
   }
 }

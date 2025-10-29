@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wazeet/utils/industry_loader.dart';
 
 // =============================================================
 // Company Setup Flow (Single-file implementation)
@@ -417,83 +418,186 @@ class _ActivitiesStep extends ConsumerWidget {
     final data = ref.watch(setupProvider);
     final controller = ref.read(setupProvider.notifier);
 
-    final filtered = kActivities
-        .where((a) => a.toLowerCase().contains(query.toLowerCase()))
-        .toList();
+    return FutureBuilder<List<ActivityData>>(
+      future: loadAllActivitiesWithDescriptions(
+        'assets/images/excel-to-json.industry-grouped.json',
+      ),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    final isValid = data.businessActivities.isNotEmpty;
+        final allActivities = snapshot.data ?? [];
+        final filtered = allActivities
+            .where(
+              (a) =>
+                  a.name.toLowerCase().contains(query.toLowerCase()) ||
+                  a.description.toLowerCase().contains(query.toLowerCase()),
+            )
+            .toList();
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: ListView(
-        children: [
-          const Text(
-            'Select Business Activities',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Choose at least one. You can change this later.',
-            style: TextStyle(color: Colors.grey.shade700),
-          ),
-          const SizedBox(height: 16),
-          Material(
-            elevation: 1,
-            borderRadius: BorderRadius.circular(12),
-            child: TextField(
-              decoration: InputDecoration(
-                fillColor: Colors.white,
-                filled: true,
-                prefixIcon: const Icon(Icons.search),
-                hintText: 'Search activities',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              onChanged: onQueryChanged,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: filtered
-                .map(
-                  (a) => FilterChip(
-                    label: Text(a),
-                    selected: data.businessActivities.contains(a),
-                    onSelected: (_) => controller.toggleActivity(a),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+        final isValid = data.businessActivities.isNotEmpty;
+
+        return Column(
+          children: [
+            // Header section
+            Container(
+              padding: const EdgeInsets.all(16),
+              color: Colors.white,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Select Business Activities',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Choose at least one. You can change this later.',
+                    style: TextStyle(color: Colors.grey.shade700),
+                  ),
+                  const SizedBox(height: 16),
+                  Material(
+                    elevation: 1,
+                    borderRadius: BorderRadius.circular(12),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        fillColor: Colors.white,
+                        filled: true,
+                        prefixIcon: const Icon(Icons.search),
+                        hintText: 'Search activities or descriptions',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      onChanged: onQueryChanged,
                     ),
                   ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 12),
-          if (!isValid)
-            const Text(
-              'Please select at least one activity to proceed.',
-              style: TextStyle(color: Colors.red),
+                  const SizedBox(height: 12),
+                  if (!isValid)
+                    const Text(
+                      'Please select at least one activity to proceed.',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  if (data.businessActivities.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.check_circle,
+                            color: Colors.blue.shade700,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${data.businessActivities.length} ${data.businessActivities.length == 1 ? "activity" : "activities"} selected',
+                              style: TextStyle(
+                                color: Colors.blue.shade700,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
-          const SizedBox(height: 8),
-          if (data.businessActivities.isNotEmpty) ...[
-            const Text(
-              'Selected:',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: data.businessActivities
-                  .map((a) => Chip(label: Text(a)))
-                  .toList(),
+            // Activities list
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                itemCount: filtered.length,
+                itemBuilder: (context, index) {
+                  final activity = filtered[index];
+                  final isSelected = data.businessActivities.contains(
+                    activity.name,
+                  );
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    elevation: isSelected ? 2 : 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: isSelected
+                            ? Colors.blue.shade700
+                            : Colors.grey.shade300,
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => controller.toggleActivity(activity.name),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.only(top: 2),
+                              child: Icon(
+                                isSelected
+                                    ? Icons.check_circle
+                                    : Icons.radio_button_unchecked,
+                                color: isSelected
+                                    ? Colors.blue.shade700
+                                    : Colors.grey.shade400,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    activity.name,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: isSelected
+                                          ? Colors.blue.shade900
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    activity.description,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade700,
+                                      height: 1.4,
+                                    ),
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
           ],
-        ],
-      ),
+        );
+      },
     );
   }
 }
