@@ -26,71 +26,66 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          // Custom Header with Background Image
-          Container(
-            height: 300,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: NetworkImage(
-                  'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1600&h=800&fit=crop',
-                ),
-                fit: BoxFit.cover,
-                onError: (exception, stackTrace) {
-                  // Fallback handled by gradient overlay
-                },
-              ),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.3),
-                    AppColors.purple.withOpacity(0.8),
-                  ],
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 280,
+            pinned: true,
+            floating: false,
+            backgroundColor: AppColors.purple,
+            flexibleSpace: FlexibleSpaceBar(
+              title: const Text(
+                'Services',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  shadows: [Shadow(color: Colors.black38, blurRadius: 8)],
                 ),
               ),
-              padding: const EdgeInsets.fromLTRB(16, 54, 16, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
+              background: Stack(
+                fit: StackFit.expand,
                 children: [
-                  const Text(
-                    'Services',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 34,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                      shadows: [
-                        Shadow(
-                          offset: Offset(0, 2),
-                          blurRadius: 4,
-                          color: Colors.black38,
-                        ),
-                      ],
+                  Image.network(
+                    'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1600&h=800&fit=crop',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: AppColors.purple.withOpacity(0.3),
+                      );
+                    },
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.3),
+                          AppColors.purple.withOpacity(0.85),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Professional business services in Dubai',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.95),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.3,
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 56,
+                    child: Text(
+                      'Professional business services in Dubai',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.95),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.3,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          Expanded(
-            child: SingleChildScrollView(
+          SliverToBoxAdapter(
+            child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,118 +100,122 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                     onChanged: (_) => setState(() {}),
                   ),
                   const SizedBox(height: 24),
-
-                  // Service Categories List
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: filteredCategories.length,
-                    itemBuilder: (context, index) {
-                      final category = filteredCategories[index];
-                      final totalServices = category.serviceTypes.fold(
-                        0,
-                        (sum, type) => sum + type.subServices.length,
-                      );
-
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(color: Colors.grey.shade200),
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          leading: Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: Color(
-                                int.parse(category.color),
-                              ).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Center(
-                              child: Text(
-                                category.icon,
-                                style: const TextStyle(fontSize: 24),
-                              ),
-                            ),
-                          ),
-                          title: Text(
-                            category.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          subtitle: Text(
-                            '$totalServices services available',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 13,
-                            ),
-                          ),
-                          trailing: Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                            color: Colors.grey.shade400,
-                          ),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    ServiceTypePage(category: category),
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 24),
-                  // CTA
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.purple.withOpacity(.08),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            'Need a custom solution?',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        ElevatedButton(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Contact us at support@wazeet.com',
-                                ),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.purple,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text('Contact Us'),
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
+            ),
+          ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                if (index == filteredCategories.length) {
+                  // CTA at the end
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.purple.withOpacity(.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Need a custom solution?',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Contact us at support@wazeet.com',
+                                  ),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.purple,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Contact Us'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                final category = filteredCategories[index];
+                final totalServices = category.serviceTypes.fold(
+                  0,
+                  (sum, type) => sum + type.subServices.length,
+                );
+
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: Colors.grey.shade200),
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      leading: Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: Color(
+                            int.parse(category.color),
+                          ).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                          child: Text(
+                            category.icon,
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        category.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      subtitle: Text(
+                        '$totalServices services available',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 13,
+                        ),
+                      ),
+                      trailing: Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: Colors.grey.shade400,
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ServiceTypePage(category: category),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                );
+              },
+              childCount: filteredCategories.length + 1, // +1 for CTA
             ),
           ),
         ],
