@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/ai_advisor_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wazeet/company_setup_flow.dart';
 import '../../providers/services_provider.dart';
@@ -516,6 +517,7 @@ class HomePage extends ConsumerWidget {
                     child: ListView(
                       scrollDirection: Axis.horizontal,
                       children: [
+                        _buildAskAdvisorCard(context),
                         _buildTipCard(
                           '💼',
                           'Business Tip',
@@ -610,6 +612,223 @@ class HomePage extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  // AI Business Advisor entry card
+  Widget _buildAskAdvisorCard(BuildContext context) {
+    return InkWell(
+      onTap: () => _showAiAdvisorDialog(context),
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        width: 290,
+        height: 140,
+        margin: const EdgeInsets.only(right: 14),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppColors.purple, AppColors.purple.withOpacity(0.85)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.purple.withOpacity(0.35),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.smart_toy, color: Colors.white),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Ask AI Business Advisor',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Get quick, actionable answers about company setup, visas, taxes and more.',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.95),
+                  fontSize: 12.5,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showAiAdvisorDialog(BuildContext context) async {
+    final controller = TextEditingController();
+    String? answer;
+    bool loading = false;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            Future<void> ask() async {
+              final q = controller.text.trim();
+              if (q.isEmpty) return;
+              setState(() => loading = true);
+              final service = AiAdvisorService();
+              // TODO: Pass a secure API key from your backend or env. Empty uses demo text.
+              answer = await service.getAdvice(question: q, apiKey: '');
+              setState(() => loading = false);
+            }
+
+            final bottom = MediaQuery.of(ctx).viewInsets.bottom;
+            return Padding(
+              padding: EdgeInsets.only(bottom: bottom),
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.smart_toy, color: AppColors.purple),
+                          const SizedBox(width: 10),
+                          const Text(
+                            'AI Business Advisor',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.pop(ctx),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: controller,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => ask(),
+                        minLines: 1,
+                        maxLines: 5,
+                        decoration: InputDecoration(
+                          hintText:
+                              'Ask about company setup, visas, taxes, banking... ',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          suffixIcon: loading
+                              ? const Padding(
+                                  padding: EdgeInsets.all(12),
+                                  child: SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                )
+                              : IconButton(
+                                  icon: Icon(
+                                    Icons.send,
+                                    color: AppColors.purple,
+                                  ),
+                                  onPressed: ask,
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children:
+                            [
+                              'Best free zone for e‑commerce',
+                              'Timeline for employment visa',
+                              'Cost to renew trade license',
+                              'Open a business bank account',
+                            ].map((s) {
+                              return ActionChip(
+                                label: Text(s),
+                                onPressed: () {
+                                  controller.text = s;
+                                  ask();
+                                },
+                              );
+                            }).toList(),
+                      ),
+                      const SizedBox(height: 16),
+                      if (answer != null)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          padding: const EdgeInsets.all(14),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: AppColors.purple.withOpacity(
+                                  0.1,
+                                ),
+                                child: Icon(
+                                  Icons.smart_toy,
+                                  color: AppColors.purple,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  answer!,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -851,7 +1070,9 @@ class HomePage extends ConsumerWidget {
   ) {
     return Container(
       width: 290,
+      height: 140, // Fix: ensure consistent height to avoid overflow
       margin: const EdgeInsets.only(right: 14),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [color.withOpacity(0.85), color],
@@ -883,35 +1104,41 @@ class HomePage extends ConsumerWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Text(emoji, style: const TextStyle(fontSize: 28)),
+                  child: Text(emoji, style: const TextStyle(fontSize: 22)),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 6),
                 Text(
                   title,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 17,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.3,
                   ),
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  description,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.95),
-                    fontSize: 13.5,
-                    height: 1.5,
+                const SizedBox(height: 4),
+                Flexible(
+                  child: Text(
+                    description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.95),
+                      fontSize: 13,
+                      height: 1.3,
+                    ),
                   ),
                 ),
               ],
