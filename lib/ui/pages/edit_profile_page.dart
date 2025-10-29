@@ -70,10 +70,11 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       if (profile == null) return;
 
       // Upload to Firebase Storage
-      final fileName = '${profile.id}_${DateTime.now().millisecondsSinceEpoch}.${file.extension}';
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('profile_pictures/$fileName');
+      final fileName =
+          '${profile.id}_${DateTime.now().millisecondsSinceEpoch}.${file.extension}';
+      final storageRef = FirebaseStorage.instance.ref().child(
+        'profile_pictures/$fileName',
+      );
 
       // Upload file bytes
       if (file.bytes != null) {
@@ -86,9 +87,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         final downloadUrl = await storageRef.getDownloadURL();
 
         // Update profile with new photo URL
-        await ref.read(userProfileProvider.notifier).updateProfile(
-              photoUrl: downloadUrl,
-            );
+        await ref
+            .read(userProfileProvider.notifier)
+            .updateProfile(photoUrl: downloadUrl);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -195,11 +196,15 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       backgroundColor: AppColors.purple,
                       child: IconButton(
                         icon: Icon(
-                          _isUploadingImage ? Icons.hourglass_empty : Icons.camera_alt,
+                          _isUploadingImage
+                              ? Icons.hourglass_empty
+                              : Icons.camera_alt,
                           size: 16,
                           color: Colors.white,
                         ),
-                        onPressed: _isUploadingImage ? null : _pickAndUploadImage,
+                        onPressed: _isUploadingImage
+                            ? null
+                            : _pickAndUploadImage,
                         padding: EdgeInsets.zero,
                       ),
                     ),
