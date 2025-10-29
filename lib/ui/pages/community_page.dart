@@ -644,149 +644,169 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Column(
-        children: [
-          // Custom Header with Industry Button
-          Container(
-            height: 200,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: NetworkImage(
-                  'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1200&auto=format&fit=crop',
-                ),
-                fit: BoxFit.cover,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 280,
+            pinned: true,
+            floating: false,
+            backgroundColor: AppColors.purple,
+            actions: [
+              // Industry Selection Button
+              IconButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const IndustrySelectionPage(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.filter_list),
+                color: Colors.white,
+                tooltip: 'Filter by Industry',
               ),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.purple.withOpacity(0.7),
-                    AppColors.purple.withOpacity(0.5),
-                  ],
-                ),
-              ),
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: Row(
-                    children: [
-                      const Text(
-                        'Community',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+              // My Profile Button
+              if (currentUser != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              UserProfileDetailPage(profile: currentUser),
                         ),
-                      ),
-                      const Spacer(),
-                      // Industry Selection Button
-                      IconButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const IndustrySelectionPage(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.filter_list),
-                        color: Colors.white,
-                        tooltip: 'Filter by Industry',
-                      ),
-                      // My Profile Button
-                      if (currentUser != null)
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    UserProfileDetailPage(profile: currentUser),
+                      );
+                    },
+                    child: CircleAvatar(
+                      backgroundColor: Colors.white,
+                      radius: 18,
+                      backgroundImage: currentUser.photoUrl != null
+                          ? NetworkImage(currentUser.photoUrl!)
+                          : null,
+                      child: currentUser.photoUrl == null
+                          ? Text(
+                              currentUser.initials,
+                              style: TextStyle(
+                                color: AppColors.purple,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
                               ),
-                            );
-                          },
-                          child: CircleAvatar(
-                            backgroundColor: Colors.white,
-                            radius: 18,
-                            backgroundImage: currentUser.photoUrl != null
-                                ? NetworkImage(currentUser.photoUrl!)
-                                : null,
-                            child: currentUser.photoUrl == null
-                                ? Text(
-                                    currentUser.initials,
-                                    style: TextStyle(
-                                      color: AppColors.purple,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  )
-                                : null,
-                          ),
-                        ),
-                    ],
+                            )
+                          : null,
+                    ),
                   ),
                 ),
+            ],
+            flexibleSpace: FlexibleSpaceBar(
+              title: const Text(
+                'Community',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  shadows: [Shadow(color: Colors.black38, blurRadius: 8)],
+                ),
+              ),
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.network(
+                    'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1200&auto=format&fit=crop',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: AppColors.purple.withOpacity(0.3),
+                      );
+                    },
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.3),
+                          AppColors.purple.withOpacity(0.85),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 56,
+                    child: Text(
+                      'Connect, share and grow together',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.95),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-
           // Stats Banner
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildStatItem('2.5K', 'Members', Icons.people),
-                ),
-                Container(width: 1, height: 30, color: Colors.grey.shade300),
-                Expanded(child: _buildStatItem('450', 'Posts', Icons.article)),
-                Container(width: 1, height: 30, color: Colors.grey.shade300),
-                Expanded(
-                  child: _buildStatItem(
-                    '15',
-                    'Active Now',
-                    Icons.circle,
-                    activeColor: Colors.green,
+          SliverToBoxAdapter(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
                   ),
-                ),
-              ],
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildStatItem('2.5K', 'Members', Icons.people),
+                  ),
+                  Container(width: 1, height: 30, color: Colors.grey.shade300),
+                  Expanded(
+                    child: _buildStatItem('450', 'Posts', Icons.article),
+                  ),
+                  Container(width: 1, height: 30, color: Colors.grey.shade300),
+                  Expanded(
+                    child: _buildStatItem(
+                      '15',
+                      'Active Now',
+                      Icons.circle,
+                      activeColor: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
           // Tabs
-          Container(
-            color: Colors.white,
-            child: TabBar(
-              controller: _tabController,
-              labelColor: AppColors.purple,
-              unselectedLabelColor: Colors.grey,
-              indicatorColor: AppColors.purple,
-              tabs: const [
-                Tab(text: 'Feed'),
-                Tab(text: 'Trending'),
-                Tab(text: 'Events'),
-              ],
+          SliverToBoxAdapter(
+            child: Container(
+              color: Colors.white,
+              child: TabBar(
+                controller: _tabController,
+                labelColor: AppColors.purple,
+                unselectedLabelColor: Colors.grey,
+                indicatorColor: AppColors.purple,
+                tabs: const [
+                  Tab(text: 'Feed'),
+                  Tab(text: 'Trending'),
+                  Tab(text: 'Events'),
+                ],
+              ),
             ),
           ),
 
-          Expanded(
+          SliverFillRemaining(
             child: TabBarView(
               controller: _tabController,
               children: [
