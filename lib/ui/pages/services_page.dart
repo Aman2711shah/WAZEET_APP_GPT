@@ -172,7 +172,7 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                         height: 50,
                         decoration: BoxDecoration(
                           color: Color(
-                            int.parse(category.color),
+                            int.tryParse(category.color) ?? 0xFF6200EE,
                           ).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
