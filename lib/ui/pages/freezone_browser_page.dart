@@ -6,7 +6,16 @@ import '../widgets/freezone_card.dart';
 import 'freezone_detail_page.dart';
 
 class FreezoneBrowserPage extends StatefulWidget {
-  const FreezoneBrowserPage({super.key});
+  final List<String>? prefilledRecommendations;
+  final int? minVisas;
+  final String? searchQuery;
+
+  const FreezoneBrowserPage({
+    super.key,
+    this.prefilledRecommendations,
+    this.minVisas,
+    this.searchQuery,
+  });
 
   @override
   State<FreezoneBrowserPage> createState() => _FreezoneBrowserPageState();
@@ -43,6 +52,15 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
         setState(() => _searchQuery = _searchController.text);
       }
     });
+
+    // Apply pre-filled parameters from AI Business Expert
+    if (widget.searchQuery != null) {
+      _searchController.text = widget.searchQuery!;
+      _searchQuery = widget.searchQuery!;
+    }
+    if (widget.minVisas != null) {
+      _minVisas = widget.minVisas;
+    }
   }
 
   @override

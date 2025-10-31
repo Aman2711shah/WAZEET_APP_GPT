@@ -22,17 +22,39 @@ Smart UAE free zone discovery and company setup assistant — powered by GPT.
 
 ## 🤖 GPT Assistance (What it does)
 
-The app can generate AI-powered free zone recommendations based on your inputs (industry, budget, visas, remote setup, etc.).
+### AI Business Expert Chatbot
 
+The flagship AI feature is an interactive consultant that guides users through business setup decisions:
+
+**How it works:**
+1. User opens "AI Business Expert" from the home screen
+2. AI asks targeted questions:
+   - "What type of business are you planning to start?"
+   - "How many shareholders will be involved?"
+   - "Will you need employment visas? If so, how many?"
+   - "Will you do business inside UAE or internationally?"
+3. AI analyzes responses and provides 2-3 personalized freezone recommendations
+4. User taps "View Freezones" to jump to the browser with pre-filled filters
+
+**Technical details:**
 - API: OpenAI Chat Completions
-- Model: gpt-4 / gpt-4o-mini (configurable)
-- Where: Company setup flow and recommendations section
-- Code: `lib/services/openai_service.dart`, loading key from `lib/config/app_config.dart` via dotenv in `lib/main.dart`
+- Model: gpt-4o-mini (fast and cost-effective)
+- Conversation state: Managed via Riverpod `StateNotifier`
+- Context: Full conversation history sent to maintain coherent dialogue
+- Code: `lib/services/ai_business_expert_service.dart` + `lib/ui/pages/ai_business_expert_page.dart`
 
-What you get:
-- A concise, human-readable recommendation of best-fit UAE free zones
-- Rationale with pricing, benefits, and suitability
-- Fallback suggestions if no API key is provided
+### Company Setup Flow AI
+
+Also available in the company setup wizard:
+- Generates recommendations based on form inputs (industry, budget, visas, etc.)
+- Code: `lib/services/openai_service.dart`
+- Fallback: Provides default suggestions if no API key configured
+
+**What you get:**
+- Natural, consultant-like conversation experience
+- Intelligent follow-up questions based on previous answers
+- Personalized freezone recommendations with clear rationale
+- Seamless transition to freezone browser with pre-populated search
 
 ## 🖼️ Screenshots / Demo
 
@@ -47,12 +69,13 @@ Tip: store images under `assets/images/` and reference them here.
 
 ## 📦 Features
 
-- Free zone Browser: search, sort, and filter by license type, budget, visas, and remote setup
-- Compare Mode: select multiple zones and view side-by-side
-- AI Advisor: GPT-backed recommendations with clear rationale
-- Services & Community: service request flow, posts, and tracking
-- Firebase: Auth, Firestore, Storage, Functions-ready
-- Payments-ready: Stripe scaffolding (see guide below)
+- **AI Business Expert** 🤖: Interactive chatbot that asks smart questions about your business and recommends the best UAE free zones. Automatically pre-fills the freezone browser with your requirements.
+- **Free zone Browser**: search, sort, and filter by license type, budget, visas, and remote setup
+- **Compare Mode**: select multiple zones and view side-by-side
+- **AI Advisor**: GPT-backed recommendations with clear rationale
+- **Services & Community**: service request flow, posts, and tracking
+- **Firebase**: Auth, Firestore, Storage, Functions-ready
+- **Payments-ready**: Stripe scaffolding (see guide below)
 
 ## 🚀 Getting Started
 
