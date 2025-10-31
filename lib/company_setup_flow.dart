@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wazeet/utils/industry_loader.dart';
+import 'package:wazeet/services/openai_service.dart';
 
 // =============================================================
 // Company Setup Flow (Single-file implementation)
@@ -16,6 +17,7 @@ class SetupData {
   final int visaCount; // 0..10
   final int licenseTenureYears; // 1/2/3
   final String entityType; // 'LLC' | 'FZ-LLC' | 'Sole Proprietor'
+  final String emirate; // Selected emirate
   final String recommendedZone; // computed/dummy
 
   const SetupData({
@@ -24,6 +26,7 @@ class SetupData {
     this.visaCount = 0,
     this.licenseTenureYears = 1,
     this.entityType = '',
+    this.emirate = '',
     this.recommendedZone = '',
   });
 
@@ -33,6 +36,7 @@ class SetupData {
     int? visaCount,
     int? licenseTenureYears,
     String? entityType,
+    String? emirate,
     String? recommendedZone,
   }) {
     return SetupData(
@@ -41,6 +45,7 @@ class SetupData {
       visaCount: visaCount ?? this.visaCount,
       licenseTenureYears: licenseTenureYears ?? this.licenseTenureYears,
       entityType: entityType ?? this.entityType,
+      emirate: emirate ?? this.emirate,
       recommendedZone: recommendedZone ?? this.recommendedZone,
     );
   }
@@ -91,7 +96,10 @@ class SetupController extends StateNotifier<SetupData> {
     if (current.contains(activity)) {
       current.remove(activity);
     } else {
-      current.add(activity);
+      // Limit to maximum 5 activities
+      if (current.length < 5) {
+        current.add(activity);
+      }
     }
     state = state.copyWith(businessActivities: current);
   }
@@ -113,6 +121,10 @@ class SetupController extends StateNotifier<SetupData> {
 
   void setEntityType(String entity) {
     state = state.copyWith(entityType: entity);
+  }
+
+  void setEmirate(String emirate) {
+    state = state.copyWith(emirate: emirate);
   }
 
   // Dummy recommender logic
@@ -164,7 +176,8 @@ class CompanySetupFlow extends ConsumerStatefulWidget {
 }
 
 class _CompanySetupFlowState extends ConsumerState<CompanySetupFlow> {
-  static const _totalSteps = 8; // 0..7
+  static const _totalSteps =
+      8; // 0..7 (Activities, Shareholders, Visa, Tenure, Entity, Emirate, Recommender, Summary)
   final _pageController = PageController();
   String _activityQuery = '';
 
@@ -177,17 +190,17 @@ class _CompanySetupFlowState extends ConsumerState<CompanySetupFlow> {
   bool _isCurrentStepValid(SetupData data, int step) {
     switch (step) {
       case 0:
-        return true; // Welcome always valid
-      case 1:
         return data.businessActivities.isNotEmpty;
-      case 2:
+      case 1:
         return data.shareholdersCount >= 1 && data.shareholdersCount <= 10;
-      case 3:
+      case 2:
         return data.visaCount >= 0 && data.visaCount <= 10;
-      case 4:
+      case 3:
         return data.licenseTenureYears >= 1 && data.licenseTenureYears <= 3;
-      case 5:
+      case 4:
         return data.entityType.isNotEmpty;
+      case 5:
+        return data.emirate.isNotEmpty;
       case 6:
         return true; // Recommender screen always passable
       case 7:
@@ -198,8 +211,8 @@ class _CompanySetupFlowState extends ConsumerState<CompanySetupFlow> {
   }
 
   void _goNext(int step) {
-    if (step == 5) {
-      // Compute recommendation before entering step 6
+    if (step == 4) {
+      // Compute recommendation before entering step 5
       ref.read(setupProvider.notifier).computeRecommendation();
     }
     final maxIndex = _totalSteps - 1;
@@ -254,7 +267,6 @@ class _CompanySetupFlowState extends ConsumerState<CompanySetupFlow> {
               controller: _pageController,
               physics: const NeverScrollableScrollPhysics(),
               children: [
-                _WelcomeStep(onStart: () => _goNext(step)),
                 _ActivitiesStep(
                   query: _activityQuery,
                   onQueryChanged: (q) => setState(() => _activityQuery = q),
@@ -263,6 +275,7 @@ class _CompanySetupFlowState extends ConsumerState<CompanySetupFlow> {
                 _VisaStep(),
                 _TenureStep(),
                 _EntityStep(),
+                _EmirateStep(),
                 _RecommenderStep(),
                 _SummaryStep(
                   onComplete: () {
@@ -293,7 +306,9 @@ class _CompanySetupFlowState extends ConsumerState<CompanySetupFlow> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: step == 0 ? null : _goBack,
+                      onPressed: step > 0
+                          ? _goBack
+                          : () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -345,17 +360,17 @@ class _CompanySetupFlowState extends ConsumerState<CompanySetupFlow> {
 String _stepTitle(int step) {
   switch (step) {
     case 0:
-      return 'Welcome';
-    case 1:
       return 'Business Activities';
-    case 2:
+    case 1:
       return 'Shareholders';
-    case 3:
+    case 2:
       return 'Visa Requirements';
-    case 4:
+    case 3:
       return 'License Tenure';
-    case 5:
+    case 4:
       return 'Legal Entity Type';
+    case 5:
+      return 'Select Emirate';
     case 6:
       return 'Smart Recommender';
     case 7:
@@ -366,46 +381,41 @@ String _stepTitle(int step) {
 }
 
 // ---------------------- Steps ----------------------
-class _WelcomeStep extends StatelessWidget {
-  const _WelcomeStep({required this.onStart});
-  final VoidCallback onStart;
 
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Text(
-              'WAZEET',
-              style: TextStyle(fontSize: 40, fontWeight: FontWeight.w800),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              "Let's set up your company in a few guided steps.",
-              style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: onStart,
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(220, 48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text('Start Setup'),
-            ),
-          ],
-        ),
-      ),
-    );
+/// Filter activities by multiple keywords (supports 3-4 keywords)
+/// Each keyword is searched in both name and description
+List<ActivityData> _filterByKeywords(
+  List<ActivityData> activities,
+  String query,
+) {
+  if (query.trim().isEmpty) {
+    return activities;
   }
+
+  // Split query into keywords (by spaces)
+  final keywords = query
+      .toLowerCase()
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((k) => k.isNotEmpty)
+      .toList();
+
+  // Limit to 4 keywords for performance
+  final searchKeywords = keywords.take(4).toList();
+
+  if (searchKeywords.isEmpty) {
+    return activities;
+  }
+
+  // Filter: activity must match ALL keywords (AND logic)
+  return activities.where((activity) {
+    final activityName = activity.name.toLowerCase();
+    final activityDesc = activity.description.toLowerCase();
+    final combinedText = '$activityName $activityDesc';
+
+    // Check if ALL keywords are present in the combined text
+    return searchKeywords.every((keyword) => combinedText.contains(keyword));
+  }).toList();
 }
 
 class _ActivitiesStep extends ConsumerWidget {
@@ -428,13 +438,9 @@ class _ActivitiesStep extends ConsumerWidget {
         }
 
         final allActivities = snapshot.data ?? [];
-        final filtered = allActivities
-            .where(
-              (a) =>
-                  a.name.toLowerCase().contains(query.toLowerCase()) ||
-                  a.description.toLowerCase().contains(query.toLowerCase()),
-            )
-            .toList();
+
+        // Support multi-keyword search (3-4 keywords)
+        final filtered = _filterByKeywords(allActivities, query);
 
         final isValid = data.businessActivities.isNotEmpty;
 
@@ -453,7 +459,7 @@ class _ActivitiesStep extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Choose at least one. You can change this later.',
+                    'Choose 1-5 activities. You can change this later.',
                     style: TextStyle(color: Colors.grey.shade700),
                   ),
                   const SizedBox(height: 16),
@@ -465,7 +471,8 @@ class _ActivitiesStep extends ConsumerWidget {
                         fillColor: Colors.white,
                         filled: true,
                         prefixIcon: const Icon(Icons.search),
-                        hintText: 'Search activities or descriptions',
+                        hintText:
+                            'Search with keywords (e.g., "retail sale food")',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -474,6 +481,17 @@ class _ActivitiesStep extends ConsumerWidget {
                       onChanged: onQueryChanged,
                     ),
                   ),
+                  if (query.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tip: Use multiple keywords for better results (e.g., "document preparation office")',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   if (!isValid)
                     const Text(
@@ -485,22 +503,32 @@ class _ActivitiesStep extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
+                        color: data.businessActivities.length >= 5
+                            ? Colors.orange.shade50
+                            : Colors.blue.shade50,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         children: [
                           Icon(
-                            Icons.check_circle,
-                            color: Colors.blue.shade700,
+                            data.businessActivities.length >= 5
+                                ? Icons.info
+                                : Icons.check_circle,
+                            color: data.businessActivities.length >= 5
+                                ? Colors.orange.shade700
+                                : Colors.blue.shade700,
                             size: 20,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              '${data.businessActivities.length} ${data.businessActivities.length == 1 ? "activity" : "activities"} selected',
+                              data.businessActivities.length >= 5
+                                  ? '5 activities selected (maximum reached)'
+                                  : '${data.businessActivities.length} ${data.businessActivities.length == 1 ? "activity" : "activities"} selected',
                               style: TextStyle(
-                                color: Colors.blue.shade700,
+                                color: data.businessActivities.length >= 5
+                                    ? Colors.orange.shade700
+                                    : Colors.blue.shade700,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -525,10 +553,13 @@ class _ActivitiesStep extends ConsumerWidget {
                   final isSelected = data.businessActivities.contains(
                     activity.name,
                   );
+                  final isLimitReached = data.businessActivities.length >= 5;
+                  final isDisabled = isLimitReached && !isSelected;
 
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
                     elevation: isSelected ? 2 : 0,
+                    color: isDisabled ? Colors.grey.shade100 : Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(
@@ -540,7 +571,9 @@ class _ActivitiesStep extends ConsumerWidget {
                     ),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
-                      onTap: () => controller.toggleActivity(activity.name),
+                      onTap: isDisabled
+                          ? null
+                          : () => controller.toggleActivity(activity.name),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Row(
@@ -552,9 +585,11 @@ class _ActivitiesStep extends ConsumerWidget {
                                 isSelected
                                     ? Icons.check_circle
                                     : Icons.radio_button_unchecked,
-                                color: isSelected
-                                    ? Colors.blue.shade700
-                                    : Colors.grey.shade400,
+                                color: isDisabled
+                                    ? Colors.grey.shade300
+                                    : (isSelected
+                                          ? Colors.blue.shade700
+                                          : Colors.grey.shade400),
                                 size: 24,
                               ),
                             ),
@@ -568,9 +603,11 @@ class _ActivitiesStep extends ConsumerWidget {
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
-                                      color: isSelected
-                                          ? Colors.blue.shade900
-                                          : Colors.black87,
+                                      color: isDisabled
+                                          ? Colors.grey.shade400
+                                          : (isSelected
+                                                ? Colors.blue.shade900
+                                                : Colors.black87),
                                     ),
                                   ),
                                   const SizedBox(height: 6),
@@ -578,7 +615,9 @@ class _ActivitiesStep extends ConsumerWidget {
                                     activity.description,
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: Colors.grey.shade700,
+                                      color: isDisabled
+                                          ? Colors.grey.shade400
+                                          : Colors.grey.shade700,
                                       height: 1.4,
                                     ),
                                     maxLines: 3,
@@ -740,9 +779,6 @@ class _TenureStep extends ConsumerWidget {
     final controller = ref.read(setupProvider.notifier);
 
     int selected = data.licenseTenureYears;
-    int base = 12000; // dummy
-    int yearly = 8000; // dummy
-    int estimated = base + (selected - 1) * yearly + data.visaCount * 1500;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -764,21 +800,6 @@ class _TenureStep extends ConsumerWidget {
               groupValue: selected,
               onChanged: (v) => controller.setLicenseTenureYears(v ?? 1),
               title: Text('$y year${y > 1 ? 's' : ''}'),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Card(
-            elevation: 0,
-            color: Colors.blue.shade50,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                'Estimated cost: AED $estimated',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
             ),
           ),
         ],
@@ -864,27 +885,20 @@ class _EntityStep extends ConsumerWidget {
   }
 }
 
-class _RecommenderStep extends ConsumerWidget {
+class _EmirateStep extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(setupProvider);
+    final controller = ref.read(setupProvider.notifier);
 
-    final alternatives = [
-      const _ZoneOption(
-        'RAKEZ Flexi Desk',
-        'Cost-effective starter option',
-        Icons.apartment,
-      ),
-      const _ZoneOption(
-        'Sharjah Media City',
-        'Great for creative businesses',
-        Icons.movie_filter,
-      ),
-      const _ZoneOption(
-        'Dubai CommerCity',
-        'E-commerce logistics friendly',
-        Icons.local_shipping,
-      ),
+    final emirates = [
+      'Abu Dhabi',
+      'Dubai',
+      'Sharjah',
+      'Ajman',
+      'Umm Al Quwain',
+      'Ras Al Khaimah',
+      'Fujairah',
     ];
 
     return Padding(
@@ -892,69 +906,980 @@ class _RecommenderStep extends ConsumerWidget {
       child: ListView(
         children: [
           const Text(
-            'Smart Free Zone Recommender',
+            'Select Emirate',
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           Text(
-            'Based on your selections, we recommend:',
+            'Choose the emirate where you want to establish your business.',
             style: TextStyle(color: Colors.grey.shade700),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
+          ...emirates.map((emirate) {
+            final selected = data.emirate == emirate;
+            return Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              elevation: selected ? 2 : 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: selected ? Colors.blue.shade700 : Colors.grey.shade300,
+                  width: selected ? 2 : 1,
+                ),
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => controller.setEmirate(emirate),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Icon(
+                        selected
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        color: selected
+                            ? Colors.blue.shade700
+                            : Colors.grey.shade400,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          emirate,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: selected
+                                ? Colors.blue.shade900
+                                : Colors.black87,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+          if (data.emirate.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text(
+                'Please select an emirate to proceed.',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecommenderStep extends ConsumerStatefulWidget {
+  const _RecommenderStep();
+
+  @override
+  ConsumerState<_RecommenderStep> createState() => _RecommenderStepState();
+}
+
+class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
+  String? _aiRecommendation;
+  bool _isLoading = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch AI recommendations when the step loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchAIRecommendations();
+    });
+  }
+
+  Future<void> _fetchAIRecommendations() async {
+    if (_aiRecommendation != null) return; // Already fetched
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final data = ref.read(setupProvider);
+
+      final recommendation = await OpenAIService.getFreezoneRecommendations(
+        businessActivities: data.businessActivities,
+        shareholdersCount: data.shareholdersCount,
+        visaCount: data.visaCount,
+        licenseTenureYears: data.licenseTenureYears,
+        entityType: data.entityType,
+        emirate: data.emirate,
+      );
+
+      if (mounted) {
+        setState(() {
+          _aiRecommendation = recommendation;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Unable to fetch recommendations. Please try again.';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final data = ref.watch(setupProvider);
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: ListView(
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'AI-Powered Free Zone Recommendations',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                ),
+              ),
+              if (_isLoading)
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Based on your business requirements, our AI analyzes optimal free zone options with pricing:',
+            style: TextStyle(color: Colors.grey.shade700),
+          ),
+          const SizedBox(height: 16),
+
+          // Your Business Summary Card
           Card(
-            elevation: 2,
+            elevation: 1,
+            color: Colors.blue.shade50,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Padding(
               padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.business_center,
+                        color: Colors.blue.shade700,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Your Business Profile',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Colors.blue.shade900,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _buildInfoRow(
+                    'Activities',
+                    data.businessActivities.join(', '),
+                  ),
+                  _buildInfoRow('Shareholders', '${data.shareholdersCount}'),
+                  _buildInfoRow('Visas', '${data.visaCount}'),
+                  _buildInfoRow(
+                    'License Period',
+                    '${data.licenseTenureYears} year(s)',
+                  ),
+                  _buildInfoRow('Entity Type', data.entityType),
+                  _buildInfoRow('Emirate', data.emirate),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // AI Recommendations Section
+          if (_isLoading)
+            Center(
+              child: Column(
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Analyzing options and pricing...',
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            )
+          else if (_error != null)
+            Card(
+              elevation: 0,
+              color: Colors.red.shade50,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      color: Colors.red.shade700,
+                      size: 48,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      _error!,
+                      style: TextStyle(color: Colors.red.shade700),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: _fetchAIRecommendations,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade700,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else if (_aiRecommendation != null)
+            ..._buildEnhancedRecommendations(_aiRecommendation!),
+
+          const SizedBox(height: 16),
+
+          // Action Buttons
+          if (!_isLoading && _aiRecommendation != null)
+            Card(
+              elevation: 0,
+              color: Colors.green.shade50,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      color: Colors.green.shade700,
+                      size: 48,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Ready to proceed with your setup?',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green.shade900,
+                        fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Review your summary in the next step or go back to make changes.',
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildEnhancedRecommendations(String recommendation) {
+    final sections = _parseRecommendation(recommendation);
+    final widgets = <Widget>[];
+
+    // Header Card
+    widgets.add(
+      Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.purple.shade700, Colors.purple.shade500],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.auto_awesome,
+                  color: Colors.white,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'AI-Powered Analysis',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Personalized recommendations with pricing',
+                      style: TextStyle(fontSize: 14, color: Colors.white70),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    widgets.add(const SizedBox(height: 16));
+
+    // Parse and display each section
+    for (var section in sections) {
+      if (section['type'] == 'zone') {
+        widgets.add(_buildZoneCard(section));
+        widgets.add(const SizedBox(height: 12));
+      } else if (section['type'] == 'comparison') {
+        widgets.add(_buildComparisonCard(section));
+        widgets.add(const SizedBox(height: 12));
+      } else if (section['type'] == 'recommendation') {
+        widgets.add(_buildBestValueCard(section));
+        widgets.add(const SizedBox(height: 12));
+      } else if (section['type'] == 'note') {
+        widgets.add(_buildNoteCard(section));
+        widgets.add(const SizedBox(height: 12));
+      } else {
+        widgets.add(_buildGenericSection(section));
+        widgets.add(const SizedBox(height: 12));
+      }
+    }
+
+    return widgets;
+  }
+
+  List<Map<String, dynamic>> _parseRecommendation(String text) {
+    final sections = <Map<String, dynamic>>[];
+    final lines = text.split('\n');
+
+    Map<String, dynamic>? currentSection;
+    List<String> currentContent = [];
+
+    for (var line in lines) {
+      final trimmed = line.trim();
+
+      // Detect zone recommendations (starts with **number or number followed by zone name)
+      // Matches: **1. Dubai Silicon Oasis** or similar patterns
+      if (RegExp(r'^\*\*\d+\.').hasMatch(trimmed)) {
+        // Save previous section
+        if (currentSection != null) {
+          currentSection['content'] = currentContent.join('\n');
+          sections.add(currentSection);
+        }
+        // Start new zone section
+        currentSection = {
+          'type': 'zone',
+          'title': trimmed.replaceAll(RegExp(r'^\*\*|\*\*$'), ''),
+        };
+        currentContent = [];
+      }
+      // Detect comparison section
+      else if (trimmed.toLowerCase().contains('cost comparison') ||
+          (trimmed.toLowerCase().contains('comparison') &&
+              !trimmed.startsWith('•'))) {
+        if (currentSection != null) {
+          currentSection['content'] = currentContent.join('\n');
+          sections.add(currentSection);
+        }
+        currentSection = {'type': 'comparison', 'title': trimmed};
+        currentContent = [];
+      }
+      // Detect best value recommendation
+      else if ((trimmed.toLowerCase().contains('best value') ||
+              trimmed.toLowerCase().contains('recommended')) &&
+          !trimmed.startsWith('•')) {
+        if (currentSection != null) {
+          currentSection['content'] = currentContent.join('\n');
+          sections.add(currentSection);
+        }
+        currentSection = {'type': 'recommendation', 'title': trimmed};
+        currentContent = [];
+      }
+      // Skip **Note sections - they're generic disclaimers
+      else if (trimmed.startsWith('**Note') || trimmed == '**Note:**') {
+        if (currentSection != null) {
+          currentSection['content'] = currentContent.join('\n');
+          sections.add(currentSection);
+        }
+        currentSection = {'type': 'note', 'title': 'Important Note'};
+        currentContent = [];
+      }
+      // Regular content
+      else if (trimmed.isNotEmpty) {
+        currentContent.add(trimmed);
+      }
+    }
+
+    // Add final section
+    if (currentSection != null) {
+      currentSection['content'] = currentContent.join('\n');
+      sections.add(currentSection);
+    }
+
+    // If no structured sections found, try to split by numbered items
+    if (sections.isEmpty || sections.length == 1) {
+      sections.clear();
+      final zonePattern = RegExp(r'\*\*(\d+)\.\s*([^*]+)\*\*');
+      final matches = zonePattern.allMatches(text);
+
+      if (matches.isNotEmpty) {
+        for (var i = 0; i < matches.length; i++) {
+          final match = matches.elementAt(i);
+          final number = match.group(1);
+          final zoneName = match.group(2)?.trim() ?? '';
+
+          // Get content until next zone or end
+          final startIndex = match.end;
+          final endIndex = i < matches.length - 1
+              ? matches.elementAt(i + 1).start
+              : text.length;
+
+          final content = text.substring(startIndex, endIndex).trim();
+
+          sections.add({
+            'type': 'zone',
+            'title': '$number. $zoneName',
+            'content': content,
+          });
+        }
+      }
+    }
+
+    // If still no sections, return as generic
+    if (sections.isEmpty) {
+      sections.add({
+        'type': 'generic',
+        'title': 'Recommendations',
+        'content': text,
+      });
+    }
+
+    return sections;
+  }
+
+  Widget _buildZoneCard(Map<String, dynamic> section) {
+    final title = section['title'] as String;
+    final content = section['content'] as String;
+
+    // Extract zone name and pricing
+    final zoneMatch = RegExp(
+      r'([A-Z][A-Za-z\s&()]+(?:Free Zone|Centre|Authority|FZ|DMCC|IFZA|RAKEZ))',
+    ).firstMatch(title);
+    final zoneName = zoneMatch?.group(1) ?? title;
+
+    final priceMatch = RegExp(
+      r'AED\s+([\d,]+)\s*-\s*([\d,]+)',
+    ).firstMatch(content);
+    final priceRange = priceMatch != null
+        ? 'AED ${priceMatch.group(1)} - ${priceMatch.group(2)}'
+        : null;
+
+    // Parse content into structured sections
+    final lines = content.split('\n');
+    final Map<String, String> sections = {};
+    String? currentKey;
+    final StringBuffer currentValue = StringBuffer();
+
+    for (var line in lines) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) continue;
+
+      // Check if line is a key (contains colon)
+      if (trimmed.contains(':') && !trimmed.startsWith('•')) {
+        if (currentKey != null) {
+          sections[currentKey] = currentValue.toString().trim();
+          currentValue.clear();
+        }
+        final parts = trimmed.split(':');
+        currentKey = parts[0].trim();
+        if (parts.length > 1) {
+          currentValue.write(parts.sublist(1).join(':').trim());
+        }
+      } else {
+        if (currentValue.isNotEmpty) {
+          currentValue.write('\n');
+        }
+        currentValue.write(trimmed);
+      }
+    }
+    if (currentKey != null) {
+      sections[currentKey] = currentValue.toString().trim();
+    }
+
+    return Card(
+      elevation: 4,
+      shadowColor: Colors.blue.shade100,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            colors: [Colors.white, Colors.blue.shade50.withOpacity(0.3)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          border: Border.all(color: Colors.blue.shade300, width: 2),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with gradient
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blue.shade600, Colors.blue.shade400],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(18),
+                  topRight: Radius.circular(18),
+                ),
+              ),
               child: Row(
                 children: [
-                  const Icon(Icons.rocket_launch, color: Colors.blue, size: 32),
-                  const SizedBox(width: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                        width: 2,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.account_balance,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          data.recommendedZone.isNotEmpty
-                              ? data.recommendedZone
-                              : 'RAKEZ Business Hub',
+                          zoneName,
                           style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: 0.5,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Tailored to: ${data.businessActivities.join(', ')}',
-                          style: TextStyle(color: Colors.grey.shade700),
-                        ),
+                        if (priceRange != null) ...[
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.payments_outlined,
+                                  size: 16,
+                                  color: Colors.green.shade700,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  priceRange,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.green.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'You might also consider:',
-            style: TextStyle(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          ...alternatives.map(
-            (z) => Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ListTile(
-                leading: Icon(z.icon, color: Colors.blue),
-                title: Text(z.title),
-                subtitle: Text(z.subtitle),
+
+            // Content body
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Display parsed sections with icons
+                  if (sections.isNotEmpty) ...[
+                    ...sections.entries.map((entry) {
+                      IconData icon = Icons.info_outline;
+                      Color iconColor = Colors.blue.shade600;
+
+                      // Assign icons based on key
+                      if (entry.key.toLowerCase().contains('suited') ||
+                          entry.key.toLowerCase().contains('benefits')) {
+                        icon = Icons.check_circle_outline;
+                        iconColor = Colors.green.shade600;
+                      } else if (entry.key.toLowerCase().contains('cost') ||
+                          entry.key.toLowerCase().contains('estimated')) {
+                        icon = Icons.monetization_on_outlined;
+                        iconColor = Colors.amber.shade700;
+                      } else if (entry.key.toLowerCase().contains('includes')) {
+                        icon = Icons.inventory_2_outlined;
+                        iconColor = Colors.indigo.shade600;
+                      }
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: iconColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(icon, color: iconColor, size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    entry.key,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.grey.shade800,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  SelectableText(
+                                    entry.value,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade700,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ] else ...[
+                    // Fallback if no structured content
+                    SelectableText(
+                      content,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade800,
+                        height: 1.6,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
+
+            // Footer with action hint
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50.withOpacity(0.5),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(18),
+                  bottomRight: Radius.circular(18),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.lightbulb_outline,
+                    size: 16,
+                    color: Colors.blue.shade700,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Contact our consultants for detailed quotes',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue.shade700,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildComparisonCard(Map<String, dynamic> section) {
+    return Card(
+      elevation: 1,
+      color: Colors.amber.shade50,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.compare_arrows,
+                  color: Colors.amber.shade700,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  section['title'] as String,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.amber.shade900,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SelectableText(
+              section['content'] as String,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade800,
+                height: 1.6,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoteCard(Map<String, dynamic> section) {
+    return Card(
+      elevation: 1,
+      color: Colors.blue.shade50,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.blue.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.info_outline, color: Colors.blue.shade700, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    section['title'] as String,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.blue.shade900,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SelectableText(
+                    section['content'] as String,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade700,
+                      height: 1.5,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBestValueCard(Map<String, dynamic> section) {
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.green.shade400, Colors.green.shade600],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.star, color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    section['title'] as String,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SelectableText(
+              section['content'] as String,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.white,
+                height: 1.6,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGenericSection(Map<String, dynamic> section) {
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (section['title'] != null) ...[
+              Text(
+                section['title'] as String,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            SelectableText(
+              section['content'] as String,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade800,
+                height: 1.6,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(value, style: TextStyle(color: Colors.grey.shade800)),
           ),
         ],
       ),
@@ -995,6 +1920,10 @@ class _SummaryStep extends ConsumerWidget {
           _SummaryTile(
             title: 'Entity Type',
             value: data.entityType.isEmpty ? '-' : data.entityType,
+          ),
+          _SummaryTile(
+            title: 'Emirate',
+            value: data.emirate.isEmpty ? '-' : data.emirate,
           ),
           _SummaryTile(
             title: 'Recommended Zone',
@@ -1045,13 +1974,6 @@ class _NumberButton extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ZoneOption {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  const _ZoneOption(this.title, this.subtitle, this.icon);
 }
 
 class _SummaryTile extends StatelessWidget {

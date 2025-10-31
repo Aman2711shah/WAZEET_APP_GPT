@@ -15,13 +15,19 @@ class MainNav extends StatefulWidget {
 
 class _MainNavState extends State<MainNav> {
   int _index = 0;
-  final pages = const [
-    HomePage(),
-    ServicesPage(),
-    CommunityPage(),
-    ApplicationsPage(), // Applications/Summits
-    ProfilePage(),
-  ];
+  late final List<Widget> pages;
+
+  @override
+  void initState() {
+    super.initState();
+    pages = [
+      HomePage(onNavigateToTab: (index) => setState(() => _index = index)),
+      const ServicesPage(),
+      const CommunityPage(),
+      const ApplicationsPage(), // Applications/Summits
+      const ProfilePage(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {

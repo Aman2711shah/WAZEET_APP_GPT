@@ -315,12 +315,11 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                     ];
 
                     final pollContent =
-                        '📊 ${questionController.text}\n\n' +
-                        options
+                        '📊 ${questionController.text}\n\n${options
                             .asMap()
                             .entries
                             .map((e) => '${e.key + 1}. ${e.value}')
-                            .join('\n');
+                            .join('\n')}';
 
                     final newPost = Post(
                       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -477,12 +476,9 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                       }
 
                       final eventContent =
-                          '🎉 ${titleController.text}\n\n' +
-                          (descriptionController.text.trim().isNotEmpty
+                          '🎉 ${titleController.text}\n\n${descriptionController.text.trim().isNotEmpty
                               ? '${descriptionController.text}\n\n'
-                              : '') +
-                          '📍 ${locationController.text.trim().isNotEmpty ? locationController.text : "TBA"}\n' +
-                          '📅 ${selectedDate.day}/${selectedDate.month}/${selectedDate.year} at ${selectedTime.format(context)}';
+                              : ''}📍 ${locationController.text.trim().isNotEmpty ? locationController.text : "TBA"}\n📅 ${selectedDate.day}/${selectedDate.month}/${selectedDate.year} at ${selectedTime.format(context)}';
 
                       final newPost = Post(
                         id: DateTime.now().millisecondsSinceEpoch.toString(),

@@ -47,7 +47,7 @@ class CommunityTab extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              ...posts.map((post) => PostCard(post: post)).toList(),
+              ...posts.map((post) => PostCard(post: post)),
             ],
           ),
         ),

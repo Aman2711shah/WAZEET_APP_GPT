@@ -9,8 +9,14 @@ import 'providers/theme_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  try {
+    // Initialize Firebase
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    print('Firebase initialization error: $e');
+  }
 
   runApp(const ProviderScope(child: WazeetApp()));
 }
@@ -29,6 +35,14 @@ class WazeetApp extends ConsumerWidget {
       darkTheme: AppTheme.dark,
       themeMode: themeMode,
       home: const MainNav(),
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(1.0)),
+          child: child ?? const SizedBox(),
+        );
+      },
     );
   }
 }

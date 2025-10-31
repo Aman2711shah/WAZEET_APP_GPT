@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class AppColors {
   // Unified primary brand color (purple)
   static const purple = Color(0xFF6D5DF6);
+  static const primary = purple; // Alias for primary color
   static const blue = Color(0xFF4A90E2);
   static const green = Color(0xFF2BB673);
   static const gold = Color(0xFFF0B429);
