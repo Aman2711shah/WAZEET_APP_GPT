@@ -7,7 +7,6 @@ import 'service_type_page.dart';
 import 'freezone_selection_page.dart';
 import 'freezone_browser_page.dart';
 import 'freezone_investment_map_page.dart';
-import 'ai_business_expert_page.dart';
 import '../theme.dart';
 
 class HomePage extends ConsumerWidget {
@@ -349,21 +348,6 @@ class HomePage extends ConsumerWidget {
                             MaterialPageRoute(
                               builder: (context) =>
                                   ServiceTypePage(category: visaCategory),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildQuickActionCard(
-                        context,
-                        'AI Business\nExpert',
-                        Icons.psychology,
-                        Colors.deepOrange,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const AIBusinessExpertPage(),
                             ),
                           );
                         },
