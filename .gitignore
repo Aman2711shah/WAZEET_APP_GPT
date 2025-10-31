@@ -13,7 +13,12 @@
 migrate_working_dir/
 
 # Environment variables
+# Secrets and keys (do not commit)
 .env
+**/serviceAccountKey.json
+tools/import/serviceAccountKey.json
+freezone-import/*-firebase-adminsdk-*.json
+freezone-import/*.json
 
 # IntelliJ related
 *.iml
