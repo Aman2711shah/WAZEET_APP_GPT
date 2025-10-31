@@ -55,149 +55,283 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        title: const Text('Find Your Free Zone'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(kToolbarHeight),
-          child: TabBar(
-            controller: _tabController,
-            indicatorColor: Colors.white,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            tabs: const [
-              Tab(text: 'By Emirate', icon: Icon(Icons.location_on_outlined)),
-              Tab(text: 'By Industry', icon: Icon(Icons.category_outlined)),
-            ],
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(_compareMode ? Icons.close : Icons.compare),
-            tooltip: _compareMode ? 'Exit Compare Mode' : 'Compare Zones',
-            onPressed: () {
-              setState(() {
-                _compareMode = !_compareMode;
-                if (!_compareMode) {
-                  _selectedZones.clear();
-                }
-              });
-            },
-          ),
-          if (_compareMode && _selectedZones.length >= 2)
-            IconButton(
-              icon: const Icon(Icons.check),
-              tooltip: 'Compare Selected',
-              onPressed: _showComparison,
-            ),
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: _showFilterSheet,
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search free zones...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.grey[100],
-              ),
-            ),
-          ),
-
-          // Active filters chips
-          if (_hasActiveFilters())
-            Container(
-              height: 50,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  if (_selectedLicenseType != null)
-                    _buildFilterChip(
-                      'License: $_selectedLicenseType',
-                      () => setState(() => _selectedLicenseType = null),
-                    ),
-                  if (_minPrice != null || _maxPrice != null)
-                    _buildFilterChip(
-                      'Price: ${_minPrice ?? 0}-${_maxPrice ?? '∞'}',
-                      () => setState(() {
-                        _minPrice = null;
-                        _maxPrice = null;
-                      }),
-                    ),
-                  if (_minVisas != null)
-                    _buildFilterChip(
-                      'Min Visas: $_minVisas',
-                      () => setState(() => _minVisas = null),
-                    ),
-                  if (_remoteSetupOnly)
-                    _buildFilterChip(
-                      'Remote Setup',
-                      () => setState(() => _remoteSetupOnly = false),
-                    ),
-                  if (_sortBy != SortBy.name)
-                    _buildFilterChip(
-                      'Sort: ${_sortBy.name}',
-                      () => setState(() => _sortBy = SortBy.name),
-                    ),
-                ],
-              ),
-            ),
-
-          // Compare mode banner
-          if (_compareMode)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              color: AppColors.primary.withOpacity(0.1),
-              child: Text(
-                '${_selectedZones.length} zones selected. Select at least 2 to compare.',
-                textAlign: TextAlign.center,
+      body: CustomScrollView(
+        slivers: [
+          // Enhanced AppBar with gradient
+          SliverAppBar(
+            expandedHeight: 180,
+            floating: false,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              title: const Text(
+                'Find Your Free Zone',
                 style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                  shadows: [
+                    Shadow(
+                      offset: Offset(0, 1),
+                      blurRadius: 3.0,
+                      color: Colors.black26,
+                    ),
+                  ],
+                ),
+              ),
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.primary,
+                      AppColors.primary.withOpacity(0.8),
+                      AppColors.purple,
+                    ],
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    // Decorative circles
+                    Positioned(
+                      right: -30,
+                      top: -30,
+                      child: Container(
+                        width: 150,
+                        height: 150,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.1),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: -50,
+                      bottom: -50,
+                      child: Container(
+                        width: 200,
+                        height: 200,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.05),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
+            actions: [
+              IconButton(
+                icon: Icon(_compareMode ? Icons.close : Icons.compare_arrows),
+                tooltip: _compareMode ? 'Exit Compare Mode' : 'Compare Zones',
+                onPressed: () {
+                  setState(() {
+                    _compareMode = !_compareMode;
+                    if (!_compareMode) {
+                      _selectedZones.clear();
+                    }
+                  });
+                },
+              ),
+              if (_compareMode && _selectedZones.length >= 2)
+                IconButton(
+                  icon: const Icon(Icons.check_circle),
+                  tooltip: 'Compare Selected',
+                  onPressed: _showComparison,
+                ),
+              IconButton(
+                icon: const Icon(Icons.tune),
+                onPressed: _showFilterSheet,
+              ),
+            ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(kToolbarHeight),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  indicatorColor: AppColors.primary,
+                  indicatorWeight: 3,
+                  labelColor: AppColors.primary,
+                  unselectedLabelColor: Colors.grey,
+                  labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                  tabs: const [
+                    Tab(
+                      text: 'By Emirate',
+                      icon: Icon(Icons.location_city, size: 20),
+                    ),
+                    Tab(
+                      text: 'By Industry',
+                      icon: Icon(Icons.business_center, size: 20),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
 
-          Expanded(
+          // Search bar and filters
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                // Enhanced search bar
+                Container(
+                  margin: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.1),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search free zones...',
+                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      prefixIcon: Icon(Icons.search, color: AppColors.primary),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.clear, color: Colors.grey),
+                              onPressed: () {
+                                _searchController.clear();
+                              },
+                            )
+                          : Icon(Icons.mic, color: Colors.grey[400]),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                    ),
+                  ),
+                ),
+                // Active filters chips with better design
+                if (_hasActiveFilters())
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (_selectedLicenseType != null)
+                          Chip(
+                            label: Text(_selectedLicenseType!),
+                            onDeleted: () =>
+                                setState(() => _selectedLicenseType = null),
+                            deleteIconColor: AppColors.primary,
+                            backgroundColor: AppColors.primary.withOpacity(0.1),
+                          ),
+                        if (_minPrice != null || _maxPrice != null)
+                          Chip(
+                            label: Text(
+                              'Price: AED ${_minPrice ?? 0} - ${_maxPrice ?? 100000}',
+                            ),
+                            onDeleted: () => setState(() {
+                              _minPrice = null;
+                              _maxPrice = null;
+                            }),
+                            deleteIconColor: AppColors.primary,
+                            backgroundColor: AppColors.primary.withOpacity(0.1),
+                          ),
+                        if (_minVisas != null && _minVisas! > 0)
+                          Chip(
+                            label: Text('Min ${_minVisas} visas'),
+                            onDeleted: () => setState(() => _minVisas = null),
+                            deleteIconColor: AppColors.primary,
+                            backgroundColor: AppColors.primary.withOpacity(0.1),
+                          ),
+                        if (_remoteSetupOnly)
+                          Chip(
+                            label: const Text('Remote Setup'),
+                            onDeleted: () =>
+                                setState(() => _remoteSetupOnly = false),
+                            deleteIconColor: AppColors.primary,
+                            backgroundColor: AppColors.primary.withOpacity(0.1),
+                          ),
+                        Chip(
+                          label: const Text('Clear All'),
+                          onDeleted: () {
+                            setState(() {
+                              _selectedLicenseType = null;
+                              _minPrice = null;
+                              _maxPrice = null;
+                              _minVisas = null;
+                              _remoteSetupOnly = false;
+                            });
+                          },
+                          deleteIconColor: Colors.red,
+                          backgroundColor: Colors.red.withOpacity(0.1),
+                        ),
+                      ],
+                    ),
+                  ),
+                // Compare mode banner
+                if (_compareMode)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.primary.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.compare_arrows,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${_selectedZones.length} zones selected. Select at least 2 to compare.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // Content
+          SliverFillRemaining(
             child: TabBarView(
               controller: _tabController,
               children: [_buildByEmirate(), _buildByIndustry()],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(String label, VoidCallback onRemove) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: Chip(
-        label: Text(label, style: const TextStyle(fontSize: 12)),
-        deleteIcon: const Icon(Icons.close, size: 16),
-        onDeleted: onRemove,
-        backgroundColor: AppColors.primary.withOpacity(0.1),
       ),
     );
   }

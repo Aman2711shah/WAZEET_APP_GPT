@@ -12,26 +12,46 @@ class IndustryData {
   final String industry;
   final String? industryArabic;
   final List<String> activities;
+  final Map<String, String> activityDescriptions;
 
   IndustryData({
     required this.industry,
     this.industryArabic,
     required this.activities,
+    this.activityDescriptions = const {},
   });
 
-  static Future<List<IndustryData>> loadFromAsset(String assetPath) async {
+  static Future<List<IndustryData>> loadFromAsset(
+    String assetPath, {
+    bool includeDescriptions = false,
+  }) async {
     final raw = await rootBundle.loadString(assetPath);
     final List<dynamic> json = jsonDecode(raw);
     return json.map((e) {
-      final acts =
-          (e['business_activities'] as List<dynamic>?)
-              ?.map((a) => a['Activity Name'] as String)
-              .toList() ??
-          [];
+      final businessActivities = e['business_activities'] as List<dynamic>?;
+      final acts = <String>[];
+      final descriptions = <String, String>{};
+
+      if (businessActivities != null) {
+        for (final activity in businessActivities) {
+          final name = activity['Activity Name'] as String?;
+          if (name != null) {
+            acts.add(name);
+            if (includeDescriptions) {
+              final description = activity['Description'] as String?;
+              if (description != null) {
+                descriptions[name] = description;
+              }
+            }
+          }
+        }
+      }
+
       return IndustryData(
         industry: e['industry'] as String,
         industryArabic: e['industry_arabic'] as String?,
         activities: acts,
+        activityDescriptions: descriptions,
       );
     }).toList();
   }
@@ -49,22 +69,15 @@ Future<List<String>> loadAllActivities(String assetPath) async {
 Future<List<ActivityData>> loadAllActivitiesWithDescriptions(
   String assetPath,
 ) async {
-  final raw = await rootBundle.loadString(assetPath);
-  final List<dynamic> json = jsonDecode(raw);
+  final data = await IndustryData.loadFromAsset(
+    assetPath,
+    includeDescriptions: true,
+  );
 
   final activityMap = <String, String>{};
 
-  for (final industry in json) {
-    final activities = industry['business_activities'] as List<dynamic>?;
-    if (activities != null) {
-      for (final activity in activities) {
-        final name = activity['Activity Name'] as String?;
-        final description = activity['Description'] as String?;
-        if (name != null && description != null) {
-          activityMap[name] = description;
-        }
-      }
-    }
+  for (final industry in data) {
+    activityMap.addAll(industry.activityDescriptions);
   }
 
   final result = activityMap.entries

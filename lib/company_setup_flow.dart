@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wazeet/utils/industry_loader.dart';
@@ -180,10 +181,25 @@ class _CompanySetupFlowState extends ConsumerState<CompanySetupFlow> {
       8; // 0..7 (Activities, Shareholders, Visa, Tenure, Entity, Emirate, Recommender, Summary)
   final _pageController = PageController();
   String _activityQuery = '';
+  Timer? _debounceTimer;
+  String _pendingQuery = '';
+
+  void _onSearchChanged(String value) {
+    _pendingQuery = value;
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          _activityQuery = _pendingQuery;
+        });
+      }
+    });
+  }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
@@ -269,7 +285,7 @@ class _CompanySetupFlowState extends ConsumerState<CompanySetupFlow> {
               children: [
                 _ActivitiesStep(
                   query: _activityQuery,
-                  onQueryChanged: (q) => setState(() => _activityQuery = q),
+                  onQueryChanged: _onSearchChanged,
                 ),
                 _ShareholdersStep(),
                 _VisaStep(),
@@ -392,55 +408,121 @@ List<ActivityData> _filterByKeywords(
     return activities;
   }
 
+  final queryLower = query.toLowerCase().trim();
+
   // Split query into keywords (by spaces)
-  final keywords = query
-      .toLowerCase()
-      .trim()
+  final keywords = queryLower
       .split(RegExp(r'\s+'))
-      .where((k) => k.isNotEmpty)
+      .where((k) => k.length > 1) // Skip single characters for performance
+      .take(4) // Limit to 4 keywords for performance
       .toList();
 
-  // Limit to 4 keywords for performance
-  final searchKeywords = keywords.take(4).toList();
-
-  if (searchKeywords.isEmpty) {
+  if (keywords.isEmpty) {
     return activities;
   }
 
-  // Filter: activity must match ALL keywords (AND logic)
-  return activities.where((activity) {
+  // Optimized filter with early exit
+  final results = <ActivityData>[];
+  for (final activity in activities) {
     final activityName = activity.name.toLowerCase();
     final activityDesc = activity.description.toLowerCase();
-    final combinedText = '$activityName $activityDesc';
 
-    // Check if ALL keywords are present in the combined text
-    return searchKeywords.every((keyword) => combinedText.contains(keyword));
-  }).toList();
+    // Fast path: check if first keyword exists before checking all
+    if (!activityName.contains(keywords[0]) &&
+        !activityDesc.contains(keywords[0])) {
+      continue;
+    }
+
+    // Check remaining keywords
+    var matchesAll = true;
+    for (var i = 0; i < keywords.length; i++) {
+      final keyword = keywords[i];
+      if (!activityName.contains(keyword) && !activityDesc.contains(keyword)) {
+        matchesAll = false;
+        break;
+      }
+    }
+
+    if (matchesAll) {
+      results.add(activity);
+    }
+  }
+
+  return results;
 }
 
-class _ActivitiesStep extends ConsumerWidget {
+class _ActivitiesStep extends ConsumerStatefulWidget {
   const _ActivitiesStep({required this.query, required this.onQueryChanged});
   final String query;
   final ValueChanged<String> onQueryChanged;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ActivitiesStep> createState() => _ActivitiesStepState();
+}
+
+class _ActivitiesStepState extends ConsumerState<_ActivitiesStep> {
+  late final Future<List<ActivityData>> _activitiesFuture;
+  List<ActivityData>? _cachedActivities;
+  List<ActivityData>? _cachedFilteredResults;
+  String _lastQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _activitiesFuture = loadAllActivitiesWithDescriptions(
+      'assets/images/excel-to-json.industry-grouped.json',
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final data = ref.watch(setupProvider);
     final controller = ref.read(setupProvider.notifier);
 
     return FutureBuilder<List<ActivityData>>(
-      future: loadAllActivitiesWithDescriptions(
-        'assets/images/excel-to-json.industry-grouped.json',
-      ),
+      future: _activitiesFuture,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  'Error loading activities',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${snapshot.error}',
+                  style: TextStyle(color: Colors.grey.shade700),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
+
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
         final allActivities = snapshot.data ?? [];
 
-        // Support multi-keyword search (3-4 keywords)
-        final filtered = _filterByKeywords(allActivities, query);
+        // Cache activities on first load
+        _cachedActivities ??= allActivities;
+
+        // Use cached results if query hasn't changed
+        List<ActivityData> filtered;
+        if (widget.query == _lastQuery && _cachedFilteredResults != null) {
+          filtered = _cachedFilteredResults!;
+        } else {
+          // Support multi-keyword search (3-4 keywords)
+          filtered = _filterByKeywords(allActivities, widget.query);
+          _cachedFilteredResults = filtered;
+          _lastQuery = widget.query;
+        }
 
         final isValid = data.businessActivities.isNotEmpty;
 
@@ -478,10 +560,10 @@ class _ActivitiesStep extends ConsumerWidget {
                           borderSide: BorderSide.none,
                         ),
                       ),
-                      onChanged: onQueryChanged,
+                      onChanged: widget.onQueryChanged,
                     ),
                   ),
-                  if (query.isNotEmpty) ...[
+                  if (widget.query.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Text(
                       'Tip: Use multiple keywords for better results (e.g., "document preparation office")',

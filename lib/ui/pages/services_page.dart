@@ -88,26 +88,30 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  _ComplianceSeal(
-                    label: 'Built on UAE Standards',
-                    icon: Icons.verified,
-                    color: Colors.green,
-                  ),
-                  const SizedBox(width: 12),
-                  _ComplianceSeal(
-                    label: 'GDPR-ready',
-                    icon: Icons.shield,
-                    color: Colors.blue,
-                  ),
-                  const SizedBox(width: 12),
-                  _ComplianceSeal(
-                    label: 'Secure Payments',
-                    icon: Icons.lock,
-                    color: Colors.deepPurple,
-                  ),
-                ],
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Row(
+                  children: [
+                    const _ComplianceSeal(
+                      label: 'Built on UAE Standards',
+                      icon: Icons.verified,
+                      color: Colors.green,
+                    ),
+                    const SizedBox(width: 12),
+                    const _ComplianceSeal(
+                      label: 'GDPR-ready',
+                      icon: Icons.shield,
+                      color: Colors.blue,
+                    ),
+                    const SizedBox(width: 12),
+                    const _ComplianceSeal(
+                      label: 'Secure Payments',
+                      icon: Icons.lock,
+                      color: Colors.deepPurple,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
