@@ -76,11 +76,12 @@ Tip: store images under `assets/images/` and reference them here.
 ## 📦 Features
 
 - **AI Business Expert** 🤖: Interactive chatbot that asks smart questions about your business and recommends the best UAE free zones. Automatically pre-fills the freezone browser with your requirements.
+- **Automated Event Discovery** 🎉: Cloud Function automatically discovers Dubai business events daily (networking, workshops, conferences) from the web using Google Custom Search API + OpenAI parsing. Events appear in the Community > Events tab.
 - **Free zone Browser**: search, sort, and filter by license type, budget, visas, and remote setup
 - **Compare Mode**: select multiple zones and view side-by-side
 - **AI Advisor**: GPT-backed recommendations with clear rationale
 - **Services & Community**: service request flow, posts, and tracking
-- **Firebase**: Auth, Firestore, Storage, Functions-ready
+- **Firebase**: Auth, Firestore, Storage, Cloud Functions with TypeScript
 - **Payments-ready**: Stripe scaffolding (see guide below)
 
 ## 🚀 Getting Started
@@ -133,6 +134,7 @@ Optional: use VS Code task “Flutter: Run App”.
 
 Start here for deeper setup and troubleshooting:
 
+- **Event Discovery Cloud Functions**: `docs/EVENT_DISCOVERY_SETUP.md` 🎉
 - AI setup: `docs/AI_RECOMMENDATIONS_SETUP.md`
 - Firestore rules: `FIRESTORE_SECURITY_RULES_FIX.md`
 - Payments & security: `SETUP_SECURITY_PAYMENTS.md`

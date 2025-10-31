@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/post.dart';
+import '../../models/event.dart';
 import '../../providers/community_posts_provider.dart';
 import '../../providers/user_profile_provider.dart';
+import '../../services/event_service.dart';
 import '../theme.dart';
 import '../widgets/post_card.dart';
 import 'industry_selection_page.dart';
@@ -315,11 +318,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                     ];
 
                     final pollContent =
-                        '📊 ${questionController.text}\n\n${options
-                            .asMap()
-                            .entries
-                            .map((e) => '${e.key + 1}. ${e.value}')
-                            .join('\n')}';
+                        '📊 ${questionController.text}\n\n${options.asMap().entries.map((e) => '${e.key + 1}. ${e.value}').join('\n')}';
 
                     final newPost = Post(
                       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -476,9 +475,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                       }
 
                       final eventContent =
-                          '🎉 ${titleController.text}\n\n${descriptionController.text.trim().isNotEmpty
-                              ? '${descriptionController.text}\n\n'
-                              : ''}📍 ${locationController.text.trim().isNotEmpty ? locationController.text : "TBA"}\n📅 ${selectedDate.day}/${selectedDate.month}/${selectedDate.year} at ${selectedTime.format(context)}';
+                          '🎉 ${titleController.text}\n\n${descriptionController.text.trim().isNotEmpty ? '${descriptionController.text}\n\n' : ''}📍 ${locationController.text.trim().isNotEmpty ? locationController.text : "TBA"}\n📅 ${selectedDate.day}/${selectedDate.month}/${selectedDate.year} at ${selectedTime.format(context)}';
 
                       final newPost = Post(
                         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -1302,105 +1299,229 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
   }
 
   Widget _buildEventsTab() {
-    final events = [
-      {
-        'title': 'Dubai Business Networking Mixer',
-        'date': 'Nov 5, 2025',
-        'time': '6:00 PM',
-        'location': 'DIFC, Dubai',
-        'attendees': '45',
-        'type': 'Networking',
-      },
-      {
-        'title': 'VAT Compliance Workshop',
-        'date': 'Nov 8, 2025',
-        'time': '2:00 PM',
-        'location': 'Virtual Event',
-        'attendees': '120',
-        'type': 'Workshop',
-      },
-      {
-        'title': 'Startup Pitch Competition',
-        'date': 'Nov 12, 2025',
-        'time': '10:00 AM',
-        'location': 'Dubai Internet City',
-        'attendees': '200',
-        'type': 'Competition',
-      },
-    ];
+    final upcomingEventsAsync = ref.watch(upcomingEventsProvider);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Upcoming Events',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Row(
+            children: [
+              const Text(
+                'Upcoming Events',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              IconButton(
+                onPressed: () {
+                  // Refresh events
+                  ref.invalidate(upcomingEventsProvider);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Refreshing events...')),
+                  );
+                },
+                icon: Icon(Icons.refresh, color: AppColors.purple),
+                tooltip: 'Refresh',
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Discover business networking events, workshops, and conferences in Dubai',
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
           ),
           const SizedBox(height: 16),
-          ...events.map((event) => _buildEventCard(event)),
-          const SizedBox(height: 24),
-          Center(
-            child: OutlinedButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('View all events')),
-                );
-              },
-              icon: const Icon(Icons.calendar_month),
-              label: const Text('View All Events'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.purple,
-                side: BorderSide(color: AppColors.purple),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
+
+          // Events Stream
+          upcomingEventsAsync.when(
+            loading: () => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(48.0),
+                child: CircularProgressIndicator(color: AppColors.purple),
+              ),
+            ),
+            error: (error, stack) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(48.0),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.grey.shade300,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Unable to load events',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      error.toString(),
+                      style: TextStyle(color: Colors.grey.shade500),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               ),
             ),
+            data: (events) {
+              if (events.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(48.0),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.event_outlined,
+                          size: 64,
+                          color: Colors.grey.shade300,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No upcoming events',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Check back soon for new events!',
+                          style: TextStyle(color: Colors.grey.shade500),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              return Column(
+                children: [
+                  ...events.map((event) => _buildDiscoveredEventCard(event)),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Showing ${events.length} upcoming ${events.length == 1 ? "event" : "events"}',
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Events are automatically discovered and updated daily',
+                    style: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEventCard(Map<String, String> event) {
+  Widget _buildDiscoveredEventCard(Event event) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Category Badge
             Row(
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                    horizontal: 10,
+                    vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.purple.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    event['type']!,
-                    style: TextStyle(
-                      color: AppColors.purple,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
+                    color: _getCategoryColor(event.category).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: _getCategoryColor(event.category).withOpacity(0.3),
                     ),
                   ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _getCategoryIcon(event.category),
+                        size: 14,
+                        color: _getCategoryColor(event.category),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        event.category,
+                        style: TextStyle(
+                          color: _getCategoryColor(event.category),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const Spacer(),
+                if (event.isToday)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'TODAY',
+                      style: TextStyle(
+                        color: Colors.red.shade700,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 12),
+
+            // Event Title
             Text(
-              event['title']!,
+              event.eventName,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
+            const SizedBox(height: 8),
+
+            // Description
+            if (event.description.isNotEmpty)
+              Text(
+                event.description,
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             const SizedBox(height: 12),
+
+            // Date & Time
             Row(
               children: [
                 Icon(
@@ -1410,59 +1531,96 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  event['date']!,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  event.formattedDate,
+                  style: TextStyle(
+                    color: Colors.grey.shade700,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-                const SizedBox(width: 16),
-                Icon(Icons.access_time, size: 14, color: Colors.grey.shade600),
-                const SizedBox(width: 6),
-                Text(
-                  event['time']!,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-                ),
+                if (event.time != null) ...[
+                  const SizedBox(width: 12),
+                  Icon(
+                    Icons.access_time,
+                    size: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    event.time!,
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 8),
+
+            // Location
             Row(
               children: [
                 Icon(Icons.location_on, size: 14, color: Colors.grey.shade600),
                 const SizedBox(width: 6),
-                Text(
-                  event['location']!,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                Expanded(
+                  child: Text(
+                    event.location.displayText,
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+
+            // Action Row
             Row(
               children: [
-                Icon(Icons.people, size: 16, color: AppColors.purple),
-                const SizedBox(width: 6),
-                Text(
-                  '${event['attendees']} attending',
-                  style: TextStyle(
-                    color: AppColors.purple,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                if (event.attendees > 0) ...[
+                  Icon(Icons.people, size: 16, color: AppColors.purple),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${event.attendees} attending',
+                    style: TextStyle(
+                      color: AppColors.purple,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
+                ],
                 const Spacer(),
-                ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Registered for ${event['title']}'),
-                      ),
-                    );
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final url = Uri.parse(event.sourceURL);
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(
+                        url,
+                        mode: LaunchMode.externalApplication,
+                      );
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Could not open event link'),
+                          ),
+                        );
+                      }
+                    }
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.purple,
-                    foregroundColor: Colors.white,
+                  icon: const Icon(Icons.open_in_new, size: 16),
+                  label: const Text('View Details'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.purple,
+                    side: BorderSide(color: AppColors.purple),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                   ),
-                  child: const Text('Register'),
                 ),
               ],
             ),
@@ -1470,6 +1628,36 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
         ),
       ),
     );
+  }
+
+  Color _getCategoryColor(String category) {
+    switch (category.toLowerCase()) {
+      case 'networking':
+        return Colors.blue;
+      case 'workshop':
+        return Colors.orange;
+      case 'conference':
+        return Colors.purple;
+      case 'competition':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'networking':
+        return Icons.people_alt;
+      case 'workshop':
+        return Icons.school;
+      case 'conference':
+        return Icons.groups;
+      case 'competition':
+        return Icons.emoji_events;
+      default:
+        return Icons.event;
+    }
   }
 }
 

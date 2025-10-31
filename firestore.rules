@@ -39,5 +39,11 @@ service cloud.firestore {
     match /users/{uid} {
       allow read, write: if signedIn() && uid == request.auth.uid;
     }
+
+    // Discovered Events (read-only for authenticated users, written by Cloud Functions)
+    match /discoveredEvents/{eventId} {
+      allow read: if signedIn();
+      allow write: if false; // Only Cloud Functions can write
+    }
   }
 }
