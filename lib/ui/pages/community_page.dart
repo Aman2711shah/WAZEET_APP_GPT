@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/post.dart';
 import '../../models/event.dart';
+import '../../models/business_news.dart';
 import '../../providers/community_posts_provider.dart';
 import '../../providers/user_profile_provider.dart';
 import '../../services/event_service.dart';
+import '../../services/business_news_service.dart';
 import '../theme.dart';
 import '../widgets/post_card.dart';
 import 'industry_selection_page.dart';
@@ -23,11 +25,12 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
   final _composer = TextEditingController();
   bool _posting = false;
   late TabController _tabController;
+  String _newsIndustry = 'All Industries';
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -800,11 +803,21 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                   controller: _tabController,
                   labelColor: AppColors.purple,
                   unselectedLabelColor: Colors.grey,
-                  indicatorColor: AppColors.purple,
+                  indicator: _UnderlineGradientIndicator(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.purple,
+                        AppColors.purple.withOpacity(0.7),
+                      ],
+                    ),
+                    thickness: 3,
+                    radius: 2,
+                  ),
                   tabs: const [
                     Tab(text: 'Feed'),
                     Tab(text: 'Trending'),
                     Tab(text: 'Events'),
+                    Tab(text: 'Business News'),
                   ],
                 ),
               ),
@@ -813,7 +826,12 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
         },
         body: TabBarView(
           controller: _tabController,
-          children: [_buildFeedTab(), _buildTrendingTab(), _buildEventsTab()],
+          children: [
+            _buildFeedTab(),
+            _buildTrendingTab(),
+            _buildEventsTab(),
+            _buildBusinessNewsTab(),
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -1429,6 +1447,387 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
     );
   }
 
+  Widget _buildBusinessNewsTab() {
+    final industries = const [
+      'All Industries',
+      'Technology',
+      'Finance',
+      'Real Estate',
+      'Healthcare',
+      'Energy',
+      'Construction',
+      'Retail',
+      'Logistics',
+    ];
+
+    final newsAsync = ref.watch(
+      businessNewsByIndustryProvider(
+        _newsIndustry == 'All Industries' ? null : _newsIndustry,
+      ),
+    );
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text(
+                'Global Business News',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              DropdownButtonHideUnderline(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: DropdownButton<String>(
+                    value: _newsIndustry,
+                    alignment: Alignment.centerRight,
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() => _newsIndustry = value);
+                    },
+                    items: industries
+                        .map(
+                          (e) => DropdownMenuItem<String>(
+                            value: e,
+                            child: Text(
+                              e,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Top Stories carousel (optional bonus)
+          newsAsync.when(
+            loading: () => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: CircularProgressIndicator(color: AppColors.purple),
+              ),
+            ),
+            error: (e, _) => _buildNewsError(e.toString()),
+            data: (items) {
+              final top = items.take(5).toList();
+              if (top.isEmpty) return const SizedBox.shrink();
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Top Stories Today',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 140,
+                    child: PageView.builder(
+                      controller: PageController(viewportFraction: 0.9),
+                      itemCount: top.length,
+                      itemBuilder: (context, index) {
+                        final n = top[index];
+                        return _buildTopStoryCard(n);
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          // News list
+          newsAsync.when(
+            loading: () => const SizedBox.shrink(),
+            error: (e, _) => const SizedBox.shrink(),
+            data: (items) {
+              if (items.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.all(48.0),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.newspaper,
+                          size: 64,
+                          color: Colors.grey.shade300,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No news for this industry',
+                          style: TextStyle(color: Colors.grey.shade600),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              return Column(
+                children: [
+                  ...items.map(_buildNewsCard),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        // Placeholder: In real integration, paginate and fetch next page
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Loading more news...')),
+                        );
+                      },
+                      icon: const Icon(Icons.expand_more),
+                      label: const Text('See More News'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.purple,
+                        side: BorderSide(color: AppColors.purple),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNewsError(String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          children: [
+            Icon(Icons.error_outline, size: 48, color: Colors.grey.shade400),
+            const SizedBox(height: 8),
+            Text(
+              'Failed to load news',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+            Text(
+              message,
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopStoryCard(BusinessNewsItem n) {
+    return Card(
+      margin: const EdgeInsets.only(right: 10),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () async {
+          final url = Uri.parse(n.url);
+          if (await canLaunchUrl(url)) {
+            await launchUrl(url, mode: LaunchMode.externalApplication);
+          }
+        },
+        child: Row(
+          children: [
+            if (n.thumbnailUrl != null)
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(14),
+                  bottomLeft: Radius.circular(14),
+                ),
+                child: Image.network(
+                  n.thumbnailUrl!,
+                  width: 120,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _industryTag(n.industry),
+                    const SizedBox(height: 8),
+                    Text(
+                      n.headline,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        if (n.logoUrl != null)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: CircleAvatar(
+                              radius: 8,
+                              backgroundImage: NetworkImage(n.logoUrl!),
+                              backgroundColor: Colors.transparent,
+                            ),
+                          ),
+                        Text(
+                          '${n.source} • ${n.timeAgo}',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNewsCard(BusinessNewsItem n) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () async {
+          final url = Uri.parse(n.url);
+          if (await canLaunchUrl(url)) {
+            await launchUrl(url, mode: LaunchMode.externalApplication);
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _industryTag(n.industry),
+                    const SizedBox(height: 8),
+                    Text(
+                      n.headline,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        if (n.logoUrl != null)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: CircleAvatar(
+                              radius: 8,
+                              backgroundImage: NetworkImage(n.logoUrl!),
+                              backgroundColor: Colors.transparent,
+                            ),
+                          ),
+                        Text(
+                          '${n.source} • ${n.timeAgo}',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              if (n.thumbnailUrl != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.network(
+                    n.thumbnailUrl!,
+                    width: 86,
+                    height: 64,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _industryTag(String label) {
+    final color = _industryColor(label);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withOpacity(0.25)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Color _industryColor(String label) {
+    switch (label.toLowerCase()) {
+      case 'technology':
+        return Colors.indigo;
+      case 'finance':
+        return Colors.green.shade700;
+      case 'real estate':
+        return Colors.brown;
+      case 'healthcare':
+        return Colors.red.shade600;
+      case 'energy':
+        return Colors.orange.shade700;
+      case 'construction':
+        return Colors.blueGrey;
+      case 'retail':
+        return Colors.pink.shade600;
+      case 'logistics':
+        return Colors.teal.shade700;
+      default:
+        return AppColors.purple;
+    }
+  }
+
   Widget _buildDiscoveredEventCard(Event event) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -1685,5 +2084,50 @@ class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(_StickyTabBarDelegate oldDelegate) {
     return tabBar != oldDelegate.tabBar;
+  }
+}
+
+/// Gradient underline indicator for TabBar
+class _UnderlineGradientIndicator extends Decoration {
+  final Gradient gradient;
+  final double thickness;
+  final double radius;
+
+  const _UnderlineGradientIndicator({
+    required this.gradient,
+    this.thickness = 2,
+    this.radius = 0,
+  });
+
+  @override
+  BoxPainter createBoxPainter([VoidCallback? onChanged]) {
+    return _UnderlineGradientPainter(this, onChanged);
+  }
+}
+
+class _UnderlineGradientPainter extends BoxPainter {
+  final _UnderlineGradientIndicator decoration;
+
+  _UnderlineGradientPainter(this.decoration, VoidCallback? onChanged)
+    : super(onChanged);
+
+  @override
+  void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
+    final rect = offset & configuration.size!;
+    final lineRect = Rect.fromLTWH(
+      rect.left + 16,
+      rect.bottom - decoration.thickness - 6,
+      rect.width - 32,
+      decoration.thickness,
+    );
+
+    final rrect = RRect.fromRectAndRadius(
+      lineRect,
+      Radius.circular(decoration.radius),
+    );
+    final paint = Paint()
+      ..shader = decoration.gradient.createShader(lineRect)
+      ..style = PaintingStyle.fill;
+    canvas.drawRRect(rrect, paint);
   }
 }

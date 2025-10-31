@@ -36,7 +36,7 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
   Future<void> _track() async {
     final id = _idController.text.trim();
     if (id.isEmpty) {
-      setState(() => _error = 'Please enter your Service Request ID');
+      setState(() => _error = 'Please enter your Request ID');
       return;
     }
 
@@ -168,7 +168,7 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Enter your Service Request ID to see the current status.',
+                    'Enter your Request ID to see the current status.',
                     style: TextStyle(fontSize: 14),
                   ),
                   const SizedBox(height: 12),
@@ -178,7 +178,7 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
                         child: TextField(
                           controller: _idController,
                           decoration: InputDecoration(
-                            labelText: 'Service Request ID',
+                            labelText: 'Request ID',
                             hintText:
                                 'e.g. a1B2c3D4... (copy from confirmation)',
                             border: const OutlineInputBorder(),

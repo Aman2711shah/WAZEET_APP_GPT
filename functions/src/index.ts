@@ -15,7 +15,7 @@ const db = admin.firestore();
  * Create a payment intent for Stripe
  */
 export const createPaymentIntent = functions
-    .region('me-central1')
+    .region('us-central1')
     .https.onCall(async (data: {
         amount: number;
         currency?: string;
@@ -46,7 +46,7 @@ export const createPaymentIntent = functions
  * Handle Stripe webhook events
  */
 export const handleStripeWebhook = functions
-    .region('me-central1')
+    .region('us-central1')
     .https.onRequest(async (req, res) => {
         const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
         const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -104,7 +104,7 @@ export const handleStripeWebhook = functions
  * Uses Google Custom Search API + OpenAI to find and parse events
  */
 export const discoverDubaiEvents = functions
-    .region('me-central1')
+    .region('us-central1')
     .pubsub.schedule('every 24 hours')
     .timeZone('Asia/Dubai')
     .onRun(async (context) => {
@@ -241,7 +241,7 @@ ${textBlock}`;
  * Manual trigger for event discovery (for testing)
  */
 export const triggerEventDiscovery = functions
-    .region('me-central1')
+    .region('us-central1')
     .https.onCall(async (data, context) => {
         // Only allow authenticated admin users
         if (!context.auth) {

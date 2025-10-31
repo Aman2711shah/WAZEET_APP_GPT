@@ -20,6 +20,7 @@ class SetupData {
   final String entityType; // 'LLC' | 'FZ-LLC' | 'Sole Proprietor'
   final String emirate; // Selected emirate
   final String recommendedZone; // computed/dummy
+  final String visaType; // 'Employment' | 'Investor' | '' (unset)
 
   const SetupData({
     this.businessActivities = const [],
@@ -29,6 +30,7 @@ class SetupData {
     this.entityType = '',
     this.emirate = '',
     this.recommendedZone = '',
+    this.visaType = '',
   });
 
   SetupData copyWith({
@@ -39,6 +41,7 @@ class SetupData {
     String? entityType,
     String? emirate,
     String? recommendedZone,
+    String? visaType,
   }) {
     return SetupData(
       businessActivities: businessActivities ?? this.businessActivities,
@@ -48,6 +51,7 @@ class SetupData {
       entityType: entityType ?? this.entityType,
       emirate: emirate ?? this.emirate,
       recommendedZone: recommendedZone ?? this.recommendedZone,
+      visaType: visaType ?? this.visaType,
     );
   }
 }
@@ -126,6 +130,10 @@ class SetupController extends StateNotifier<SetupData> {
 
   void setEmirate(String emirate) {
     state = state.copyWith(emirate: emirate);
+  }
+
+  void setVisaType(String type) {
+    state = state.copyWith(visaType: type);
   }
 
   // Dummy recommender logic
@@ -210,7 +218,12 @@ class _CompanySetupFlowState extends ConsumerState<CompanySetupFlow> {
       case 1:
         return data.shareholdersCount >= 1 && data.shareholdersCount <= 10;
       case 2:
-        return data.visaCount >= 0 && data.visaCount <= 10;
+        final baseValid = data.visaCount >= 0 && data.visaCount <= 10;
+        // If user requests visa slots, require explicit visa type selection
+        if (baseValid && data.visaCount > 0) {
+          return data.visaType.isNotEmpty;
+        }
+        return baseValid;
       case 3:
         return data.licenseTenureYears >= 1 && data.licenseTenureYears <= 3;
       case 4:
@@ -651,65 +664,157 @@ class _ActivitiesStepState extends ConsumerState<_ActivitiesStep> {
                         width: isSelected ? 2 : 1,
                       ),
                     ),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: isDisabled
-                          ? null
-                          : () => controller.toggleActivity(activity.name),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              margin: const EdgeInsets.only(top: 2),
-                              child: Icon(
-                                isSelected
-                                    ? Icons.check_circle
-                                    : Icons.radio_button_unchecked,
-                                color: isDisabled
-                                    ? Colors.grey.shade300
-                                    : (isSelected
-                                          ? Colors.blue.shade700
-                                          : Colors.grey.shade400),
-                                size: 24,
-                              ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Select row (only this row toggles selection)
+                          InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: isDisabled
+                                ? null
+                                : () =>
+                                      controller.toggleActivity(activity.name),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  margin: const EdgeInsets.only(top: 2),
+                                  child: Icon(
+                                    isSelected
+                                        ? Icons.check_circle
+                                        : Icons.radio_button_unchecked,
+                                    color: isDisabled
+                                        ? Colors.grey.shade300
+                                        : (isSelected
+                                              ? Colors.blue.shade700
+                                              : Colors.grey.shade400),
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        activity.name,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: isDisabled
+                                              ? Colors.grey.shade400
+                                              : (isSelected
+                                                    ? Colors.blue.shade900
+                                                    : Colors.black87),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        activity.description,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: isDisabled
+                                              ? Colors.grey.shade400
+                                              : Colors.grey.shade700,
+                                          height: 1.4,
+                                        ),
+                                        maxLines: 3,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // ESR Applicability (expandable)
+                          _TintedSection(
+                            child: _ExpandableInfoTile(
+                              title: Row(
+                                children: const [
                                   Text(
-                                    activity.name,
+                                    'ESR Applicability',
                                     style: TextStyle(
-                                      fontSize: 16,
                                       fontWeight: FontWeight.w600,
-                                      color: isDisabled
-                                          ? Colors.grey.shade400
-                                          : (isSelected
-                                                ? Colors.blue.shade900
-                                                : Colors.black87),
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    activity.description,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: isDisabled
-                                          ? Colors.grey.shade400
-                                          : Colors.grey.shade700,
-                                      height: 1.4,
-                                    ),
-                                    maxLines: 3,
-                                    overflow: TextOverflow.ellipsis,
+                                  SizedBox(width: 6),
+                                  Tooltip(
+                                    message:
+                                        'Economic Substance Regulations: certain activities must file annual ESR notifications and reports.',
+                                    child: Icon(Icons.info_outline, size: 16),
                                   ),
                                 ],
                               ),
+                              subtitle: _esrSummary(activity.name),
+                              expandedChild: Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  _esrDetails(activity.name),
+                                  style: TextStyle(
+                                    color: Colors.grey.shade700,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ],
-                        ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          // Additional Documents (expandable)
+                          _TintedSection(
+                            child: _ExpandableInfoTile(
+                              title: Row(
+                                children: const [
+                                  Text(
+                                    'Additional Documents Required',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  SizedBox(width: 6),
+                                  Tooltip(
+                                    message:
+                                        'Extra supporting documents commonly required by the licensing authority.',
+                                    child: Icon(Icons.info_outline, size: 16),
+                                  ),
+                                ],
+                              ),
+                              subtitle: 'Tap to view details',
+                              expandedChild: Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: _documentsFor(activity.name).map((
+                                    doc,
+                                  ) {
+                                    return ActionChip(
+                                      avatar: const Icon(
+                                        Icons.description,
+                                        size: 16,
+                                      ),
+                                      label: Text(doc['name']!),
+                                      onPressed: () =>
+                                          _showDocInfo(context, doc),
+                                      backgroundColor: Colors.white,
+                                      side: BorderSide(
+                                        color: Colors.grey.shade300,
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   );
@@ -717,6 +822,249 @@ class _ActivitiesStepState extends ConsumerState<_ActivitiesStep> {
               ),
             ),
           ],
+        );
+      },
+    );
+  }
+}
+
+// ---- Helper tinted container ----
+class _TintedSection extends StatelessWidget {
+  final Widget child;
+  const _TintedSection({required this.child});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.deepPurple.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.deepPurple.withOpacity(0.15)),
+      ),
+      child: child,
+    );
+  }
+}
+
+// ---- Expandable tile used for ESR/Docs ----
+class _ExpandableInfoTile extends StatefulWidget {
+  final Widget title;
+  final String? subtitle;
+  final Widget expandedChild;
+  const _ExpandableInfoTile({
+    required this.title,
+    this.subtitle,
+    required this.expandedChild,
+  });
+
+  @override
+  State<_ExpandableInfoTile> createState() => _ExpandableInfoTileState();
+}
+
+class _ExpandableInfoTileState extends State<_ExpandableInfoTile> {
+  bool _expanded = false;
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: () => setState(() => _expanded = !_expanded),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DefaultTextStyle.merge(
+                      style: const TextStyle(fontSize: 14),
+                      child: widget.title,
+                    ),
+                    if (widget.subtitle != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.subtitle!,
+                        style: TextStyle(
+                          color: Colors.grey.shade700,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Row(
+                children: [
+                  Text(
+                    _expanded ? 'Hide' : 'View Details',
+                    style: TextStyle(
+                      color: Colors.deepPurple.shade700,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(
+                    _expanded ? Icons.expand_less : Icons.expand_more,
+                    color: Colors.deepPurple.shade700,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        AnimatedCrossFade(
+          firstChild: const SizedBox.shrink(),
+          secondChild: widget.expandedChild,
+          crossFadeState: _expanded
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
+          duration: const Duration(milliseconds: 200),
+        ),
+      ],
+    );
+  }
+}
+
+// ---- Activity details helpers (ESR + Documents) ----
+extension on _ActivitiesStepState {
+  bool _esrRequired(String name) {
+    final n = name.toLowerCase();
+    return n.contains('holding') ||
+        n.contains('headquarter') ||
+        n.contains('distribution') ||
+        n.contains('service') || // relevant service centers
+        n.contains('finance') ||
+        n.contains('leasing') ||
+        n.contains('insurance') ||
+        n.contains('shipping') ||
+        n.contains('intellectual property') ||
+        n.contains('ip') ||
+        n.contains('bank');
+  }
+
+  String _esrSummary(String name) {
+    final required = _esrRequired(name);
+    return required
+        ? '✅ ESR Required – Submit annual economic substance declaration.'
+        : '⚪ Not applicable under ESR regulations.';
+  }
+
+  String _esrDetails(String name) {
+    if (_esrRequired(name)) {
+      return 'This activity is generally considered a Relevant Activity for ESR. Licensees must file an annual ESR Notification and, if conditions are met, an ESR Report with the authority.';
+    }
+    return 'Based on typical classifications, this activity does not fall under ESR Relevant Activities. Always confirm with your free zone authority.';
+  }
+
+  List<Map<String, String>> _documentsFor(String name) {
+    final n = name.toLowerCase();
+    final base = <Map<String, String>>[
+      {
+        'name': 'Owner Passport',
+        'desc': 'Clear color copy of all owners/UBOs.',
+      },
+      {
+        'name': 'Business Plan',
+        'desc': '1–2 page summary of proposed activity and operations.',
+      },
+      {
+        'name': 'NOC (if employed)',
+        'desc': 'No Objection Certificate from current employer if applicable.',
+      },
+      {
+        'name': 'Shareholder Resolution',
+        'desc': 'Resolution to incorporate and appoint managers.',
+      },
+      {
+        'name': 'MOA/AOA',
+        'desc': 'Memorandum/Articles for LLC or corporate shareholder.',
+      },
+    ];
+    if (n.contains('transport') || n.contains('towing')) {
+      base.addAll([
+        {
+          'name': 'Vehicle List',
+          'desc': 'List of operational vehicles/fleet details.',
+        },
+        {'name': 'Driver Licenses', 'desc': 'Valid UAE licenses for drivers.'},
+      ]);
+    } else if (n.contains('document')) {
+      base.add({
+        'name': 'Sample Templates',
+        'desc': 'Examples of documents offered for clients.',
+      });
+    } else if (n.contains('retail') ||
+        n.contains('(g.p.s)') ||
+        n.contains('gps')) {
+      base.add({
+        'name': 'Supplier Invoices',
+        'desc': 'Proof of supply channels for devices/hardware.',
+      });
+    }
+    return base;
+  }
+
+  void _showDocInfo(BuildContext context, Map<String, String> doc) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.description, color: Colors.deepPurple),
+                    const SizedBox(width: 8),
+                    Text(
+                      doc['name']!,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  doc['desc']!,
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () {},
+                      icon: const Icon(Icons.upload_file),
+                      label: const Text('Upload (placeholder)'),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Coming soon',
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
         );
       },
     );
@@ -830,7 +1178,36 @@ class _VisaStep extends ConsumerWidget {
               'Enter a value between 0 and 10',
               style: TextStyle(color: Colors.red),
             ),
+          const SizedBox(height: 16),
+          const Text(
+            'Select Visa Type',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          Column(
+            children: [
+              _VisaTypeCard(
+                title: 'Employment Visa',
+                subtitle: 'For employees and managers hired by the company.',
+                selected: data.visaType == 'Employment',
+                onTap: () => controller.setVisaType('Employment'),
+              ),
+              const SizedBox(height: 8),
+              _VisaTypeCard(
+                title: 'Investor Visa',
+                subtitle:
+                    'For shareholders/owners with qualifying share capital.',
+                selected: data.visaType == 'Investor',
+                onTap: () => controller.setVisaType('Investor'),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
+          if (data.visaCount > 0 && data.visaType.isEmpty)
+            const Text(
+              'Please select a visa type to proceed.',
+              style: TextStyle(color: Colors.red),
+            ),
           Theme(
             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
@@ -840,15 +1217,88 @@ class _VisaStep extends ConsumerWidget {
                 left: 8,
                 right: 8,
               ),
-              children: const [
-                Text(
-                  'Visa processing typically takes 5–10 working days after company formation, '
-                  'including medical and Emirates ID. Requirements vary based on the free zone and activity.',
-                ),
+              children: [
+                if (data.visaType.isEmpty)
+                  const Text(
+                    'Select a visa type above to see tailored steps. In general, the process includes an entry permit, medical exam, Emirates ID biometrics, and visa stamping. Details vary by free zone.',
+                  )
+                else if (data.visaType == 'Investor')
+                  const Text(
+                    'Investor Visa overview:\n\n• Entry Permit issuance (e-visa)\n• Establishment Card & shareholding verification\n• Medical examination\n• Emirates ID biometrics\n• Visa stamping (or e-visa activation)\n\nNotes: Investor visas may have different minimum share capital requirements and may not require a labor contract. Timelines vary by authority.',
+                  )
+                else
+                  const Text(
+                    'Employment Visa overview:\n\n• Entry Permit issuance (e-visa)\n• Optional status change (if inside UAE)\n• Medical examination\n• Emirates ID biometrics\n• Labor contract (mainland) or equivalent free zone process\n• Visa stamping (or e-visa activation)\n\nTypical duration is 5–10 working days post company setup. Exact steps vary by free zone.',
+                  ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ---- Visa type card ----
+class _VisaTypeCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+  const _VisaTypeCard({
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = selected
+        ? Colors.deepPurple.shade700
+        : Colors.grey.shade300;
+    final iconColor = selected
+        ? Colors.deepPurple.shade700
+        : Colors.grey.shade400;
+
+    return Card(
+      elevation: selected ? 2 : 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: borderColor, width: selected ? 2 : 1),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                selected ? Icons.check_circle : Icons.radio_button_unchecked,
+                color: iconColor,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(color: Colors.grey.shade700),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1183,6 +1633,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
                   ),
                   _buildInfoRow('Shareholders', '${data.shareholdersCount}'),
                   _buildInfoRow('Visas', '${data.visaCount}'),
+                  _buildInfoRow('Visa Type', data.visaType),
                   _buildInfoRow(
                     'License Period',
                     '${data.licenseTenureYears} year(s)',
@@ -1995,6 +2446,10 @@ class _SummaryStep extends ConsumerWidget {
             value: '${data.shareholdersCount}',
           ),
           _SummaryTile(title: 'Visa Slots', value: '${data.visaCount}'),
+          _SummaryTile(
+            title: 'Visa Type',
+            value: data.visaType.isEmpty ? '-' : data.visaType,
+          ),
           _SummaryTile(
             title: 'License Tenure',
             value: '${data.licenseTenureYears} year(s)',

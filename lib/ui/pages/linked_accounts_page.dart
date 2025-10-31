@@ -14,6 +14,7 @@ class _LinkedAccountsPageState extends ConsumerState<LinkedAccountsPage> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _linkedInController;
   late TextEditingController _twitterController;
+  late TextEditingController _instagramController;
   late TextEditingController _websiteController;
 
   @override
@@ -24,6 +25,9 @@ class _LinkedAccountsPageState extends ConsumerState<LinkedAccountsPage> {
       text: profile?.linkedInUrl ?? '',
     );
     _twitterController = TextEditingController(text: profile?.twitterUrl ?? '');
+    _instagramController = TextEditingController(
+      text: profile?.instagramUrl ?? '',
+    );
     _websiteController = TextEditingController(text: profile?.websiteUrl ?? '');
   }
 
@@ -31,6 +35,7 @@ class _LinkedAccountsPageState extends ConsumerState<LinkedAccountsPage> {
   void dispose() {
     _linkedInController.dispose();
     _twitterController.dispose();
+    _instagramController.dispose();
     _websiteController.dispose();
     super.dispose();
   }
@@ -60,6 +65,9 @@ class _LinkedAccountsPageState extends ConsumerState<LinkedAccountsPage> {
       twitterUrl: _twitterController.text.trim().isEmpty
           ? null
           : _twitterController.text.trim(),
+      instagramUrl: _instagramController.text.trim().isEmpty
+          ? null
+          : _instagramController.text.trim(),
       websiteUrl: _websiteController.text.trim().isEmpty
           ? null
           : _websiteController.text.trim(),
@@ -176,6 +184,52 @@ class _LinkedAccountsPageState extends ConsumerState<LinkedAccountsPage> {
                       ),
                       keyboardType: TextInputType.url,
                       validator: (v) => _validateUrl(v, 'Twitter'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Instagram
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE4405F).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            color: Color(0xFFE4405F),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Instagram',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _instagramController,
+                      decoration: const InputDecoration(
+                        hintText: 'https://instagram.com/yourprofile',
+                        prefixIcon: Icon(Icons.link),
+                      ),
+                      keyboardType: TextInputType.url,
+                      validator: (v) => _validateUrl(v, 'Instagram'),
                     ),
                   ],
                 ),

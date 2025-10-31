@@ -6,6 +6,7 @@ import 'community_page.dart';
 import 'applications_page.dart';
 import 'profile_page.dart';
 import '../widgets/floating_ai_chatbot.dart';
+import '../widgets/floating_human_support.dart';
 
 class MainNav extends StatefulWidget {
   const MainNav({super.key});
@@ -33,7 +34,13 @@ class _MainNavState extends State<MainNav> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(children: [pages[_index], const FloatingAIChatbot()]),
+      body: Stack(
+        children: [
+          pages[_index],
+          const FloatingAIChatbot(),
+          const FloatingHumanSupport(),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _index,

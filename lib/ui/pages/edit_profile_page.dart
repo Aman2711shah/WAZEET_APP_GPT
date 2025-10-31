@@ -15,27 +15,83 @@ class EditProfilePage extends ConsumerStatefulWidget {
 class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
-  late TextEditingController _titleController;
+  late TextEditingController _emailController;
+  // Title is now a dropdown selection
+  String? _selectedTitle;
   late TextEditingController _bioController;
   late TextEditingController _phoneController;
+  late TextEditingController _designationController;
+  late TextEditingController _qualificationController;
+  String _selectedCountryCode = '+971';
   bool _isUploadingImage = false;
+
+  // Preset titles
+  static const List<String> _titles = <String>[
+    'Founder',
+    'CEO',
+    'Entrepreneur',
+    'Manager',
+    'Consultant',
+    'Freelancer',
+  ];
+
+  // Minimal country list with flags
+  static const List<Map<String, String>> _countries = [
+    {'flag': '🇦🇪', 'code': '+971', 'name': 'United Arab Emirates'},
+    {'flag': '🇺🇸', 'code': '+1', 'name': 'United States'},
+    {'flag': '🇬🇧', 'code': '+44', 'name': 'United Kingdom'},
+    {'flag': '🇮🇳', 'code': '+91', 'name': 'India'},
+    {'flag': '🇸🇬', 'code': '+65', 'name': 'Singapore'},
+  ];
 
   @override
   void initState() {
     super.initState();
     final profile = ref.read(userProfileProvider);
     _nameController = TextEditingController(text: profile?.name ?? '');
-    _titleController = TextEditingController(text: profile?.title ?? '');
+    _emailController = TextEditingController(text: profile?.email ?? '');
+    // Title selection
+    _selectedTitle = _titles.contains(profile?.title) ? profile?.title : null;
     _bioController = TextEditingController(text: profile?.bio ?? '');
-    _phoneController = TextEditingController(text: profile?.phone ?? '');
+    // Phone & country code: try to infer from saved phone/countryCode
+    final savedPhone = profile?.phone ?? '';
+    final savedCode = profile?.countryCode;
+    if (savedCode != null && _countries.any((c) => c['code'] == savedCode)) {
+      _selectedCountryCode = savedCode;
+    } else {
+      // Try match code prefix from phone
+      for (final c in _countries) {
+        final code = c['code']!;
+        if (savedPhone.startsWith(code)) {
+          _selectedCountryCode = code;
+          break;
+        }
+      }
+    }
+    // Remove code from the editing phone field if present
+    String phoneWithoutCode = savedPhone;
+    if (phoneWithoutCode.startsWith(_selectedCountryCode)) {
+      phoneWithoutCode = phoneWithoutCode
+          .substring(_selectedCountryCode.length)
+          .trim();
+    }
+    _phoneController = TextEditingController(text: phoneWithoutCode);
+    _designationController = TextEditingController(
+      text: profile?.designation ?? '',
+    );
+    _qualificationController = TextEditingController(
+      text: profile?.qualification ?? '',
+    );
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _titleController.dispose();
+    _emailController.dispose();
     _bioController.dispose();
     _phoneController.dispose();
+    _designationController.dispose();
+    _qualificationController.dispose();
     super.dispose();
   }
 
@@ -121,17 +177,28 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
     final notifier = ref.read(userProfileProvider.notifier);
 
+    // Build full phone with country code
+    String? fullPhone;
+    final phoneTrim = _phoneController.text.trim();
+    if (phoneTrim.isNotEmpty) {
+      fullPhone = '$_selectedCountryCode $phoneTrim';
+    }
+
     await notifier.updateProfile(
       name: _nameController.text.trim(),
-      title: _titleController.text.trim().isEmpty
-          ? null
-          : _titleController.text.trim(),
+      email: _emailController.text.trim(),
+      title: _selectedTitle,
       bio: _bioController.text.trim().isEmpty
           ? null
           : _bioController.text.trim(),
-      phone: _phoneController.text.trim().isEmpty
+      phone: fullPhone,
+      countryCode: _selectedCountryCode,
+      designation: _designationController.text.trim().isEmpty
           ? null
-          : _phoneController.text.trim(),
+          : _designationController.text.trim(),
+      qualification: _qualificationController.text.trim().isEmpty
+          ? null
+          : _qualificationController.text.trim(),
     );
 
     if (mounted) {
@@ -230,51 +297,130 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             ),
             const SizedBox(height: 16),
 
-            // Email (read-only)
+            // Email
             TextFormField(
-              initialValue: profile?.email ?? '',
+              controller: _emailController,
               decoration: const InputDecoration(
                 labelText: 'Email',
                 prefixIcon: Icon(Icons.email_outlined),
-                enabled: false,
               ),
+              keyboardType: TextInputType.emailAddress,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Email is required';
+                }
+                // Basic email validation
+                if (!value.contains('@') || !value.contains('.')) {
+                  return 'Please enter a valid email';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 16),
 
-            // Title/Position
-            TextFormField(
-              controller: _titleController,
+            // Title/Position (Dropdown)
+            DropdownButtonFormField<String>(
+              value: _selectedTitle,
+              items: _titles
+                  .map(
+                    (t) => DropdownMenuItem<String>(value: t, child: Text(t)),
+                  )
+                  .toList(),
+              onChanged: (v) => setState(() => _selectedTitle = v),
               decoration: const InputDecoration(
                 labelText: 'Title/Position',
-                hintText: 'e.g., Entrepreneur',
+                hintText: 'Select your title',
                 prefixIcon: Icon(Icons.work_outline),
+                suffixIcon: Icon(Icons.keyboard_arrow_down),
               ),
             ),
             const SizedBox(height: 16),
 
-            // Phone
-            TextFormField(
-              controller: _phoneController,
-              decoration: const InputDecoration(
-                labelText: 'Phone Number',
-                hintText: '+971 XX XXX XXXX',
-                prefixIcon: Icon(Icons.phone_outlined),
-              ),
-              keyboardType: TextInputType.phone,
+            // Phone with country code dropdown
+            Row(
+              children: [
+                // Country dropdown (flat style)
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).inputDecorationTheme.fillColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context).dividerColor,
+                      width: 0.8,
+                    ),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedCountryCode,
+                      isDense: true,
+                      onChanged: (v) =>
+                          setState(() => _selectedCountryCode = v ?? '+971'),
+                      items: _countries
+                          .map(
+                            (c) => DropdownMenuItem<String>(
+                              value: c['code'],
+                              child: Row(
+                                children: [
+                                  Text(c['flag']!),
+                                  const SizedBox(width: 6),
+                                  Text(c['code']!),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: _phoneController,
+                    decoration: const InputDecoration(
+                      labelText: 'Phone Number',
+                      hintText: 'XX XXX XXXX',
+                      prefixIcon: Icon(Icons.phone_outlined),
+                    ),
+                    keyboardType: TextInputType.phone,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
 
-            // Bio
+            // About Me (Bio)
             TextFormField(
               controller: _bioController,
               decoration: const InputDecoration(
-                labelText: 'Bio',
+                labelText: 'About Me',
                 hintText: 'Tell us about yourself...',
                 prefixIcon: Icon(Icons.description_outlined),
                 alignLabelWithHint: true,
               ),
               maxLines: 4,
               maxLength: 500,
+            ),
+
+            const SizedBox(height: 16),
+
+            // Designation (Optional)
+            TextFormField(
+              controller: _designationController,
+              decoration: const InputDecoration(
+                labelText: 'Designation (Optional)',
+                prefixIcon: Icon(Icons.badge_outlined),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Qualification (Optional)
+            TextFormField(
+              controller: _qualificationController,
+              decoration: const InputDecoration(
+                labelText: 'Qualification (Optional)',
+                prefixIcon: Icon(Icons.school_outlined),
+              ),
             ),
             const SizedBox(height: 24),
 

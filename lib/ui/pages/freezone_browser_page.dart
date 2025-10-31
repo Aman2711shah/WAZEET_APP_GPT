@@ -449,6 +449,7 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
             Container(
               padding: const EdgeInsets.all(16),
               child: DropdownButtonFormField<String>(
+                isExpanded: true,
                 initialValue: _selectedIndustry,
                 decoration: const InputDecoration(
                   labelText: 'Select Industry or Activity',
@@ -768,6 +769,7 @@ class _FilterSheetState extends State<_FilterSheet> {
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
+            isExpanded: true,
             initialValue: _licenseType,
             decoration: const InputDecoration(border: OutlineInputBorder()),
             items: const [
@@ -852,6 +854,7 @@ class _FilterSheetState extends State<_FilterSheet> {
           const Text('Sort By', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           DropdownButtonFormField<SortBy>(
+            isExpanded: true,
             initialValue: _sortBy,
             decoration: const InputDecoration(border: OutlineInputBorder()),
             items: const [

@@ -92,6 +92,8 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
     setState(() {
       _isExpanded = !_isExpanded;
     });
+    // Broadcast expanded state for other overlays (e.g., human support button)
+    ref.read(aiChatExpandedProvider.notifier).state = _isExpanded;
     if (_isExpanded) {
       _animationController.forward();
       _scrollToBottom();
@@ -104,6 +106,7 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
     setState(() {
       _isExpanded = false;
     });
+    ref.read(aiChatExpandedProvider.notifier).state = false;
     _animationController.reverse();
   }
 
@@ -578,3 +581,6 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
     );
   }
 }
+
+/// Global provider exposing the AI chat expanded state so other widgets can react
+final aiChatExpandedProvider = StateProvider<bool>((_) => false);

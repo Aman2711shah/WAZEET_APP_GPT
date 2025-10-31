@@ -6,13 +6,23 @@ class UserProfile {
   final String? title;
   final String? bio;
   final String? phone;
+  final String? countryCode;
   final String? photoUrl;
   final String? linkedInUrl;
   final String? twitterUrl;
+  final String? instagramUrl;
   final String? websiteUrl;
   final bool isDarkMode;
   final String? company;
   final String? location;
+  // Company profile fields (optional)
+  final String? companyTagline;
+  final String? companySize; // e.g., "50–100 employees"
+  final String? companyFounded; // e.g., "2019"
+  final String? companyHeadquarters; // e.g., "Dubai, UAE"
+  final String? companyLogoUrl;
+  final String? designation;
+  final String? qualification;
   final List<String> industries; // User's preferred industries
   final List<String> skills;
   final List<String> interests;
@@ -30,13 +40,22 @@ class UserProfile {
     this.title,
     this.bio,
     this.phone,
+    this.countryCode,
     this.photoUrl,
     this.linkedInUrl,
     this.twitterUrl,
+    this.instagramUrl,
     this.websiteUrl,
     this.isDarkMode = false,
     this.company,
     this.location,
+    this.companyTagline,
+    this.companySize,
+    this.companyFounded,
+    this.companyHeadquarters,
+    this.companyLogoUrl,
+    this.designation,
+    this.qualification,
     this.industries = const [],
     this.skills = const [],
     this.interests = const [],
@@ -55,13 +74,22 @@ class UserProfile {
     String? title,
     String? bio,
     String? phone,
+    String? countryCode,
     String? photoUrl,
     String? linkedInUrl,
     String? twitterUrl,
+    String? instagramUrl,
     String? websiteUrl,
     bool? isDarkMode,
     String? company,
     String? location,
+    String? companyTagline,
+    String? companySize,
+    String? companyFounded,
+    String? companyHeadquarters,
+    String? companyLogoUrl,
+    String? designation,
+    String? qualification,
     List<String>? industries,
     List<String>? skills,
     List<String>? interests,
@@ -79,13 +107,22 @@ class UserProfile {
       title: title ?? this.title,
       bio: bio ?? this.bio,
       phone: phone ?? this.phone,
+      countryCode: countryCode ?? this.countryCode,
       photoUrl: photoUrl ?? this.photoUrl,
       linkedInUrl: linkedInUrl ?? this.linkedInUrl,
       twitterUrl: twitterUrl ?? this.twitterUrl,
+      instagramUrl: instagramUrl ?? this.instagramUrl,
       websiteUrl: websiteUrl ?? this.websiteUrl,
       isDarkMode: isDarkMode ?? this.isDarkMode,
       company: company ?? this.company,
       location: location ?? this.location,
+      companyTagline: companyTagline ?? this.companyTagline,
+      companySize: companySize ?? this.companySize,
+      companyFounded: companyFounded ?? this.companyFounded,
+      companyHeadquarters: companyHeadquarters ?? this.companyHeadquarters,
+      companyLogoUrl: companyLogoUrl ?? this.companyLogoUrl,
+      designation: designation ?? this.designation,
+      qualification: qualification ?? this.qualification,
       industries: industries ?? this.industries,
       skills: skills ?? this.skills,
       interests: interests ?? this.interests,
@@ -114,13 +151,22 @@ class UserProfile {
       'title': title,
       'bio': bio,
       'phone': phone,
+      'countryCode': countryCode,
       'photoUrl': photoUrl,
       'linkedInUrl': linkedInUrl,
       'twitterUrl': twitterUrl,
+      'instagramUrl': instagramUrl,
       'websiteUrl': websiteUrl,
       'isDarkMode': isDarkMode,
       'company': company,
       'location': location,
+      'companyTagline': companyTagline,
+      'companySize': companySize,
+      'companyFounded': companyFounded,
+      'companyHeadquarters': companyHeadquarters,
+      'companyLogoUrl': companyLogoUrl,
+      'designation': designation,
+      'qualification': qualification,
       'industries': industries,
       'skills': skills,
       'interests': interests,
@@ -141,13 +187,22 @@ class UserProfile {
       title: json['title'] as String?,
       bio: json['bio'] as String?,
       phone: json['phone'] as String?,
+      countryCode: json['countryCode'] as String?,
       photoUrl: json['photoUrl'] as String?,
       linkedInUrl: json['linkedInUrl'] as String?,
       twitterUrl: json['twitterUrl'] as String?,
+      instagramUrl: json['instagramUrl'] as String?,
       websiteUrl: json['websiteUrl'] as String?,
       isDarkMode: json['isDarkMode'] as bool? ?? false,
       company: json['company'] as String?,
       location: json['location'] as String?,
+      companyTagline: json['companyTagline'] as String?,
+      companySize: json['companySize'] as String?,
+      companyFounded: json['companyFounded'] as String?,
+      companyHeadquarters: json['companyHeadquarters'] as String?,
+      companyLogoUrl: json['companyLogoUrl'] as String?,
+      designation: json['designation'] as String?,
+      qualification: json['qualification'] as String?,
       industries: (json['industries'] as List<dynamic>?)?.cast<String>() ?? [],
       skills: (json['skills'] as List<dynamic>?)?.cast<String>() ?? [],
       interests: (json['interests'] as List<dynamic>?)?.cast<String>() ?? [],

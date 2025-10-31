@@ -80,12 +80,21 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
   /// Update profile fields
   Future<void> updateProfile({
     String? name,
+    String? email,
     String? title,
     String? bio,
     String? phone,
+    String? countryCode,
     String? photoUrl,
     String? company,
     String? location,
+    String? companyTagline,
+    String? companySize,
+    String? companyFounded,
+    String? companyHeadquarters,
+    String? companyLogoUrl,
+    String? designation,
+    String? qualification,
     List<String>? industries,
     List<String>? skills,
     List<String>? interests,
@@ -94,12 +103,21 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
 
     state = state!.copyWith(
       name: name,
+      email: email,
       title: title,
       bio: bio,
       phone: phone,
+      countryCode: countryCode,
       photoUrl: photoUrl,
       company: company,
       location: location,
+      companyTagline: companyTagline,
+      companySize: companySize,
+      companyFounded: companyFounded,
+      companyHeadquarters: companyHeadquarters,
+      companyLogoUrl: companyLogoUrl,
+      designation: designation,
+      qualification: qualification,
       industries: industries,
       skills: skills,
       interests: interests,
@@ -118,6 +136,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
   Future<void> updateLinkedAccounts({
     String? linkedInUrl,
     String? twitterUrl,
+    String? instagramUrl,
     String? websiteUrl,
   }) async {
     if (state == null) return;
@@ -125,6 +144,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
     state = state!.copyWith(
       linkedInUrl: linkedInUrl,
       twitterUrl: twitterUrl,
+      instagramUrl: instagramUrl,
       websiteUrl: websiteUrl,
     );
 
