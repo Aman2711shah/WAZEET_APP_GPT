@@ -60,7 +60,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                             width: 60,
                             height: 60,
                             decoration: BoxDecoration(
-                              color: AppColors.purple.withOpacity(0.1),
+                              color: AppColors.purple.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(
@@ -213,7 +213,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.purple.withOpacity(0.1),
+                      color: AppColors.purple.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -246,7 +246,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, -5),
               ),
@@ -285,7 +285,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.purple.withOpacity(0.1) : Colors.white,
+          color: isSelected ? AppColors.purple.withValues(alpha: 0.1) : Colors.white,
           border: Border.all(
             color: isSelected ? AppColors.purple : Colors.grey.shade300,
             width: isSelected ? 2 : 1,
@@ -461,8 +461,8 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                       child: ListTile(
                         leading: CircleAvatar(
                           backgroundColor: isUploaded
-                              ? Colors.green.withOpacity(0.1)
-                              : AppColors.purple.withOpacity(0.1),
+                              ? Colors.green.withValues(alpha: 0.1)
+                              : AppColors.purple.withValues(alpha: 0.1),
                           child: isUploading
                               ? SizedBox(
                                   width: 20,

@@ -714,7 +714,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
-                          color: AppColors.purple.withOpacity(0.3),
+                          color: AppColors.purple.withValues(alpha: 0.3),
                         );
                       },
                     ),
@@ -724,8 +724,8 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Colors.black.withOpacity(0.3),
-                            AppColors.purple.withOpacity(0.85),
+                            Colors.black.withValues(alpha: 0.3),
+                            AppColors.purple.withValues(alpha: 0.85),
                           ],
                         ),
                       ),
@@ -737,7 +737,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                       child: Text(
                         'Connect, share and grow together',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.95),
+                          color: Colors.white.withValues(alpha: 0.95),
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.3,
@@ -759,7 +759,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -807,7 +807,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                     gradient: LinearGradient(
                       colors: [
                         AppColors.purple,
-                        AppColors.purple.withOpacity(0.7),
+                        AppColors.purple.withValues(alpha: 0.7),
                       ],
                     ),
                     thickness: 3,
@@ -915,7 +915,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                   Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: AppColors.purple.withOpacity(0.1),
+                        backgroundColor: AppColors.purple.withValues(alpha: 0.1),
                         child: Text(
                           'D',
                           style: TextStyle(
@@ -1109,7 +1109,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                 child: Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: AppColors.purple.withOpacity(0.1),
+                      backgroundColor: AppColors.purple.withValues(alpha: 0.1),
                       child: Text(
                         person['name']![0],
                         style: TextStyle(
@@ -1200,7 +1200,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.purple.withOpacity(0.1),
+                    color: AppColors.purple.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(Icons.tag, color: AppColors.purple, size: 20),
@@ -1275,7 +1275,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
               children: [
                 CircleAvatar(
                   radius: 12,
-                  backgroundColor: AppColors.purple.withOpacity(0.1),
+                  backgroundColor: AppColors.purple.withValues(alpha: 0.1),
                   child: Text(
                     author[0],
                     style: TextStyle(
@@ -1790,9 +1790,9 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withOpacity(0.25)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Text(
         label,
@@ -1847,10 +1847,10 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: _getCategoryColor(event.category).withOpacity(0.1),
+                    color: _getCategoryColor(event.category).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: _getCategoryColor(event.category).withOpacity(0.3),
+                      color: _getCategoryColor(event.category).withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(

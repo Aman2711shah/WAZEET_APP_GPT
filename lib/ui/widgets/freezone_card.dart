@@ -24,7 +24,7 @@ class FreeZoneCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: isSelected ? 8 : 3,
       shadowColor: isSelected
-          ? AppColors.primary.withOpacity(0.4)
+          ? AppColors.primary.withValues(alpha: 0.4)
           : Colors.black26,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -38,7 +38,10 @@ class FreeZoneCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           gradient: isSelected
               ? LinearGradient(
-                  colors: [AppColors.primary.withOpacity(0.05), Colors.white],
+                  colors: [
+                    AppColors.primary.withValues(alpha: 0.05),
+                    Colors.white,
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 )
@@ -58,7 +61,7 @@ class FreeZoneCard extends StatelessWidget {
                   height: 80,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.primary.withOpacity(0.03),
+                    color: AppColors.primary.withValues(alpha: 0.03),
                   ),
                 ),
               ),
@@ -76,8 +79,8 @@ class FreeZoneCard extends StatelessWidget {
                             margin: const EdgeInsets.only(right: 12),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? AppColors.primary.withOpacity(0.1)
-                                  : Colors.grey.withOpacity(0.05),
+                                  ? AppColors.primary.withValues(alpha: 0.1)
+                                  : Colors.grey.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Checkbox(
@@ -112,7 +115,9 @@ class FreeZoneCard extends StatelessWidget {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.1),
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
@@ -140,7 +145,7 @@ class FreeZoneCard extends StatelessWidget {
                       children: [
                         _buildBadge(
                           _getEmirateDisplayName(zone.emirate),
-                          AppColors.primary.withOpacity(0.15),
+                          AppColors.primary.withValues(alpha: 0.15),
                           AppColors.primary,
                           Icons.location_city,
                         ),
@@ -157,7 +162,7 @@ class FreeZoneCard extends StatelessWidget {
                         gradient: LinearGradient(
                           colors: [
                             Colors.green[50]!,
-                            Colors.green[100]!.withOpacity(0.3),
+                            Colors.green[100]!.withValues(alpha: 0.3),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(12),
@@ -298,13 +303,13 @@ class FreeZoneCard extends StatelessWidget {
                             gradient: LinearGradient(
                               colors: [
                                 AppColors.primary,
-                                AppColors.primary.withOpacity(0.8),
+                                AppColors.primary.withValues(alpha: 0.8),
                               ],
                             ),
                             borderRadius: BorderRadius.circular(25),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.primary.withOpacity(0.3),
+                                color: AppColors.primary.withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -369,7 +374,7 @@ class FreeZoneCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: textColor.withOpacity(0.2),
+            color: textColor.withValues(alpha: 0.2),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -457,9 +462,9 @@ class FreeZoneCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -470,7 +475,7 @@ class FreeZoneCard extends StatelessWidget {
             text,
             style: TextStyle(
               fontSize: 13,
-              color: color.withOpacity(0.9),
+              color: color.withValues(alpha: 0.9),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -483,9 +488,15 @@ class FreeZoneCard extends StatelessWidget {
     try {
       final allocation = zone.visaAllocation;
       int maxVisas = 0;
+      // Handle cases where values may not be ints (dynamic / num / null)
       for (final value in allocation.values) {
-        if (value is int && value > maxVisas) {
-          maxVisas = value;
+        final v = switch (value) {
+          int i => i,
+          num n => n.toInt(),
+          _ => null,
+        };
+        if (v != null && v > maxVisas) {
+          maxVisas = v;
         }
       }
       return maxVisas;
@@ -494,7 +505,9 @@ class FreeZoneCard extends StatelessWidget {
     }
   }
 
-  String _getEmirateDisplayName(String emirate) {
+  String _getEmirateDisplayName(String? emirate) {
+    if (emirate == null || emirate.isEmpty) return 'UAE';
+    final normalized = emirate.trim().toLowerCase().replaceAll(' ', '_');
     final map = {
       'abu_dhabi': 'Abu Dhabi',
       'dubai': 'Dubai',
@@ -504,6 +517,6 @@ class FreeZoneCard extends StatelessWidget {
       'fujairah': 'Fujairah',
       'umm_al_quwain': 'UAQ',
     };
-    return map[emirate] ?? emirate;
+    return map[normalized] ?? emirate;
   }
 }

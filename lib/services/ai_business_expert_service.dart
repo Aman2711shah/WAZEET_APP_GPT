@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/app_config.dart';
@@ -73,11 +75,11 @@ BUDGET: [low/medium/high]
         final data = jsonDecode(response.body);
         return data['choices'][0]['message']['content'];
       } else {
-        print('API Error: ${response.statusCode} - ${response.body}');
+        debugPrint('API Error: ${response.statusCode} - ${response.body}');
         return _getFallbackResponse(conversationHistory.length);
       }
     } catch (e) {
-      print('Error in AI Business Expert: $e');
+      debugPrint('Error in AI Business Expert: $e');
       return _getFallbackResponse(conversationHistory.length);
     }
   }
@@ -143,7 +145,7 @@ BUDGET: [low/medium/high]
 
       return requirements;
     } catch (e) {
-      print('Error extracting requirements: $e');
+      debugPrint('Error extracting requirements: $e');
       return null;
     }
   }

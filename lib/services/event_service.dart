@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/event.dart';
@@ -75,7 +77,7 @@ class EventService {
       }
       return null;
     } catch (e) {
-      print('Error getting event by ID: $e');
+      debugPrint('Error getting event by ID: $e');
       return null;
     }
   }
@@ -89,7 +91,7 @@ class EventService {
           .get();
       return snapshot.docs.map((doc) => Event.fromFirestore(doc)).toList();
     } catch (e) {
-      print('Error getting all events: $e');
+      debugPrint('Error getting all events: $e');
       return [];
     }
   }
@@ -108,7 +110,7 @@ class EventService {
           .get();
       return snapshot.docs.map((doc) => Event.fromFirestore(doc)).toList();
     } catch (e) {
-      print('Error getting upcoming events: $e');
+      debugPrint('Error getting upcoming events: $e');
       return [];
     }
   }
@@ -153,7 +155,7 @@ class EventService {
       categories.sort();
       return categories;
     } catch (e) {
-      print('Error getting categories: $e');
+      debugPrint('Error getting categories: $e');
       return ['Networking', 'Workshop', 'Conference', 'Competition', 'Other'];
     }
   }
@@ -165,7 +167,7 @@ class EventService {
         'attendees': FieldValue.increment(1),
       });
     } catch (e) {
-      print('Error incrementing attendees: $e');
+      debugPrint('Error incrementing attendees: $e');
     }
   }
 

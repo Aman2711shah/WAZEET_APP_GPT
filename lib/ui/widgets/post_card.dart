@@ -30,7 +30,7 @@ class PostCard extends ConsumerWidget {
                   onTap: () => _navigateToProfile(context, post),
                   child: CircleAvatar(
                     radius: 24,
-                    backgroundColor: AppColors.purple.withOpacity(0.1),
+                    backgroundColor: AppColors.purple.withValues(alpha: 0.1),
                     backgroundImage: post.userPhotoUrl != null
                         ? NetworkImage(post.userPhotoUrl!)
                         : null,
@@ -133,7 +133,7 @@ class PostCard extends ConsumerWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.purple.withOpacity(0.1),
+                      color: AppColors.purple.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Row(
@@ -414,7 +414,7 @@ class PostCard extends ConsumerWidget {
         children: [
           CircleAvatar(
             radius: 16,
-            backgroundColor: AppColors.purple.withOpacity(0.1),
+            backgroundColor: AppColors.purple.withValues(alpha: 0.1),
             child: Text(
               name[0],
               style: TextStyle(color: AppColors.purple, fontSize: 14),

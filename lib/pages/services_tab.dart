@@ -87,7 +87,7 @@ class ServicesTab extends StatelessWidget {
 
   Widget _ctaCard(BuildContext context) {
     return Card(
-      color: AppColors.purple.withOpacity(0.1),
+      color: AppColors.purple.withValues(alpha: 0.1),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

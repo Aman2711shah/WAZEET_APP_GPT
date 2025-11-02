@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:html' as html;
+import 'package:url_launcher/url_launcher.dart';
 import '../theme.dart';
 
 class AdminRequestsPage extends StatelessWidget {
@@ -59,7 +59,7 @@ class AdminRequestsPage extends StatelessWidget {
                   leading: CircleAvatar(
                     backgroundColor: _getStatusColor(
                       data['status'],
-                    ).withOpacity(0.1),
+                    ).withValues(alpha: 0.1),
                     child: Icon(
                       _getStatusIcon(data['status']),
                       color: _getStatusColor(data['status']),
@@ -85,7 +85,7 @@ class AdminRequestsPage extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: _getStatusColor(
                             data['status'],
-                          ).withOpacity(0.1),
+                          ).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -218,8 +218,11 @@ class AdminRequestsPage extends StatelessWidget {
     return Icons.insert_drive_file;
   }
 
-  void _openDocument(String url) {
-    html.window.open(url, '_blank');
+  Future<void> _openDocument(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   Future<void> _updateStatus(String docId, String status) async {
@@ -229,7 +232,7 @@ class AdminRequestsPage extends StatelessWidget {
           .doc(docId)
           .update({'status': status});
     } catch (e) {
-      print('Error updating status: $e');
+      debugPrint('Error updating status: $e');
     }
   }
 }

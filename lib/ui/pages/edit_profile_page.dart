@@ -232,7 +232,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                 children: [
                   CircleAvatar(
                     radius: 50,
-                    backgroundColor: AppColors.purple.withOpacity(0.1),
+                    backgroundColor: AppColors.purple.withValues(alpha: 0.1),
                     backgroundImage: profile?.photoUrl != null
                         ? NetworkImage(profile!.photoUrl!)
                         : null,
@@ -320,7 +320,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
             // Title/Position (Dropdown)
             DropdownButtonFormField<String>(
-              value: _selectedTitle,
+              initialValue: _selectedTitle,
               items: _titles
                   .map(
                     (t) => DropdownMenuItem<String>(value: t, child: Text(t)),

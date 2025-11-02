@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/freezone.dart';
 import '../theme.dart';
+import '../../providers/bookmarks_provider.dart';
 
-class FreeZoneDetailPage extends StatelessWidget {
+class FreeZoneDetailPage extends ConsumerWidget {
   final FreeZone zone;
 
   const FreeZoneDetailPage({super.key, required this.zone});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bookmarks = ref.watch(bookmarksProvider);
+    final isBookmarked = bookmarks.contains(zone.id);
     return Scaffold(
       appBar: AppBar(
         title: Text(zone.abbreviation),
@@ -17,13 +24,21 @@ class FreeZoneDetailPage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.share),
             onPressed: () {
-              // TODO: Implement share functionality
+              final shareText =
+                  'Free Zone: ${zone.name} (${_getEmirateDisplayName(zone.emirate)})\nStarting from: ${zone.startingPriceFormatted}';
+              Share.share(shareText, subject: 'Check this Free Zone');
             },
           ),
           IconButton(
-            icon: const Icon(Icons.bookmark_border),
-            onPressed: () {
-              // TODO: Implement bookmark functionality
+            icon: Icon(isBookmarked ? Icons.bookmark : Icons.bookmark_border),
+            onPressed: () async {
+              await ref.read(bookmarksProvider.notifier).toggle(zone.id);
+              if (context.mounted) {
+                final msg = isBookmarked ? 'Removed bookmark' : 'Bookmarked';
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(msg)));
+              }
             },
           ),
         ],
@@ -44,7 +59,7 @@ class FreeZoneDetailPage extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -91,43 +106,49 @@ class FreeZoneDetailPage extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // Price Card
+          // Pricing Section with Stacked Cards
           Card(
-            elevation: 2,
+            elevation: 0,
+            color: Colors.grey[50],
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.attach_money, color: Colors.green[700]),
-                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.green[100],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.monetization_on,
+                          color: Colors.green[700],
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
                       const Text(
                         'Pricing',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Text(
                     'Starting from',
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    zone.startingPriceFormatted,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green[700],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildPricingTable(),
+                  const SizedBox(height: 20),
+                  _buildPricingCards(),
                 ],
               ),
             ),
@@ -136,20 +157,47 @@ class FreeZoneDetailPage extends StatelessWidget {
           const SizedBox(height: 16),
 
           // License Types
-          _buildSection(
-            'License Types',
-            Icons.business_outlined,
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: zone.licenseTypes
-                  .map(
-                    (type) => Chip(
-                      label: Text(type),
-                      backgroundColor: AppColors.primary.withOpacity(0.1),
-                    ),
-                  )
-                  .toList(),
+          Card(
+            elevation: 0,
+            color: Colors.grey[50],
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.purple.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.business_outlined,
+                          color: AppColors.purple,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'License Types',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  ...zone.licenseTypes.map(
+                    (type) => _buildLicenseTypeCard(type),
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -295,9 +343,7 @@ class FreeZoneDetailPage extends StatelessWidget {
 
           // CTA Button
           ElevatedButton(
-            onPressed: () {
-              // TODO: Implement contact or inquiry functionality
-            },
+            onPressed: () => _showContactSheet(context),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -313,6 +359,73 @@ class FreeZoneDetailPage extends StatelessWidget {
 
           const SizedBox(height: 16),
         ],
+      ),
+    );
+  }
+
+  Future<void> _launchEmail({
+    required String subject,
+    required String body,
+  }) async {
+    final uri = Uri(
+      scheme: 'mailto',
+      // No recipient to let user choose
+      path: '',
+      queryParameters: {'subject': subject, 'body': body},
+    );
+    await launchUrl(uri, mode: LaunchMode.platformDefault);
+  }
+
+  void _showContactSheet(BuildContext context) {
+    final subject = 'Inquiry about ${zone.name}';
+    final body =
+        'Hello,\n\nI am interested in ${zone.name} (${_getEmirateDisplayName(zone.emirate)}).\nStarting from: ${zone.startingPriceFormatted}.\n\nPlease share more details.\n\nThanks,';
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.email_outlined),
+              title: const Text('Contact via Email'),
+              onTap: () async {
+                Navigator.of(ctx).pop();
+                await _launchEmail(subject: subject, body: body);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.share_outlined),
+              title: const Text('Share Free Zone'),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                final shareText =
+                    'Free Zone: ${zone.name} (${_getEmirateDisplayName(zone.emirate)})\nStarting from: ${zone.startingPriceFormatted}';
+                Share.share(shareText, subject: 'Check this Free Zone');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.copy_all_outlined),
+              title: const Text('Copy details'),
+              onTap: () async {
+                Navigator.of(ctx).pop();
+                final copy =
+                    '${zone.name} (${_getEmirateDisplayName(zone.emirate)}) — ${zone.startingPriceFormatted}';
+                await Clipboard.setData(ClipboardData(text: copy));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Copied to clipboard')),
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
@@ -346,34 +459,13 @@ class FreeZoneDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildPricingTable() {
+  Widget _buildPricingCards() {
     final setupValue = zone.costs['setup'];
     final renewalValue = zone.costs['annual_renewal'];
 
     // Handle string format (new data structure)
     if (setupValue is String || renewalValue is String) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (setupValue is String && setupValue.isNotEmpty) ...[
-            const Text(
-              'Setup Costs',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(setupValue),
-            const SizedBox(height: 16),
-          ],
-          if (renewalValue is String && renewalValue.isNotEmpty) ...[
-            const Text(
-              'Annual Renewal',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(renewalValue),
-          ],
-        ],
-      );
+      return _buildStringBasedPricingCards(setupValue, renewalValue);
     }
 
     // Handle Map format (old data structure)
@@ -381,38 +473,118 @@ class FreeZoneDetailPage extends StatelessWidget {
     final renewal = renewalValue is Map<String, dynamic> ? renewalValue : null;
 
     if (setup == null && renewal == null) {
-      return const Text('Contact for pricing details');
+      return _buildSinglePricingCard(
+        'Contact for Pricing',
+        'Please contact us for detailed pricing information',
+        '',
+        Icons.phone,
+      );
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (setup != null && setup.isNotEmpty) ...[
           const Text(
             'Setup Costs',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: Colors.black87,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           ...setup.entries.map(
-            (entry) => _buildPriceRow(entry.key, entry.value),
+            (entry) => _buildPricingCardFromMap(entry.key, entry.value),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
         ],
         if (renewal != null && renewal.isNotEmpty) ...[
           const Text(
             'Annual Renewal',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: Colors.black87,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           ...renewal.entries.map(
-            (entry) => _buildPriceRow(entry.key, entry.value),
+            (entry) => _buildPricingCardFromMap(entry.key, entry.value),
           ),
         ],
       ],
     );
   }
 
-  Widget _buildPriceRow(String label, dynamic value) {
+  Widget _buildStringBasedPricingCards(
+    dynamic setupValue,
+    dynamic renewalValue,
+  ) {
+    // Parse the string format pricing information
+    final List<Widget> cards = [];
+
+    if (setupValue is String && setupValue.isNotEmpty) {
+      cards.add(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Setup Costs',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ..._parseStringPricing(setupValue),
+            const SizedBox(height: 20),
+          ],
+        ),
+      );
+    }
+
+    if (renewalValue is String && renewalValue.isNotEmpty) {
+      cards.add(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Annual Renewal',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ..._parseStringPricing(renewalValue),
+          ],
+        ),
+      );
+    }
+
+    return Column(children: cards);
+  }
+
+  List<Widget> _parseStringPricing(String pricingText) {
+    // Parse formats like "License: AED 15,020 / General Trading: AED 50,000 / Registration: AED 7,000"
+    final items = pricingText.split('/').map((s) => s.trim()).toList();
+    return items.map((item) {
+      final parts = item.split(':').map((s) => s.trim()).toList();
+      if (parts.length == 2) {
+        return _buildSinglePricingCard(
+          parts[0],
+          '',
+          parts[1],
+          _getIconForPricingType(parts[0]),
+        );
+      }
+      return _buildSinglePricingCard('Price', '', item, Icons.attach_money);
+    }).toList();
+  }
+
+  Widget _buildPricingCardFromMap(String label, dynamic value) {
     String displayValue = '';
     if (value is Map) {
       final amount = value['amount'];
@@ -422,24 +594,151 @@ class FreeZoneDetailPage extends StatelessWidget {
       displayValue = value.toString();
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+    return _buildSinglePricingCard(
+      _formatKey(label),
+      '',
+      displayValue,
+      _getIconForPricingType(label),
+    );
+  }
+
+  Widget _buildSinglePricingCard(
+    String title,
+    String subtitle,
+    String price,
+    IconData icon,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.purple.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.purple, size: 22),
+          ),
+          const SizedBox(width: 16),
           Expanded(
-            child: Text(
-              _formatKey(label),
-              style: const TextStyle(fontSize: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                if (subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                ],
+              ],
             ),
           ),
-          Text(
-            displayValue,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          if (price.isNotEmpty)
+            Text(
+              price,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.green[700],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  IconData _getIconForPricingType(String type) {
+    final lowerType = type.toLowerCase();
+    if (lowerType.contains('license')) return Icons.description;
+    if (lowerType.contains('trading')) return Icons.business_center;
+    if (lowerType.contains('registration')) return Icons.app_registration;
+    if (lowerType.contains('desk') || lowerType.contains('package')) {
+      return Icons.desk;
+    }
+    if (lowerType.contains('visa')) return Icons.badge;
+    if (lowerType.contains('office')) return Icons.domain;
+    if (lowerType.contains('renewal')) return Icons.refresh;
+    return Icons.attach_money;
+  }
+
+  Widget _buildLicenseTypeCard(String type) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.purple.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: AppColors.purple.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              _getLicenseTypeIcon(type),
+              color: AppColors.purple,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              type,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  IconData _getLicenseTypeIcon(String type) {
+    final lowerType = type.toLowerCase();
+    if (lowerType.contains('trade')) return Icons.store;
+    if (lowerType.contains('service')) return Icons.room_service;
+    if (lowerType.contains('industrial') ||
+        lowerType.contains('manufacturing')) {
+      return Icons.factory;
+    }
+    if (lowerType.contains('education')) return Icons.school;
+    if (lowerType.contains('general')) return Icons.business;
+    if (lowerType.contains('professional')) return Icons.work;
+    if (lowerType.contains('commercial')) return Icons.shopping_bag;
+    return Icons.description;
   }
 
   Widget _buildVisaAllocation() {

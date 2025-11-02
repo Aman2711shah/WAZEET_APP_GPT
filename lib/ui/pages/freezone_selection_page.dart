@@ -139,9 +139,11 @@ class _FreezoneSelectionPageState extends State<FreezoneSelectionPage> {
       });
     } catch (e) {
       setState(() => _isSearching = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error searching activities: $e')));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error searching activities: $e')),
+        );
+      }
     }
   }
 
@@ -304,7 +306,7 @@ class _FreezoneSelectionPageState extends State<FreezoneSelectionPage> {
                     'Find the perfect freezone package in seconds',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
                   ),
                 ],
@@ -320,7 +322,7 @@ class _FreezoneSelectionPageState extends State<FreezoneSelectionPage> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -537,7 +539,9 @@ class _FreezoneSelectionPageState extends State<FreezoneSelectionPage> {
                                   border: Border.all(color: Colors.grey[300]!),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.08),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.08,
+                                      ),
                                       blurRadius: 8,
                                     ),
                                   ],
@@ -780,7 +784,7 @@ class _FreezoneSelectionPageState extends State<FreezoneSelectionPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -820,7 +824,7 @@ class _FreezoneSelectionPageState extends State<FreezoneSelectionPage> {
                         package['packageName'] ?? '',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                         ),
                       ),
                     ],

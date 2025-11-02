@@ -101,7 +101,7 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
                     end: Alignment.bottomRight,
                     colors: [
                       AppColors.primary,
-                      AppColors.primary.withOpacity(0.8),
+                      AppColors.primary.withValues(alpha: 0.8),
                       AppColors.purple,
                     ],
                   ),
@@ -117,7 +117,7 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
                         height: 150,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                         ),
                       ),
                     ),
@@ -129,7 +129,7 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
                         height: 200,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.05),
+                          color: Colors.white.withValues(alpha: 0.05),
                         ),
                       ),
                     ),
@@ -168,7 +168,7 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -208,7 +208,7 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: AppColors.primary.withValues(alpha: 0.1),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -258,7 +258,9 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
                             onDeleted: () =>
                                 setState(() => _selectedLicenseType = null),
                             deleteIconColor: AppColors.primary,
-                            backgroundColor: AppColors.primary.withOpacity(0.1),
+                            backgroundColor: AppColors.primary.withValues(
+                              alpha: 0.1,
+                            ),
                           ),
                         if (_minPrice != null || _maxPrice != null)
                           Chip(
@@ -270,14 +272,18 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
                               _maxPrice = null;
                             }),
                             deleteIconColor: AppColors.primary,
-                            backgroundColor: AppColors.primary.withOpacity(0.1),
+                            backgroundColor: AppColors.primary.withValues(
+                              alpha: 0.1,
+                            ),
                           ),
                         if (_minVisas != null && _minVisas! > 0)
                           Chip(
-                            label: Text('Min ${_minVisas} visas'),
+                            label: Text('Min $_minVisas visas'),
                             onDeleted: () => setState(() => _minVisas = null),
                             deleteIconColor: AppColors.primary,
-                            backgroundColor: AppColors.primary.withOpacity(0.1),
+                            backgroundColor: AppColors.primary.withValues(
+                              alpha: 0.1,
+                            ),
                           ),
                         if (_remoteSetupOnly)
                           Chip(
@@ -285,7 +291,9 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
                             onDeleted: () =>
                                 setState(() => _remoteSetupOnly = false),
                             deleteIconColor: AppColors.primary,
-                            backgroundColor: AppColors.primary.withOpacity(0.1),
+                            backgroundColor: AppColors.primary.withValues(
+                              alpha: 0.1,
+                            ),
                           ),
                         Chip(
                           label: const Text('Clear All'),
@@ -299,7 +307,7 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
                             });
                           },
                           deleteIconColor: Colors.red,
-                          backgroundColor: Colors.red.withOpacity(0.1),
+                          backgroundColor: Colors.red.withValues(alpha: 0.1),
                         ),
                       ],
                     ),
@@ -311,10 +319,10 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
                     padding: const EdgeInsets.all(12),
                     margin: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppColors.primary.withOpacity(0.3),
+                        color: AppColors.primary.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -565,7 +573,7 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
             Icon(
               Icons.business_center_outlined,
               size: 80,
-              color: AppColors.primary.withOpacity(0.5),
+              color: AppColors.primary.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 24),
             Text(
@@ -590,7 +598,7 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
             Icon(
               Icons.arrow_upward,
               size: 48,
-              color: AppColors.primary.withOpacity(0.3),
+              color: AppColors.primary.withValues(alpha: 0.3),
             ),
           ],
         ),

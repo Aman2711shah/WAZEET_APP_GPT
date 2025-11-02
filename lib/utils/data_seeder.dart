@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Helper class to create sample data in Firestore for testing
@@ -261,9 +263,9 @@ class FirestoreDataSeeder {
         });
       }
 
-      print('Sample data seeded successfully!');
+      debugPrint('Sample data seeded successfully!');
     } catch (e) {
-      print('Error seeding data: $e');
+      debugPrint('Error seeding data: $e');
     }
   }
 }

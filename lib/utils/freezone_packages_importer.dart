@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:csv/csv.dart';
 
@@ -12,13 +14,13 @@ class FreezonePackagesImporter {
       final rows = const CsvToListConverter().convert(csvContent);
 
       if (rows.isEmpty) {
-        print('CSV file is empty');
+        debugPrint('CSV file is empty');
         return;
       }
 
       // First row is headers
       final headers = rows[0].map((e) => e.toString()).toList();
-      print('Headers: $headers');
+      debugPrint('Headers: $headers');
 
       // Get reference to the collection
       final collection = _firestore.collection('freezonePackages');
@@ -76,21 +78,21 @@ class FreezonePackagesImporter {
           successCount++;
 
           if (successCount % 10 == 0) {
-            print('Imported $successCount packages...');
+            debugPrint('Imported $successCount packages...');
           }
         } catch (e) {
           errorCount++;
-          print('Error importing row $i: $e');
+          debugPrint('Error importing row $i: $e');
         }
       }
 
-      print('✅ Import completed!');
-      print('Successfully imported: $successCount packages');
+      debugPrint('✅ Import completed!');
+      debugPrint('Successfully imported: $successCount packages');
       if (errorCount > 0) {
-        print('⚠️ Errors: $errorCount packages failed');
+        debugPrint('⚠️ Errors: $errorCount packages failed');
       }
     } catch (e) {
-      print('❌ Error during import: $e');
+      debugPrint('❌ Error during import: $e');
       rethrow;
     }
   }
@@ -182,9 +184,9 @@ class FreezonePackagesImporter {
       }
 
       await batch.commit();
-      print('✅ Cleared ${snapshot.docs.length} packages from Firestore');
+      debugPrint('✅ Cleared ${snapshot.docs.length} packages from Firestore');
     } catch (e) {
-      print('❌ Error clearing packages: $e');
+      debugPrint('❌ Error clearing packages: $e');
       rethrow;
     }
   }
@@ -202,7 +204,7 @@ class FreezonePackagesImporter {
 
       return counts;
     } catch (e) {
-      print('❌ Error getting package counts: $e');
+      debugPrint('❌ Error getting package counts: $e');
       rethrow;
     }
   }

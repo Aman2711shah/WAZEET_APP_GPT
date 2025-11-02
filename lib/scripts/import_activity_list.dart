@@ -1,31 +1,33 @@
+import 'package:flutter/foundation.dart';
+
 import 'dart:io';
 import 'dart:convert';
 
 /// Simple script to convert Activity List CSV to JSON for Firebase import
 /// Run: dart lib/scripts/import_activity_list.dart
 void main() async {
-  print('🔄 Converting Activity List CSV to JSON for Firebase import...\n');
+  debugPrint('🔄 Converting Activity List CSV to JSON for Firebase import...\n');
 
   final csvFile = File('/Users/amanshah/Downloads/Activity List - Master.csv');
 
   if (!await csvFile.exists()) {
-    print('❌ CSV file not found!');
-    print('Please ensure the file exists at:');
-    print(csvFile.path);
+    debugPrint('❌ CSV file not found!');
+    debugPrint('Please ensure the file exists at:');
+    debugPrint(csvFile.path);
     exit(1);
   }
 
   // Read CSV
   final lines = await csvFile.readAsLines();
   if (lines.isEmpty) {
-    print('❌ CSV file is empty');
+    debugPrint('❌ CSV file is empty');
     exit(1);
   }
 
   // Parse headers
   final headers = lines[0].split(',').map((h) => h.trim()).toList();
-  print('📋 Found ${lines.length - 1} activities');
-  print('📊 Headers: ${headers.join(", ")}\n');
+  debugPrint('📋 Found ${lines.length - 1} activities');
+  debugPrint('📊 Headers: ${headers.join(", ")}\n');
 
   // Convert to JSON array
   final List<Map<String, dynamic>> activities = [];
@@ -66,22 +68,22 @@ void main() async {
     JsonEncoder.withIndent('  ').convert(activities),
   );
 
-  print('✅ Successfully converted ${activities.length} activities!');
-  print('📄 Output file: ${jsonFile.path}');
-  print('\n📝 Instructions:');
-  print('1. Go to Firebase Console: https://console.firebase.google.com');
-  print('2. Select your project');
-  print('3. Go to Firestore Database');
-  print('4. Click "Import" button');
-  print('5. Select the generated JSON file: activity_list.json');
-  print('6. Set collection name: Activity list');
-  print('7. Click "Import"');
-  print('\n🎉 Done!');
+  debugPrint('✅ Successfully converted ${activities.length} activities!');
+  debugPrint('📄 Output file: ${jsonFile.path}');
+  debugPrint('\n📝 Instructions:');
+  debugPrint('1. Go to Firebase Console: https://console.firebase.google.com');
+  debugPrint('2. Select your project');
+  debugPrint('3. Go to Firestore Database');
+  debugPrint('4. Click "Import" button');
+  debugPrint('5. Select the generated JSON file: activity_list.json');
+  debugPrint('6. Set collection name: Activity list');
+  debugPrint('7. Click "Import"');
+  debugPrint('\n🎉 Done!');
 
   // Print sample data
   if (activities.isNotEmpty) {
-    print('\n📋 Sample Activity:');
-    print(JsonEncoder.withIndent('  ').convert(activities[0]));
+    debugPrint('\n📋 Sample Activity:');
+    debugPrint(JsonEncoder.withIndent('  ').convert(activities[0]));
   }
 }
 

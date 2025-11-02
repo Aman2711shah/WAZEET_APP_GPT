@@ -66,6 +66,9 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
   Map<String, dynamic>? _extractedRequirements;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
+  // 3D interactions
+  bool _hovering = false;
+  bool _pressed = false;
 
   @override
   void initState() {
@@ -184,13 +187,19 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
 
   @override
   Widget build(BuildContext context) {
+    double safeDockBottom() {
+      final padding = MediaQuery.of(context).padding.bottom;
+      // Keep the button clear of the bottom nav and device insets
+      return 20 + kBottomNavigationBarHeight + padding;
+    }
+
     return Stack(
       children: [
         // Expanded chat window
         if (_isExpanded)
           Positioned(
             right: 20,
-            bottom: 90,
+            bottom: safeDockBottom() + 70,
             child: ScaleTransition(
               scale: _scaleAnimation,
               alignment: Alignment.bottomRight,
@@ -199,58 +208,178 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
           ),
 
         // Floating action button
-        Positioned(right: 20, bottom: 20, child: _buildFloatingButton()),
+        Positioned(
+          right: 20,
+          bottom: safeDockBottom(),
+          child: _buildFloatingButton(),
+        ),
       ],
     );
   }
 
   Widget _buildFloatingButton() {
-    return Material(
-      elevation: 8,
-      borderRadius: BorderRadius.circular(30),
-      child: InkWell(
-        onTap: _toggleChat,
-        borderRadius: BorderRadius.circular(30),
-        child: Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.deepOrange, Colors.orange[700]!],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.deepOrange.withOpacity(0.4),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Icon(
-                _isExpanded ? Icons.close : Icons.psychology,
-                color: Colors.white,
-                size: 28,
-              ),
-              if (!_isExpanded && _isTyping)
+    // 3D glossy floating button with hover tilt, press sink, and layered shadows
+    return Tooltip(
+      message: _isExpanded ? 'Close' : 'AI Business Expert',
+      preferBelow: false,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hovering = true),
+        onExit: (_) => setState(() => _hovering = false),
+        child: GestureDetector(
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapCancel: () => setState(() => _pressed = false),
+          onTapUp: (_) => setState(() => _pressed = false),
+          onTap: _toggleChat,
+          child: SizedBox(
+            width: 76,
+            height: 76,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Soft ground shadow
                 Positioned(
-                  right: 8,
-                  top: 8,
+                  bottom: 8,
                   child: Container(
-                    width: 12,
-                    height: 12,
-                    decoration: const BoxDecoration(
-                      color: Colors.greenAccent,
-                      shape: BoxShape.circle,
+                    width: 46,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.25),
+                          blurRadius: 20,
+                          spreadRadius: 2,
+                        ),
+                      ],
                     ),
                   ),
                 ),
-            ],
+
+                // Main button with tilt/scale animation
+                AnimatedScale(
+                  duration: const Duration(milliseconds: 140),
+                  curve: Curves.easeOut,
+                  scale: _pressed
+                      ? 0.96
+                      : _hovering
+                      ? 1.06
+                      : 1.0,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
+                    curve: Curves.easeOut,
+                    transformAlignment: Alignment.center,
+                    transform: Matrix4.identity()
+                      ..setEntry(3, 2, 0.001)
+                      ..rotateX(_hovering ? -0.06 : 0.0)
+                      ..rotateY(_hovering ? 0.06 : 0.0),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(30),
+                      elevation: _pressed ? 6 : (_hovering ? 14 : 10),
+                      shadowColor: Colors.black.withValues(alpha: 0.35),
+                      child: Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(30),
+                          gradient: LinearGradient(
+                            colors: [Colors.orange[500]!, Colors.deepOrange],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            // Deep colored ambient
+                            BoxShadow(
+                              color: Colors.deepOrange.withValues(alpha: 0.55),
+                              blurRadius: 16,
+                              offset: const Offset(0, 8),
+                            ),
+                            // Subtle rim light
+                            const BoxShadow(
+                              color: Colors.white24,
+                              blurRadius: 2,
+                              offset: Offset(-2, -2),
+                            ),
+                          ],
+                        ),
+                        foregroundDecoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(30),
+                          // Specular highlight gloss
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.28),
+                              Colors.white.withValues(alpha: 0.04),
+                              Colors.white.withValues(alpha: 0.0),
+                            ],
+                            stops: const [0.0, 0.35, 1.0],
+                          ),
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Outer subtle ring
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  width: 1.2,
+                                ),
+                              ),
+                            ),
+                            // Icon
+                            Icon(
+                              _isExpanded ? Icons.close : Icons.psychology,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                            // Tiny online/typing indicator
+                            if (!_isExpanded && _isTyping)
+                              Positioned(
+                                right: 7,
+                                top: 7,
+                                child: Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.greenAccent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                            // Gloss highlight streak
+                            Positioned(
+                              left: 10,
+                              top: 12,
+                              child: Transform.rotate(
+                                angle: -0.6,
+                                child: Container(
+                                  width: 38,
+                                  height: 14,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20),
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.white.withValues(alpha: 0.55),
+                                        Colors.white.withValues(alpha: 0.0),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -268,7 +397,7 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -293,7 +422,7 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -462,7 +591,7 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.deepOrange.withOpacity(0.1),
+                color: Colors.deepOrange.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -486,7 +615,7 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 3,
                     offset: const Offset(0, 1),
                   ),
@@ -526,7 +655,7 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.deepOrange.withOpacity(0.1),
+              color: Colors.deepOrange.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -570,7 +699,7 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
           width: 6,
           height: 6,
           decoration: BoxDecoration(
-            color: Colors.grey[600]!.withOpacity(opacity),
+            color: Colors.grey[600]!.withValues(alpha: opacity),
             shape: BoxShape.circle,
           ),
         );

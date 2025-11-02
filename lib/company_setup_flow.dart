@@ -325,7 +325,7 @@ class _CompanySetupFlowState extends ConsumerState<CompanySetupFlow> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 8,
                     offset: const Offset(0, -2),
                   ),
@@ -840,7 +840,7 @@ class _TintedSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.deepPurple.shade50,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.deepPurple.withOpacity(0.15)),
+        border: Border.all(color: Colors.deepPurple.withValues(alpha: 0.15)),
       ),
       child: child,
     );
@@ -1326,12 +1326,19 @@ class _TenureStep extends ConsumerWidget {
             style: TextStyle(color: Colors.grey.shade700),
           ),
           const SizedBox(height: 12),
-          ...[1, 2, 3].map(
-            (y) => RadioListTile<int>(
-              value: y,
-              groupValue: selected,
-              onChanged: (v) => controller.setLicenseTenureYears(v ?? 1),
-              title: Text('$y year${y > 1 ? 's' : ''}'),
+          // Migrate to RadioGroup API: manages selection and change handling
+          RadioGroup<int>(
+            groupValue: selected,
+            onChanged: (v) => controller.setLicenseTenureYears(v ?? 1),
+            child: Column(
+              children: [
+                ...[1, 2, 3].map(
+                  (y) => RadioListTile<int>(
+                    value: y,
+                    title: Text('$y year${y > 1 ? 's' : ''}'),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -1770,7 +1777,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -1997,7 +2004,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           gradient: LinearGradient(
-            colors: [Colors.white, Colors.blue.shade50.withOpacity(0.3)],
+            colors: [Colors.white, Colors.blue.shade50.withValues(alpha: 0.3)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -2025,10 +2032,10 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                         width: 2,
                       ),
                     ),
@@ -2064,7 +2071,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
+                                  color: Colors.black.withValues(alpha: 0.1),
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 ),
@@ -2132,7 +2139,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: iconColor.withOpacity(0.1),
+                                color: iconColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(icon, color: iconColor, size: 20),
@@ -2185,7 +2192,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50.withOpacity(0.5),
+                color: Colors.blue.shade50.withValues(alpha: 0.5),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(18),
                   bottomRight: Radius.circular(18),
@@ -2329,7 +2336,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
+                    color: Colors.white.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(Icons.star, color: Colors.white, size: 24),

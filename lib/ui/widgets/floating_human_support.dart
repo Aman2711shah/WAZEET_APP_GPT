@@ -41,10 +41,14 @@ class _FloatingHumanSupportState extends ConsumerState<FloatingHumanSupport>
   @override
   Widget build(BuildContext context) {
     final aiExpanded = ref.watch(aiChatExpandedProvider);
+    double safeDockBottom() {
+      final padding = MediaQuery.of(context).padding.bottom;
+      return 20 + kBottomNavigationBarHeight + padding;
+    }
 
     return Positioned(
       left: 20,
-      bottom: 20,
+      bottom: safeDockBottom(),
       child: SlideTransition(
         position: _offsetAnim,
         child: _SupportButton(minimized: aiExpanded),
@@ -59,58 +63,62 @@ class _SupportButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gradient = const LinearGradient(
-      colors: [Color(0xFF7A5AF8), Color(0xFF9B7BFF)],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
+    // Circular button with 3D gradient glow effect
+    final size = minimized ? 56.0 : 60.0;
 
-    final button = Material(
-      elevation: 8,
-      borderRadius: BorderRadius.circular(minimized ? 28 : 28),
-      child: InkWell(
-        onTap: () => _openSupportSheet(context),
-        borderRadius: BorderRadius.circular(minimized ? 28 : 28),
-        child: Container(
-          height: 56,
-          constraints: BoxConstraints(minWidth: minimized ? 56 : 200),
-          padding: EdgeInsets.symmetric(horizontal: minimized ? 0 : 16),
-          decoration: BoxDecoration(
-            gradient: gradient,
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF7A5AF8).withOpacity(0.35),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
-              ),
-            ],
+    final button = Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: const RadialGradient(
+          colors: [Color(0xFF9B7BFF), Color(0xFF7A5AF8), Color(0xFF6448D6)],
+          stops: [0.0, 0.6, 1.0],
+          center: Alignment(-0.3, -0.3),
+        ),
+        boxShadow: [
+          // Outer soft glow
+          BoxShadow(
+            color: const Color(0xFF7A5AF8).withValues(alpha: 0.5),
+            blurRadius: 24,
+            spreadRadius: 4,
+            offset: const Offset(0, 8),
           ),
-          child: Row(
-            mainAxisSize: minimized ? MainAxisSize.min : MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.headset_mic, color: Colors.white, size: 22),
-              if (!minimized) ...[
-                const SizedBox(width: 8),
-                const Text(
-                  'Talk to an Expert',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ],
+          // Inner highlight for 3D effect
+          BoxShadow(
+            color: Colors.white.withValues(alpha: 0.3),
+            blurRadius: 8,
+            spreadRadius: -4,
+            offset: const Offset(-2, -2),
+          ),
+          // Bottom shadow for depth
+          BoxShadow(
+            color: const Color(0xFF6448D6).withValues(alpha: 0.6),
+            blurRadius: 12,
+            offset: const Offset(4, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _openSupportSheet(context),
+          customBorder: const CircleBorder(),
+          splashColor: Colors.white.withValues(alpha: 0.3),
+          highlightColor: Colors.white.withValues(alpha: 0.1),
+          child: Center(
+            child: Icon(
+              Icons.headset_mic,
+              color: Colors.white,
+              size: minimized ? 26 : 32,
+            ),
           ),
         ),
       ),
     );
 
     return Semantics(
-      label: minimized
-          ? 'Chat with an Expert Support'
-          : 'Call an Expert Support',
+      label: 'Talk to an Expert Support',
       button: true,
       child: Tooltip(message: 'Talk to an Expert', child: button),
     );

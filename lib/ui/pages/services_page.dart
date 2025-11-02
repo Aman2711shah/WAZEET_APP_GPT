@@ -50,7 +50,7 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
-                        color: AppColors.purple.withOpacity(0.3),
+                        color: AppColors.purple.withValues(alpha: 0.3),
                       );
                     },
                   ),
@@ -60,8 +60,8 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withOpacity(0.3),
-                          AppColors.purple.withOpacity(0.85),
+                          Colors.black.withValues(alpha: 0.3),
+                          AppColors.purple.withValues(alpha: 0.85),
                         ],
                       ),
                     ),
@@ -73,7 +73,7 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                     child: Text(
                       'Professional business services in Dubai',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.95),
+                        color: Colors.white.withValues(alpha: 0.95),
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0.3,
@@ -146,7 +146,7 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.purple.withOpacity(.08),
+                        color: AppColors.purple.withValues(alpha: .08),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -204,7 +204,7 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                         decoration: BoxDecoration(
                           color: Color(
                             int.tryParse(category.color) ?? 0xFF6200EE,
-                          ).withOpacity(0.1),
+                          ).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Center(
@@ -274,9 +274,9 @@ class _ComplianceSeal extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

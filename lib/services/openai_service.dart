@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:wazeet/config/app_config.dart';
@@ -26,7 +28,7 @@ class OpenAIService {
 
       // Check if API key is configured
       if (!AppConfig.hasOpenAiKey) {
-        print('OpenAI API key not configured, using fallback recommendations');
+        debugPrint('OpenAI API key not configured, using fallback recommendations');
         return _getFallbackRecommendation(
           businessActivities: businessActivities,
           emirate: emirate,
@@ -64,7 +66,7 @@ class OpenAIService {
         );
       }
     } catch (e) {
-      print('Error getting AI recommendations: $e');
+      debugPrint('Error getting AI recommendations: $e');
       return _getFallbackRecommendation(
         businessActivities: businessActivities,
         emirate: emirate,

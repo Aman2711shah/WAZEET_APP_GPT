@@ -123,7 +123,7 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
 
       _scrollToBottom();
     } catch (e) {
-      print('Error sending message: $e');
+      debugPrint('Error sending message: $e');
       final errorMessage = ChatMessage(
         text:
             "I apologize, I'm having trouble connecting right now. Please try again.",
@@ -198,9 +198,9 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 border: Border(
-                  top: BorderSide(color: AppColors.primary.withOpacity(0.3)),
+                  top: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
                 ),
               ),
               child: Row(
@@ -233,7 +233,7 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 4,
                   offset: const Offset(0, -2),
                 ),
@@ -303,7 +303,7 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.psychology, color: AppColors.primary, size: 20),
@@ -323,7 +323,7 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -363,7 +363,7 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.psychology, color: AppColors.primary, size: 20),
@@ -403,7 +403,7 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
           width: 8,
           height: 8,
           decoration: BoxDecoration(
-            color: Colors.grey[600]!.withOpacity(opacity),
+            color: Colors.grey[600]!.withValues(alpha: opacity),
             shape: BoxShape.circle,
           ),
         );

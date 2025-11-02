@@ -155,7 +155,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         elevation: 0,
         color: AppColors.darkCard,
-        shadowColor: Colors.black.withOpacity(0.3),
+        shadowColor: Colors.black.withValues(alpha: 0.3),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: AppColors.darkBorder, width: 0.5),
@@ -238,8 +238,8 @@ class AppTheme {
       // Enhanced chip theme
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.darkCard,
-        selectedColor: AppColors.darkPurple.withOpacity(0.2),
-        disabledColor: AppColors.darkCard.withOpacity(0.5),
+        selectedColor: AppColors.darkPurple.withValues(alpha: 0.2),
+        disabledColor: AppColors.darkCard.withValues(alpha: 0.5),
         labelStyle: const TextStyle(color: AppColors.darkText),
         secondaryLabelStyle: const TextStyle(
           color: AppColors.darkTextSecondary,
@@ -314,15 +314,15 @@ class AppTheme {
 
       // Enhanced switch theme
       switchTheme: SwitchThemeData(
-        thumbColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return AppColors.darkPurple;
           }
           return AppColors.darkGreyText;
         }),
-        trackColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
-            return AppColors.darkPurple.withOpacity(0.5);
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.darkPurple.withValues(alpha: 0.5);
           }
           return AppColors.darkBorder;
         }),

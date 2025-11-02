@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -170,7 +172,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
           .set(state!.toJson(), SetOptions(merge: true));
     } catch (e) {
       // Handle error silently or log
-      print('Error saving profile: $e');
+      debugPrint('Error saving profile: $e');
     }
   }
 

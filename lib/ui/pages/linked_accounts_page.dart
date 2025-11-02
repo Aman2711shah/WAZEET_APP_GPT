@@ -114,7 +114,7 @@ class _LinkedAccountsPageState extends ConsumerState<LinkedAccountsPage> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0077B5).withOpacity(0.1),
+                            color: const Color(0xFF0077B5).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
@@ -160,7 +160,7 @@ class _LinkedAccountsPageState extends ConsumerState<LinkedAccountsPage> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(Icons.tag, color: Colors.black),
@@ -203,7 +203,7 @@ class _LinkedAccountsPageState extends ConsumerState<LinkedAccountsPage> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE4405F).withOpacity(0.1),
+                            color: const Color(0xFFE4405F).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
@@ -249,7 +249,7 @@ class _LinkedAccountsPageState extends ConsumerState<LinkedAccountsPage> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppColors.purple.withOpacity(0.1),
+                            color: AppColors.purple.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(Icons.language, color: AppColors.purple),

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -9,12 +11,12 @@ import '../firebase_options.dart';
 /// Run this script with:
 /// dart run lib/scripts/import_freezone_packages.dart
 Future<void> main() async {
-  print('🚀 Starting Freezone Packages Import...\n');
+  debugPrint('🚀 Starting Freezone Packages Import...\n');
 
   // Initialize Firebase
-  print('Initializing Firebase...');
+  debugPrint('Initializing Firebase...');
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  print('✅ Firebase initialized\n');
+  debugPrint('✅ Firebase initialized\n');
 
   final firestore = FirebaseFirestore.instance;
   final csvFilePath =
@@ -22,10 +24,10 @@ Future<void> main() async {
 
   try {
     // Read CSV file
-    print('📄 Reading CSV file: $csvFilePath');
+    debugPrint('📄 Reading CSV file: $csvFilePath');
     final file = File(csvFilePath);
     if (!await file.exists()) {
-      print('❌ Error: CSV file not found at $csvFilePath');
+      debugPrint('❌ Error: CSV file not found at $csvFilePath');
       exit(1);
     }
 
@@ -33,34 +35,34 @@ Future<void> main() async {
     final rows = const CsvToListConverter().convert(csvContent);
 
     if (rows.isEmpty) {
-      print('❌ Error: CSV file is empty');
+      debugPrint('❌ Error: CSV file is empty');
       exit(1);
     }
 
     // Get headers
     final headers = rows[0].map((e) => e.toString().trim()).toList();
-    print('✅ Found ${rows.length - 1} packages to import');
-    print('📋 Headers: ${headers.join(", ")}\n');
+    debugPrint('✅ Found ${rows.length - 1} packages to import');
+    debugPrint('📋 Headers: ${headers.join(", ")}\n');
 
     // Get Firestore collection
     final collection = firestore.collection('freezonePackages');
 
     // Optional: Clear existing data
-    print('Do you want to clear existing packages first? (y/n):');
+    debugPrint('Do you want to clear existing packages first? (y/n):');
     final clearResponse = stdin.readLineSync();
     if (clearResponse?.toLowerCase() == 'y') {
-      print('🗑️  Clearing existing packages...');
+      debugPrint('🗑️  Clearing existing packages...');
       final snapshot = await collection.get();
       final batch = firestore.batch();
       for (var doc in snapshot.docs) {
         batch.delete(doc.reference);
       }
       await batch.commit();
-      print('✅ Cleared ${snapshot.docs.length} existing packages\n');
+      debugPrint('✅ Cleared ${snapshot.docs.length} existing packages\n');
     }
 
     // Import data
-    print('📥 Importing packages to Firestore...\n');
+    debugPrint('📥 Importing packages to Firestore...\n');
     int successCount = 0;
     int errorCount = 0;
 
@@ -96,22 +98,22 @@ Future<void> main() async {
         successCount++;
 
         if (successCount % 50 == 0) {
-          print('   Imported $successCount packages...');
+          debugPrint('   Imported $successCount packages...');
         }
       } catch (e) {
         errorCount++;
-        print('⚠️  Error importing row $i: $e');
+        debugPrint('⚠️  Error importing row $i: $e');
       }
     }
 
-    print('\n✅ Import completed!');
-    print('Successfully imported: $successCount packages');
+    debugPrint('\n✅ Import completed!');
+    debugPrint('Successfully imported: $successCount packages');
     if (errorCount > 0) {
-      print('⚠️  Errors: $errorCount packages failed');
+      debugPrint('⚠️  Errors: $errorCount packages failed');
     }
 
     // Show statistics
-    print('\n📊 Package Statistics:');
+    debugPrint('\n📊 Package Statistics:');
     final snapshot = await collection.get();
     final freezoneCounts = <String, int>{};
     for (var doc in snapshot.docs) {
@@ -119,14 +121,14 @@ Future<void> main() async {
       freezoneCounts[freezone] = (freezoneCounts[freezone] ?? 0) + 1;
     }
 
-    freezoneCounts.forEach((freezone, count) {
-      print('   $freezone: $count packages');
+    freezoneCounts.forEach((freezone, pkgCount) {
+      debugPrint('   $freezone: $pkgCount packages');
     });
 
-    print('\n🎉 Import process finished!');
+    debugPrint('\n🎉 Import process finished!');
   } catch (e, stackTrace) {
-    print('❌ Fatal error during import: $e');
-    print(stackTrace);
+    debugPrint('❌ Fatal error during import: $e');
+    debugPrint(stackTrace.toString());
     exit(1);
   }
 

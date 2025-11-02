@@ -31,12 +31,12 @@ class FreezoneInvestmentMapPage extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.purple, AppColors.purple.withOpacity(0.8)],
+                  colors: [AppColors.purple, AppColors.purple.withValues(alpha: 0.8)],
                 ),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.purple.withOpacity(0.3),
+                    color: AppColors.purple.withValues(alpha: 0.3),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -65,7 +65,7 @@ class FreezoneInvestmentMapPage extends StatelessWidget {
                   Text(
                     'Strategic analysis of UAE\'s top free zones, their revenue models, and anchor tenants. Essential intelligence for investors and business executives.',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.95),
+                      color: Colors.white.withValues(alpha: 0.95),
                       fontSize: 14,
                       height: 1.4,
                     ),
@@ -259,9 +259,9 @@ class FreezoneInvestmentMapPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.purple.withOpacity(0.1),
+                color: AppColors.purple.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.purple.withOpacity(0.3)),
+                border: Border.all(color: AppColors.purple.withValues(alpha: 0.3)),
               ),
               child: Column(
                 children: [
@@ -312,7 +312,7 @@ class FreezoneInvestmentMapPage extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
+            color: color.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: color, size: 24),
@@ -413,9 +413,9 @@ class FreezoneInvestmentMapPage extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -423,7 +423,7 @@ class FreezoneInvestmentMapPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 24),
@@ -474,7 +474,7 @@ class FreezoneInvestmentMapPage extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
+            color: color.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: color, size: 24),
@@ -578,7 +578,7 @@ class FreezoneInvestmentMapPage extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.15),
+                    color: color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(Icons.insights, color: color, size: 20),

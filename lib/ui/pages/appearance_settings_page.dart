@@ -28,57 +28,61 @@ class AppearanceSettingsPage extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
 
-          // Light Mode Option
-          Card(
-            child: RadioListTile<bool>(
-              value: false,
-              groupValue: isDarkMode,
-              onChanged: (value) {
-                ref
-                    .read(themeModeProvider.notifier)
-                    .setThemeMode(ThemeMode.light);
-              },
-              title: const Text('Light Mode'),
-              subtitle: const Text('Bright and clean interface'),
-              secondary: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isDarkMode
-                      ? Colors.grey.shade800
-                      : Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(12),
+          // Theme selection migrated to RadioGroup API
+          RadioGroup<bool>(
+            groupValue: isDarkMode,
+            onChanged: (value) {
+              final dark = value ?? false;
+              ref
+                  .read(themeModeProvider.notifier)
+                  .setThemeMode(dark ? ThemeMode.dark : ThemeMode.light);
+            },
+            child: Column(
+              children: [
+                // Light Mode Option
+                Card(
+                  child: RadioListTile<bool>(
+                    value: false,
+                    title: const Text('Light Mode'),
+                    subtitle: const Text('Bright and clean interface'),
+                    secondary: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isDarkMode
+                            ? Colors.grey.shade800
+                            : Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.light_mode,
+                        color: isDarkMode
+                            ? Colors.orange.shade300
+                            : Colors.orange,
+                      ),
+                    ),
+                  ),
                 ),
-                child: Icon(
-                  Icons.light_mode,
-                  color: isDarkMode ? Colors.orange.shade300 : Colors.orange,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-          // Dark Mode Option
-          Card(
-            child: RadioListTile<bool>(
-              value: true,
-              groupValue: isDarkMode,
-              onChanged: (value) {
-                ref
-                    .read(themeModeProvider.notifier)
-                    .setThemeMode(ThemeMode.dark);
-              },
-              title: const Text('Dark Mode'),
-              subtitle: const Text('Easy on the eyes'),
-              secondary: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isDarkMode
-                      ? Colors.purple.shade900
-                      : Colors.grey.shade800,
-                  borderRadius: BorderRadius.circular(12),
+                // Dark Mode Option
+                Card(
+                  child: RadioListTile<bool>(
+                    value: true,
+                    title: const Text('Dark Mode'),
+                    subtitle: const Text('Easy on the eyes'),
+                    secondary: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isDarkMode
+                            ? Colors.purple.shade900
+                            : Colors.grey.shade800,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.dark_mode, color: Colors.white),
+                    ),
+                  ),
                 ),
-                child: const Icon(Icons.dark_mode, color: Colors.white),
-              ),
+              ],
             ),
           ),
           const SizedBox(height: 24),
@@ -87,9 +91,11 @@ class AppearanceSettingsPage extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.purple.withOpacity(0.1),
+              color: AppColors.purple.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.purple.withOpacity(0.3)),
+              border: Border.all(
+                color: AppColors.purple.withValues(alpha: 0.3),
+              ),
             ),
             child: Row(
               children: [
