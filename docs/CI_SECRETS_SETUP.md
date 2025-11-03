@@ -31,7 +31,7 @@ Add these repository secrets:
 
 - ANDROID_KEYSTORE_BASE64
 - ANDROID_KEY_PROPERTIES
-- PLAY_STORE_CONFIG_JSON
+- PLAY_STORE_CONFIG_JSON_BASE64
 
 ### Prepare values
 
@@ -56,25 +56,15 @@ storeFile=upload-keystore.jks
 ```
 Paste into `ANDROID_KEY_PROPERTIES`.
 
-3) Play Store service account JSON
+3) Play Store service account JSON (base64)
 
-Open the service account JSON you downloaded from Google Cloud/Play Console (the one used for Play Console uploads). Copy its entire contents and paste into `PLAY_STORE_CONFIG_JSON`.
-
-If pasting multiline JSON causes issues, base64-encode it and adjust the workflow step like this:
-
-```yaml
-- name: Setup Play Store Service Account
-  env:
-    PLAY_STORE_CONFIG_JSON_BASE64: ${{ secrets.PLAY_STORE_CONFIG_JSON_BASE64 }}
-  run: |
-    echo "$PLAY_STORE_CONFIG_JSON_BASE64" | base64 -d > android/play-store-credentials.json
-```
-
-Then add the secret `PLAY_STORE_CONFIG_JSON_BASE64` with the base64 of the JSON:
+Open the service account JSON you downloaded from Google Cloud/Play Console (the one used for Play Console uploads). Base64-encode it:
 
 ```sh
 base64 -in path/to/service-account.json | pbcopy
 ```
+
+Paste the base64 output into `PLAY_STORE_CONFIG_JSON_BASE64`.
 
 ## Triggering the workflow
 
