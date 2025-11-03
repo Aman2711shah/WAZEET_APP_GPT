@@ -245,6 +245,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
     ).showSnackBar(const SnackBar(content: Text('Posted successfully! 🎉')));
   }
 
+  // ignore: unused_element
   void _showArticleEditor() {
     final titleController = TextEditingController();
     final contentController = TextEditingController();
@@ -346,6 +347,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
     );
   }
 
+  // ignore: unused_element
   void _showPollCreator() {
     final questionController = TextEditingController();
     final option1Controller = TextEditingController();
@@ -482,6 +484,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
     );
   }
 
+  // ignore: unused_element
   void _showEventCreator() {
     final titleController = TextEditingController();
     final descriptionController = TextEditingController();
@@ -642,6 +645,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
     );
   }
 
+  // ignore: unused_element
   void _showPhotoShare() {
     final captionController = TextEditingController();
 
