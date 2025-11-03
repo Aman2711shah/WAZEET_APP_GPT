@@ -1,0 +1,80 @@
+# Android Fastlane Configuration for WAZEET
+
+default_platform(:android)
+
+platform :android do
+  desc "Deploy a new beta to Google Play Internal Testing"
+  lane :beta do
+    # Ensure we're in a clean state
+    ensure_git_status_clean
+
+    # Get current version from pubspec.yaml
+    pubspec_path = "../pubspec.yaml"
+    pubspec = File.read(pubspec_path)
+    version_line = pubspec.match(/^version:\s*(.+)$/)[1]
+    version_name, version_code = version_line.split('+')
+
+    # Increment version code
+    new_version_code = version_code.to_i + 1
+    new_version_line = "version: #{version_name}+#{new_version_code}"
+    
+    # Update pubspec.yaml
+    new_pubspec = pubspec.sub(/^version:\s*.+$/, new_version_line)
+    File.write(pubspec_path, new_pubspec)
+
+    UI.message("📦 Building Android app v#{version_name} (#{new_version_code})")
+
+    # Build the Android App Bundle (AAB)
+    Dir.chdir("..") do
+      sh("flutter", "build", "appbundle", "--release")
+    end
+
+    # Upload to Play Console Internal Testing track
+    upload_to_play_store(
+      track: 'internal',
+      aab: '../build/app/outputs/bundle/release/app-release.aab',
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      release_status: 'completed',
+      version_code: new_version_code.to_s
+    )
+
+    # Commit version bump
+    Dir.chdir("..") do
+      sh("git", "add", "pubspec.yaml")
+      sh("git", "commit", "-m", "Bump Android version to #{version_name} (#{new_version_code})")
+      
+      # Tag release
+      sh("git", "tag", "android-v#{version_name}-#{new_version_code}")
+      
+      # Push to remote
+      sh("git", "push", "origin", "main", "--tags")
+    end
+
+    UI.success("✅ Successfully deployed Android beta v#{version_name} (#{new_version_code}) to Play Console Internal Testing!")
+  end
+
+  desc "Promote internal build to beta (closed testing)"
+  lane :promote_to_beta do
+    upload_to_play_store(
+      track: 'internal',
+      track_promote_to: 'beta',
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+    UI.success("✅ Promoted to Beta (Closed Testing) track")
+  end
+
+  desc "Build Android APK for testing (no upload)"
+  lane :build do
+    Dir.chdir("..") do
+      sh("flutter", "build", "apk", "--release")
+    end
+    UI.success("✅ Android APK build completed")
+  end
+end

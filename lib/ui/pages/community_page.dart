@@ -17,6 +17,182 @@ class CommunityPage extends ConsumerStatefulWidget {
   const CommunityPage({super.key});
   @override
   ConsumerState<CommunityPage> createState() => _CommunityPageState();
+
+  // Static method to show create options from anywhere
+  // Static method that can be called from main_nav or anywhere else
+  static void showCreateOptionsMenu(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.article, color: AppColors.purple),
+                title: const Text('Write an article'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showArticleEditor(context, ref);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.poll, color: AppColors.purple),
+                title: const Text('Create a poll'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showPollCreator(context, ref);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.event, color: AppColors.purple),
+                title: const Text('Create an event'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showEventCreator(context, ref);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.image, color: AppColors.purple),
+                title: const Text('Share a photo'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showPhotoShare(context, ref);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Static helper methods to show dialogs
+  static void _showArticleEditor(BuildContext context, WidgetRef ref) {
+    final titleController = TextEditingController();
+    final contentController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.article, color: AppColors.purple),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Write an Article',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Article Title',
+                  hintText: 'Enter a catchy title...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: TextField(
+                  controller: contentController,
+                  maxLines: null,
+                  expands: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Content',
+                    hintText: 'Write your article here...',
+                    border: OutlineInputBorder(),
+                    alignLabelWithHint: true,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    if (titleController.text.trim().isEmpty ||
+                        contentController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please fill in all fields'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    final newPost = Post(
+                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      userId: 'demo_user',
+                      userName: 'David Chen',
+                      userTitle: 'Entrepreneur | WAZEET Founder',
+                      content:
+                          '📝 ${titleController.text}\n\n${contentController.text}',
+                      createdAt: DateTime.now(),
+                      likesCount: 0,
+                      commentsCount: 0,
+                      imageUrl: null,
+                    );
+
+                    ref.read(communityPostsProvider.notifier).addPost(newPost);
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Article published! 📝')),
+                    );
+                  },
+                  icon: const Icon(Icons.publish),
+                  label: const Text('Publish Article'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.purple,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static void _showPollCreator(BuildContext context, WidgetRef ref) {
+    // Poll creator implementation - I'll add a placeholder for now
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Poll creator coming soon!')));
+  }
+
+  static void _showEventCreator(BuildContext context, WidgetRef ref) {
+    // Event creator implementation - I'll add a placeholder for now
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Event creator coming soon!')));
+  }
+
+  static void _showPhotoShare(BuildContext context, WidgetRef ref) {
+    // Photo share implementation - I'll add a placeholder for now
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Photo share coming soon!')));
+  }
 }
 
 class _CommunityPageState extends ConsumerState<CommunityPage>
@@ -67,57 +243,6 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Posted successfully! 🎉')));
-  }
-
-  void _showPostOptions() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(Icons.article, color: AppColors.purple),
-                title: const Text('Write an article'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showArticleEditor();
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.poll, color: AppColors.purple),
-                title: const Text('Create a poll'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showPollCreator();
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.event, color: AppColors.purple),
-                title: const Text('Create an event'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showEventCreator();
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.image, color: AppColors.purple),
-                title: const Text('Share a photo'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showPhotoShare();
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   void _showArticleEditor() {
@@ -834,15 +959,6 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showPostOptions,
-        backgroundColor: AppColors.purple,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'Create',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-      ),
     );
   }
 
@@ -915,7 +1031,9 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                   Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: AppColors.purple.withValues(alpha: 0.1),
+                        backgroundColor: AppColors.purple.withValues(
+                          alpha: 0.1,
+                        ),
                         child: Text(
                           'D',
                           style: TextStyle(
@@ -1847,10 +1965,14 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: _getCategoryColor(event.category).withValues(alpha: 0.1),
+                    color: _getCategoryColor(
+                      event.category,
+                    ).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: _getCategoryColor(event.category).withValues(alpha: 0.3),
+                      color: _getCategoryColor(
+                        event.category,
+                      ).withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(

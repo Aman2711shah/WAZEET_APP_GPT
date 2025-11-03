@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme.dart';
 import 'home_page.dart';
 import 'services_page.dart';
@@ -9,14 +10,14 @@ import 'profile_page.dart';
 import '../widgets/floating_ai_chatbot.dart';
 import '../widgets/floating_human_support.dart';
 
-class MainNav extends StatefulWidget {
+class MainNav extends ConsumerStatefulWidget {
   const MainNav({super.key});
 
   @override
-  State<MainNav> createState() => _MainNavState();
+  ConsumerState<MainNav> createState() => _MainNavState();
 }
 
-class _MainNavState extends State<MainNav> {
+class _MainNavState extends ConsumerState<MainNav> {
   int _index = 0;
   late final List<Widget> pages;
 
@@ -45,6 +46,7 @@ class _MainNavState extends State<MainNav> {
       bottomNavigationBar: _CustomBottomNavBar(
         currentIndex: _index,
         onTap: (i) => setState(() => _index = i),
+        ref: ref,
       ),
     );
   }
@@ -54,8 +56,13 @@ class _MainNavState extends State<MainNav> {
 class _CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final WidgetRef ref;
 
-  const _CustomBottomNavBar({required this.currentIndex, required this.onTap});
+  const _CustomBottomNavBar({
+    required this.currentIndex,
+    required this.onTap,
+    required this.ref,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -98,6 +105,22 @@ class _CustomBottomNavBar extends StatelessWidget {
               _buildNavItem(4, Icons.more_horiz, 'More'),
             ],
           ),
+
+          // "Create" button positioned above and to the right of bottom nav (only on Community page)
+          if (currentIndex == 2)
+            Positioned(
+              right: 16,
+              bottom: 70,
+              child: FloatingActionButton(
+                heroTag: 'create_button',
+                onPressed: () {
+                  _showCreatePostOptions(context);
+                },
+                backgroundColor: AppColors.purple,
+                elevation: 6,
+                child: const Icon(Icons.add, color: Colors.white, size: 28),
+              ),
+            ),
 
           // Community label under the center tab
           Positioned(
@@ -201,7 +224,9 @@ class _CustomBottomNavBar extends StatelessWidget {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF7A5AF8).withValues(alpha: 0.35),
+                          color: const Color(
+                            0xFF7A5AF8,
+                          ).withValues(alpha: 0.35),
                           blurRadius: 18,
                           spreadRadius: 1,
                           offset: const Offset(0, -4),
@@ -246,6 +271,11 @@ class _CustomBottomNavBar extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _showCreatePostOptions(BuildContext context) {
+    // Call the community page's create options menu
+    CommunityPage.showCreateOptionsMenu(context, ref);
   }
 }
 

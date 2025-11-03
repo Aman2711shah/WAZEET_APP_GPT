@@ -134,6 +134,9 @@ Optional: use VS Code task “Flutter: Run App”.
 
 Start here for deeper setup and troubleshooting:
 
+- **Beta Distribution & Deployment**: `docs/BETA_DISTRIBUTION.md` 🚀 (NEW!)
+- **Quick Start for Beta Deploys**: `BETA_DEPLOY_QUICK_START.md` ⚡
+- **Testing Plans**: `docs/TEST_PLAN_ALPHA.md` and `docs/TEST_PLAN_BETA.md` 🧪
 - **Event Discovery Cloud Functions**: `docs/EVENT_DISCOVERY_SETUP.md` 🎉
 - AI setup: `docs/AI_RECOMMENDATIONS_SETUP.md`
 - Firestore rules: `FIRESTORE_SECURITY_RULES_FIX.md`
@@ -153,9 +156,53 @@ Start here for deeper setup and troubleshooting:
 
 ## 🧪 Testing
 
+Run all tests:
 ```bash
 flutter test
 ```
+
+Run analyzer:
+```bash
+flutter analyze
+```
+
+Integration tests (requires simulator/emulator):
+```bash
+flutter test integration_test
+```
+
+## 🚀 Beta Distribution (One Command!)
+
+Deploy beta builds to TestFlight (iOS) and Play Console (Android) with a single command:
+
+```bash
+# iOS only
+./scripts/deploy-ios-beta.sh
+
+# Android only
+./scripts/deploy-android-beta.sh
+
+# Both platforms
+./scripts/deploy-beta-all.sh
+```
+
+**What it does:**
+- ✅ Auto-increments build/version numbers
+- 🏗️ Builds release binaries (IPA/AAB)
+- ⬆️ Uploads to TestFlight/Play Console
+- 🏷️ Creates git tags and commits version bumps
+- 📤 Pushes everything to remote
+
+**First-time setup** (15 min per platform):
+- iOS: App Store Connect API key + Fastlane Match
+- Android: Upload keystore + Play Console service account
+- Full guide: `docs/BETA_DISTRIBUTION.md`
+- Quick reference: `BETA_DEPLOY_QUICK_START.md`
+
+**CI/CD**: GitHub Actions workflow included (`.github/workflows/deploy-beta.yml`)
+- Triggers on git tags: `v*.*.*-beta`
+- Or manual dispatch from Actions tab
+- Requires GitHub secrets (see docs)
 
 ## 🔒 Security
 
