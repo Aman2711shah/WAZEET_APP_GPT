@@ -389,10 +389,15 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
 
   Widget _buildChatWindow() {
     final messages = ref.watch(conversationProvider);
+    final screenSize = MediaQuery.of(context).size;
+    
+    // Responsive sizing: max 380 width, 550 height, but adapt to small screens
+    final chatWidth = (screenSize.width * 0.9).clamp(280.0, 380.0);
+    final chatHeight = (screenSize.height * 0.7).clamp(400.0, 550.0);
 
     return Container(
-      width: 380,
-      height: 550,
+      width: chatWidth,
+      height: chatHeight,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),

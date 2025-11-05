@@ -379,7 +379,8 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     controller: _phoneController,
                     decoration: const InputDecoration(
                       labelText: 'Phone Number',
-                      hintText: 'XX XXX XXXX',
+                      hintText: '50 123 4567',
+                      helperText: 'Format: 50 123 4567 (without country code)',
                       prefixIcon: Icon(Icons.phone_outlined),
                     ),
                     keyboardType: TextInputType.phone,
