@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/ai_business_expert_service.dart';
+import '../../config/app_config.dart';
 import '../pages/freezone_browser_page.dart';
 
 /// Chat message model
@@ -189,8 +190,12 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
   Widget build(BuildContext context) {
     double safeDockBottom() {
       final padding = MediaQuery.of(context).padding.bottom;
+      final screenHeight = MediaQuery.of(context).size.height;
+      
       // Keep the button clear of the bottom nav and device insets
-      return 20 + kBottomNavigationBarHeight + padding;
+      // Add extra padding on small screens to prevent overlap
+      final extraPadding = screenHeight < 700 ? 10.0 : 0.0;
+      return 20 + kBottomNavigationBarHeight + padding + extraPadding;
     }
 
     return Stack(
@@ -388,10 +393,15 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
 
   Widget _buildChatWindow() {
     final messages = ref.watch(conversationProvider);
+    final screenSize = MediaQuery.of(context).size;
+    
+    // Responsive sizing: max 380 width, 550 height, but adapt to small screens
+    final chatWidth = (screenSize.width * 0.9).clamp(280.0, 380.0);
+    final chatHeight = (screenSize.height * 0.7).clamp(400.0, 550.0);
 
     return Container(
-      width: 380,
-      height: 550,
+      width: chatWidth,
+      height: chatHeight,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -467,6 +477,31 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
               ],
             ),
           ),
+
+          // Warning banner if API key is missing
+          if (!AppConfig.hasOpenAiKey)
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade100,
+                border: Border(bottom: BorderSide(color: Colors.orange.shade300)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.orange.shade800, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Limited mode: AI features unavailable. Configure OpenAI API key for full functionality.',
+                      style: TextStyle(
+                        color: Colors.orange.shade900,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
           // Messages
           Expanded(

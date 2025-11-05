@@ -229,19 +229,21 @@ class ProfilePage extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  _menuItem(
-                    context,
-                    icon: Icons.admin_panel_settings,
-                    title: 'Service Requests',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AdminRequestsPage(),
-                        ),
-                      );
-                    },
-                  ),
+                  // Only show admin menu item for admin users
+                  if (profile?.isAdmin == true)
+                    _menuItem(
+                      context,
+                      icon: Icons.admin_panel_settings,
+                      title: 'Service Requests (Admin)',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdminRequestsPage(),
+                          ),
+                        );
+                      },
+                    ),
                   const Divider(height: 32),
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 4),

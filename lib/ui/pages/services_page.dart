@@ -135,12 +135,49 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
               ),
             ),
           ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                if (index == filteredCategories.length) {
-                  // CTA at the end
-                  return Padding(
+          // Empty state when search returns no results
+          if (filteredCategories.isEmpty)
+            SliverFillRemaining(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.search_off,
+                        size: 64,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No services found',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Try adjusting your search',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  if (index == filteredCategories.length) {
+                    // CTA at the end
+                    return Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                     child: Container(
                       width: double.infinity,
@@ -245,10 +282,10 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                     ),
                   ),
                 );
-              },
-              childCount: filteredCategories.length + 1, // +1 for CTA
+                },
+                childCount: filteredCategories.length + 1, // +1 for CTA
+              ),
             ),
-          ),
         ],
       ),
     );

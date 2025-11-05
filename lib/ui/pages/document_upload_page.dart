@@ -21,11 +21,41 @@ class _DocumentUploadPageState extends State<DocumentUploadPage> {
     final result = await FilePicker.platform.pickFiles(
       allowMultiple: false,
       withData: kIsWeb,
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'],
     );
     if (result == null || result.files.isEmpty) return;
 
     final file = result.files.single;
     final path = file.path;
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('File size must be less than 10MB'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    // Validate file extension
+    final extension = file.extension?.toLowerCase();
+    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
+    if (extension == null || !allowedExtensions.contains(extension)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Only PDF, JPG, PNG, DOC, and DOCX files are allowed'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
 
     setState(() {
       _busy = true;

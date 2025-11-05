@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wazeet/company_setup_flow.dart';
 import '../../providers/services_provider.dart';
+import '../../providers/user_stats_provider.dart';
 import 'service_type_page.dart';
 import 'freezone_selection_page.dart';
 import 'freezone_browser_page.dart';
@@ -17,6 +18,7 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final serviceCategories = ref.watch(servicesProvider);
+    final userStats = ref.watch(userStatsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -217,7 +219,7 @@ class HomePage extends ConsumerWidget {
                           children: [
                             Expanded(
                               child: _buildStatItem(
-                                '3',
+                                '${userStats.activeServices}',
                                 'Active Services',
                                 Icons.check_circle,
                               ),
@@ -229,7 +231,7 @@ class HomePage extends ConsumerWidget {
                             ),
                             Expanded(
                               child: _buildStatItem(
-                                '5',
+                                '${userStats.pendingTasks}',
                                 'Pending Tasks',
                                 Icons.pending_actions,
                               ),
@@ -241,7 +243,7 @@ class HomePage extends ConsumerWidget {
                             ),
                             Expanded(
                               child: _buildStatItem(
-                                '12',
+                                '${userStats.documents}',
                                 'Documents',
                                 Icons.description,
                               ),
@@ -340,16 +342,24 @@ class HomePage extends ConsumerWidget {
                         Icons.card_travel,
                         Colors.blue,
                         () {
-                          final visaCategory = serviceCategories.firstWhere(
-                            (cat) => cat.id == 'visa',
-                          );
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ServiceTypePage(category: visaCategory),
-                            ),
-                          );
+                          try {
+                            final visaCategory = serviceCategories.firstWhere(
+                              (cat) => cat.id == 'visa',
+                            );
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ServiceTypePage(category: visaCategory),
+                              ),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Service category not available'),
+                              ),
+                            );
+                          }
                         },
                       ),
                       _buildQuickActionCard(
@@ -372,16 +382,24 @@ class HomePage extends ConsumerWidget {
                         Icons.receipt_long,
                         Colors.deepPurple,
                         () {
-                          final taxCategory = serviceCategories.firstWhere(
-                            (cat) => cat.id == 'tax',
-                          );
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ServiceTypePage(category: taxCategory),
-                            ),
-                          );
+                          try {
+                            final taxCategory = serviceCategories.firstWhere(
+                              (cat) => cat.id == 'tax',
+                            );
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ServiceTypePage(category: taxCategory),
+                              ),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Service category not available'),
+                              ),
+                            );
+                          }
                         },
                       ),
                       _buildQuickActionCard(
@@ -390,15 +408,23 @@ class HomePage extends ConsumerWidget {
                         Icons.calculate,
                         Colors.teal,
                         () {
-                          final accountingCategory = serviceCategories
-                              .firstWhere((cat) => cat.id == 'accounting');
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ServiceTypePage(category: accountingCategory),
-                            ),
-                          );
+                          try {
+                            final accountingCategory = serviceCategories
+                                .firstWhere((cat) => cat.id == 'accounting');
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ServiceTypePage(category: accountingCategory),
+                              ),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Service category not available'),
+                              ),
+                            );
+                          }
                         },
                       ),
                       _buildQuickActionCard(
@@ -531,30 +557,53 @@ class HomePage extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _buildActivityCard(
-                    'Employment Visa Renewal',
-                    'In Progress',
-                    'Expected completion: 3 days',
-                    Icons.card_travel,
-                    Colors.blue,
-                    0.7,
-                  ),
-                  _buildActivityCard(
-                    'VAT Registration',
-                    'Documents Required',
-                    '2 documents pending',
-                    Icons.receipt_long,
-                    Colors.orange,
-                    0.3,
-                  ),
-                  _buildActivityCard(
-                    'Trade License Renewal',
-                    'Completed',
-                    'Completed on Oct 25, 2025',
-                    Icons.check_circle,
-                    Colors.green,
-                    1.0,
-                  ),
+                  // Show real user activity or empty state
+                  if (userStats.recentActivity.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.inbox_outlined,
+                            size: 48,
+                            color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No recent activity',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Start by exploring our services',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    ...userStats.recentActivity.map((activity) {
+                      return _buildActivityCard(
+                        activity.title,
+                        activity.status,
+                        activity.subtitle,
+                        _getIconForStatus(activity.status),
+                        _getColorForStatus(activity.status),
+                        activity.progress,
+                      );
+                    }),
                   const SizedBox(height: 24),
 
                   // Help & Support
@@ -2028,5 +2077,36 @@ class HomePage extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  // Helper methods for activity display
+  IconData _getIconForStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'in progress':
+      case 'processing':
+        return Icons.card_travel;
+      case 'completed':
+        return Icons.check_circle;
+      case 'pending':
+      case 'submitted':
+        return Icons.pending_actions;
+      default:
+        return Icons.description;
+    }
+  }
+
+  Color _getColorForStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'in progress':
+      case 'processing':
+        return Colors.blue;
+      case 'completed':
+        return Colors.green;
+      case 'pending':
+      case 'submitted':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
   }
 }
