@@ -71,6 +71,31 @@ class CommunityPage extends ConsumerStatefulWidget {
     );
   }
 
+  // Helper method to create post with user info
+  static Post _createPostWithUserInfo(
+    WidgetRef ref, {
+    required String content,
+    String? imageUrl,
+  }) {
+    final profile = ref.read(userProfileProvider);
+    return Post(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      userId: profile?.id ?? 'anonymous',
+      userName: profile?.name ?? 'Anonymous User',
+      userTitle: profile?.title ?? 'Member',
+      userAvatar: profile?.photoUrl,
+      content: content,
+      createdAt: DateTime.now(),
+      likesCount: 0,
+      commentsCount: 0,
+      sharesCount: 0,
+      likedBy: [],
+      imageUrl: imageUrl,
+      industries: profile?.industries ?? [],
+      isVerified: profile?.isVerified ?? false,
+    );
+  }
+
   // Static helper methods to show dialogs
   static void _showArticleEditor(BuildContext context, WidgetRef ref) {
     final titleController = TextEditingController();
@@ -138,17 +163,9 @@ class CommunityPage extends ConsumerStatefulWidget {
                       return;
                     }
 
-                    final newPost = Post(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      userId: 'demo_user',
-                      userName: 'David Chen',
-                      userTitle: 'Entrepreneur | WAZEET Founder',
-                      content:
-                          '📝 ${titleController.text}\n\n${contentController.text}',
-                      createdAt: DateTime.now(),
-                      likesCount: 0,
-                      commentsCount: 0,
-                      imageUrl: null,
+                    final newPost = _createPostWithUserInfo(
+                      ref,
+                      content:'📝 ${titleController.text}\n\n${contentController.text}',
                     );
 
                     ref.read(communityPostsProvider.notifier).addPost(newPost);
@@ -222,17 +239,9 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
 
     setState(() => _posting = true);
 
-    final newPost = Post(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      userId: 'demo_user',
-      userName: 'David Chen',
-      userTitle: 'Entrepreneur | WAZEET Founder',
+    final newPost = CommunityPage._createPostWithUserInfo(
+      ref,
       content: _composer.text.trim(),
-      createdAt: DateTime.now(),
-      likesCount: 0,
-      commentsCount: 0,
-      sharesCount: 0,
-      likedBy: [],
     );
 
     ref.read(communityPostsProvider.notifier).addPost(newPost);
@@ -312,17 +321,9 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                       return;
                     }
 
-                    final newPost = Post(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      userId: 'demo_user',
-                      userName: 'David Chen',
-                      userTitle: 'Entrepreneur | WAZEET Founder',
-                      content:
-                          '📝 ${titleController.text}\n\n${contentController.text}',
-                      createdAt: DateTime.now(),
-                      likesCount: 0,
-                      commentsCount: 0,
-                      imageUrl: null,
+                    final newPost = _createPostWithUserInfo(
+                      ref,
+                      content:'📝 ${titleController.text}\n\n${contentController.text}',
                     );
 
                     ref.read(communityPostsProvider.notifier).addPost(newPost);
@@ -450,16 +451,9 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                     final pollContent =
                         '📊 ${questionController.text}\n\n${options.asMap().entries.map((e) => '${e.key + 1}. ${e.value}').join('\n')}';
 
-                    final newPost = Post(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      userId: 'demo_user',
-                      userName: 'David Chen',
-                      userTitle: 'Entrepreneur | WAZEET Founder',
-                      content: pollContent,
-                      createdAt: DateTime.now(),
-                      likesCount: 0,
-                      commentsCount: 0,
-                      imageUrl: null,
+                    final newPost = _createPostWithUserInfo(
+                      ref,
+                      content:pollContent,
                     );
 
                     ref.read(communityPostsProvider.notifier).addPost(newPost);
@@ -608,17 +602,10 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                       final eventContent =
                           '🎉 ${titleController.text}\n\n${descriptionController.text.trim().isNotEmpty ? '${descriptionController.text}\n\n' : ''}📍 ${locationController.text.trim().isNotEmpty ? locationController.text : "TBA"}\n📅 ${selectedDate.day}/${selectedDate.month}/${selectedDate.year} at ${selectedTime.format(context)}';
 
-                      final newPost = Post(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        userId: 'demo_user',
-                        userName: 'David Chen',
-                        userTitle: 'Entrepreneur | WAZEET Founder',
-                        content: eventContent,
-                        createdAt: DateTime.now(),
-                        likesCount: 0,
-                        commentsCount: 0,
-                        imageUrl: null,
-                      );
+                      final newPost = _createPostWithUserInfo(
+                      ref,
+                      content:eventContent,
+                    );
 
                       ref
                           .read(communityPostsProvider.notifier)
@@ -728,17 +715,10 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                       return;
                     }
 
-                    final newPost = Post(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      userId: 'demo_user',
-                      userName: 'David Chen',
-                      userTitle: 'Entrepreneur | WAZEET Founder',
+                    final newPost = _createPostWithUserInfo(
+                      ref,
                       content: '📷 ${captionController.text}',
-                      createdAt: DateTime.now(),
-                      likesCount: 0,
-                      commentsCount: 0,
-                      imageUrl:
-                          'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800',
+                      imageUrl: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800',
                     );
 
                     ref.read(communityPostsProvider.notifier).addPost(newPost);
