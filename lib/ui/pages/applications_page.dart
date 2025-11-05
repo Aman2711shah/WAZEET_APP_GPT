@@ -50,10 +50,14 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
       final doc = await FirebaseFirestore.instance
           .collection('service_requests')
           .doc(id)
-          .get();
+          .get()
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () => throw Exception('Request timed out'),
+          );
       if (!doc.exists) {
         setState(() {
-          _error = 'No application found for this ID';
+          _error = 'No application found for this ID. Please check your ID and try again.';
           _loading = false;
         });
         return;
@@ -63,8 +67,14 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
         _loading = false;
       });
     } catch (e) {
+      String errorMessage = 'Something went wrong. Please try again.';
+      if (e.toString().contains('timeout') || e.toString().contains('network')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      } else if (e.toString().contains('permission')) {
+        errorMessage = 'Access denied. Please contact support.';
+      }
       setState(() {
-        _error = 'Something went wrong. Please try again.';
+        _error = errorMessage;
         _loading = false;
       });
     }
@@ -219,8 +229,31 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
                     ],
                   ),
                   if (_error != null) ...[
-                    const SizedBox(height: 8),
-                    Text(_error!, style: const TextStyle(color: Colors.red)),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _error!,
+                              style: TextStyle(color: Colors.red.shade700, fontSize: 13),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: _track,
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ],
               ),
