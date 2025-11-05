@@ -32,6 +32,7 @@ class UserProfile {
   final int postsCount;
   final DateTime? joinedDate;
   final bool isVerified;
+  final bool isAdmin; // Admin access flag
 
   const UserProfile({
     required this.id,
@@ -65,6 +66,7 @@ class UserProfile {
     this.postsCount = 0,
     this.joinedDate,
     this.isVerified = false,
+    this.isAdmin = false, // Default to false for security
   });
 
   UserProfile copyWith({
@@ -99,6 +101,7 @@ class UserProfile {
     int? postsCount,
     DateTime? joinedDate,
     bool? isVerified,
+    bool? isAdmin,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -132,6 +135,7 @@ class UserProfile {
       postsCount: postsCount ?? this.postsCount,
       joinedDate: joinedDate ?? this.joinedDate,
       isVerified: isVerified ?? this.isVerified,
+      isAdmin: isAdmin ?? this.isAdmin,
     );
   }
 
@@ -176,6 +180,7 @@ class UserProfile {
       'postsCount': postsCount,
       'joinedDate': joinedDate?.toIso8601String(),
       'isVerified': isVerified,
+      'isAdmin': isAdmin,
     };
   }
 
@@ -214,6 +219,7 @@ class UserProfile {
           ? DateTime.parse(json['joinedDate'] as String)
           : null,
       isVerified: json['isVerified'] as bool? ?? false,
+      isAdmin: json['isAdmin'] as bool? ?? false, // Default to false for security
     );
   }
 }
