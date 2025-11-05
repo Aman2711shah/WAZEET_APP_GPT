@@ -340,16 +340,24 @@ class HomePage extends ConsumerWidget {
                         Icons.card_travel,
                         Colors.blue,
                         () {
-                          final visaCategory = serviceCategories.firstWhere(
-                            (cat) => cat.id == 'visa',
-                          );
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ServiceTypePage(category: visaCategory),
-                            ),
-                          );
+                          try {
+                            final visaCategory = serviceCategories.firstWhere(
+                              (cat) => cat.id == 'visa',
+                            );
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ServiceTypePage(category: visaCategory),
+                              ),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Service category not available'),
+                              ),
+                            );
+                          }
                         },
                       ),
                       _buildQuickActionCard(
@@ -372,16 +380,24 @@ class HomePage extends ConsumerWidget {
                         Icons.receipt_long,
                         Colors.deepPurple,
                         () {
-                          final taxCategory = serviceCategories.firstWhere(
-                            (cat) => cat.id == 'tax',
-                          );
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ServiceTypePage(category: taxCategory),
-                            ),
-                          );
+                          try {
+                            final taxCategory = serviceCategories.firstWhere(
+                              (cat) => cat.id == 'tax',
+                            );
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ServiceTypePage(category: taxCategory),
+                              ),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Service category not available'),
+                              ),
+                            );
+                          }
                         },
                       ),
                       _buildQuickActionCard(
@@ -390,15 +406,23 @@ class HomePage extends ConsumerWidget {
                         Icons.calculate,
                         Colors.teal,
                         () {
-                          final accountingCategory = serviceCategories
-                              .firstWhere((cat) => cat.id == 'accounting');
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ServiceTypePage(category: accountingCategory),
-                            ),
-                          );
+                          try {
+                            final accountingCategory = serviceCategories
+                                .firstWhere((cat) => cat.id == 'accounting');
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ServiceTypePage(category: accountingCategory),
+                              ),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Service category not available'),
+                              ),
+                            );
+                          }
                         },
                       ),
                       _buildQuickActionCard(
