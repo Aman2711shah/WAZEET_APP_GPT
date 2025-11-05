@@ -384,6 +384,21 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       prefixIcon: Icon(Icons.phone_outlined),
                     ),
                     keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value != null && value.trim().isNotEmpty) {
+                        // Remove spaces for validation
+                        final phone = value.replaceAll(' ', '');
+                        // Check if it's a valid number (7-10 digits)
+                        if (phone.length < 7 || phone.length > 10) {
+                          return 'Please enter a valid phone number';
+                        }
+                        // Check if it contains only digits
+                        if (!RegExp(r'^\d+$').hasMatch(phone)) {
+                          return 'Phone number should contain only digits';
+                        }
+                      }
+                      return null;
+                    },
                   ),
                 ),
               ],

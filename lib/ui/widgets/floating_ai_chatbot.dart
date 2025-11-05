@@ -190,8 +190,12 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
   Widget build(BuildContext context) {
     double safeDockBottom() {
       final padding = MediaQuery.of(context).padding.bottom;
+      final screenHeight = MediaQuery.of(context).size.height;
+      
       // Keep the button clear of the bottom nav and device insets
-      return 20 + kBottomNavigationBarHeight + padding;
+      // Add extra padding on small screens to prevent overlap
+      final extraPadding = screenHeight < 700 ? 10.0 : 0.0;
+      return 20 + kBottomNavigationBarHeight + padding + extraPadding;
     }
 
     return Stack(
