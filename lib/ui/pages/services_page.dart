@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/services_provider.dart';
 import 'service_type_page.dart';
-import '../theme.dart';
+import '../responsive.dart';
+import '../theme/responsive_text.dart';
+import '../widgets/back_to_top_button.dart';
 
 class ServicesPage extends ConsumerStatefulWidget {
   const ServicesPage({super.key});
@@ -12,6 +14,7 @@ class ServicesPage extends ConsumerStatefulWidget {
 
 class _ServicesPageState extends ConsumerState<ServicesPage> {
   final _search = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   Widget build(BuildContext context) {
@@ -24,63 +27,76 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
             );
           }).toList();
 
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      floatingActionButton: BackToTopButton(controller: _scrollController),
       body: CustomScrollView(
+        controller: _scrollController,
         slivers: [
           SliverAppBar(
-            expandedHeight: 280,
+            expandedHeight: Responsive.heroHeight(context),
             pinned: true,
             floating: false,
-            backgroundColor: AppColors.purple,
+            backgroundColor: scheme.primary,
             flexibleSpace: FlexibleSpaceBar(
-              title: const Text(
+              title: Text(
                 'Services',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: scheme.onPrimary,
                   fontWeight: FontWeight.bold,
-                  shadows: [Shadow(color: Colors.black38, blurRadius: 8)],
+                  fontSize: rFont(context, sm: 16, md: 18, lg: 20),
+                  shadows: const [Shadow(color: Colors.black38, blurRadius: 8)],
                 ),
               ),
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.network(
-                    'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1600&h=800&fit=crop',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: AppColors.purple.withValues(alpha: 0.3),
-                      );
-                    },
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.3),
-                          AppColors.purple.withValues(alpha: 0.85),
-                        ],
+              background: SafeArea(
+                top: true,
+                child: Stack(
+                  clipBehavior: Clip.hardEdge,
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1600&h=800&fit=crop',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: scheme.primary.withValues(alpha: 0.3),
+                        );
+                      },
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.35),
+                            scheme.primary.withValues(alpha: 0.5),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  Positioned(
-                    left: 16,
-                    right: 16,
-                    bottom: 56,
-                    child: Text(
-                      'Professional business services in Dubai',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.95),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.3,
+                    Positioned(
+                      left: 16,
+                      right: 16,
+                      bottom: 56,
+                      child: Text(
+                        'Professional business services in Dubai',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.95),
+                          fontSize: rFont(context, sm: 12, md: 13, lg: 14),
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.3,
+                        ),
+                        maxLines: 2,
+                        softWrap: true,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -146,7 +162,7 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.purple.withValues(alpha: .08),
+                        color: scheme.primary.withValues(alpha: .08),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -168,8 +184,8 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                               );
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.purple,
-                              foregroundColor: Colors.white,
+                              backgroundColor: scheme.primary,
+                              foregroundColor: scheme.onPrimary,
                             ),
                             child: const Text('Contact Us'),
                           ),
@@ -191,7 +207,7 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: Colors.grey.shade200),
+                      side: BorderSide(color: scheme.outlineVariant),
                     ),
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(
@@ -224,14 +240,14 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                       subtitle: Text(
                         '$totalServices services available',
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: scheme.onSurfaceVariant,
                           fontSize: 13,
                         ),
                       ),
                       trailing: Icon(
                         Icons.arrow_forward_ios,
                         size: 16,
-                        color: Colors.grey.shade400,
+                        color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
                       ),
                       onTap: () {
                         Navigator.push(

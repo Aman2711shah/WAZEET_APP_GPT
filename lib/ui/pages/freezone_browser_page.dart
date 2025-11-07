@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../../models/freezone.dart';
+import '../../models/freezone_package.dart';
 import '../../services/freezone_service.dart';
+import '../../services/freezone_package_service.dart';
+import '../../services/freezone_normalizer.dart';
 import '../widgets/freezone_card.dart';
 import 'freezone_detail_page.dart';
 
@@ -25,6 +28,7 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final FreeZoneService _service = FreeZoneService();
+  final FreezonePackageService _packageService = FreezonePackageService();
 
   // Search and filter state
   final TextEditingController _searchController = TextEditingController();
@@ -43,6 +47,10 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
   // Industry filter for "By Industry" tab
   String? _selectedIndustry;
 
+  // AI Recommendations mode
+  bool _recommendationsMode = false;
+  List<String> _normalizedRecommendations = [];
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +68,18 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
     }
     if (widget.minVisas != null) {
       _minVisas = widget.minVisas;
+    }
+
+    // Handle AI recommendations
+    if (widget.prefilledRecommendations != null &&
+        widget.prefilledRecommendations!.isNotEmpty) {
+      _recommendationsMode = true;
+      _normalizedRecommendations = FreezoneNormalizer.normalizeList(
+        widget.prefilledRecommendations!,
+      );
+      debugPrint('🎯 AI Recommendations Mode Activated');
+      debugPrint('📋 Raw recommendations: ${widget.prefilledRecommendations}');
+      debugPrint('🔄 Normalized recommendations: $_normalizedRecommendations');
     }
   }
 
@@ -312,6 +332,63 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
                       ],
                     ),
                   ),
+                // AI Recommendations mode banner
+                if (_recommendationsMode)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.orange.withValues(alpha: 0.15),
+                          Colors.deepOrange.withValues(alpha: 0.1),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.orange.withValues(alpha: 0.3),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.auto_awesome,
+                          color: Colors.orange,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'Showing AI recommendations',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: Colors.deepOrange,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _clearRecommendationsMode,
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.deepOrange,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                          ),
+                          child: const Text(
+                            'Clear All',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 // Compare mode banner
                 if (_compareMode)
                   Container(
@@ -374,16 +451,16 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
   Widget _buildByEmirate() {
     return StreamBuilder<List<FreeZone>>(
       stream: _service.getAllZones(),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+      builder: (context, zonesSnapshot) {
+        if (zonesSnapshot.hasError) {
+          return Center(child: Text('Error: ${zonesSnapshot.error}'));
         }
 
-        if (!snapshot.hasData) {
+        if (!zonesSnapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        var zones = snapshot.data!;
+        var zones = zonesSnapshot.data!;
         zones = _applySearchAndFilters(zones);
 
         // Group by emirate
@@ -398,46 +475,243 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
 
         final sortedEmirates = byEmirate.keys.toList()..sort();
 
-        return ListView.builder(
-          padding: const EdgeInsets.only(bottom: 16),
-          itemCount: sortedEmirates.length,
-          itemBuilder: (context, index) {
-            final emirate = sortedEmirates[index];
-            final emirateZones = byEmirate[emirate]!;
+        return StreamBuilder<Map<String, List<FreezonePackage>>>(
+          stream: _packageService.getAllPackagesGrouped(),
+          builder: (context, packagesSnapshot) {
+            final packagesMap = packagesSnapshot.data ?? {};
 
-            return Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: ExpansionTile(
-                title: Text(
-                  _getEmirateDisplayName(emirate),
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text('${emirateZones.length} free zones'),
-                leading: Icon(Icons.place, color: AppColors.primary),
-                children: emirateZones
-                    .map(
-                      (zone) => FreeZoneCard(
-                        zone: zone,
-                        onTap: () => _openZoneDetails(zone),
-                        compareMode: _compareMode,
-                        isSelected: _selectedZones.contains(zone.id),
-                        onSelect: (selected) {
-                          setState(() {
-                            if (selected == true) {
-                              _selectedZones.add(zone.id);
-                            } else {
-                              _selectedZones.remove(zone.id);
-                            }
-                          });
-                        },
+            return ListView.builder(
+              padding: const EdgeInsets.only(bottom: 16),
+              itemCount: sortedEmirates.length,
+              itemBuilder: (context, index) {
+                final emirate = sortedEmirates[index];
+                final emirateZones = byEmirate[emirate]!;
+
+                return Card(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                  ),
+                  child: ExpansionTile(
+                    tilePadding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                    title: Text(
+                      _getEmirateDisplayName(emirate),
+                      style: AppTextStyle.titleLarge.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
-                    )
-                    .toList(),
-              ),
+                    ),
+                    subtitle: Text(
+                      '${emirateZones.length} free zones',
+                      style: AppTextStyle.bodyMedium.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    leading: Container(
+                      padding: EdgeInsets.all(AppSpacing.sm),
+                      decoration: BoxDecoration(
+                        gradient: AppColors.gradientPurple,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: Icon(
+                        Icons.location_city_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    children: emirateZones.map((zone) {
+                      final zonePackages = packagesMap[zone.abbreviation] ?? [];
+                      return _buildZoneWithPackages(zone, zonePackages);
+                    }).toList(),
+                  ),
+                );
+              },
             );
           },
         );
       },
+    );
+  }
+
+  Widget _buildZoneWithPackages(FreeZone zone, List<FreezonePackage> packages) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Freezone card
+        FreeZoneCard(
+          zone: zone,
+          onTap: () => _openZoneDetails(zone),
+          compareMode: _compareMode,
+          isSelected: _selectedZones.contains(zone.id),
+          onSelect: (selected) {
+            setState(() {
+              if (selected == true) {
+                _selectedZones.add(zone.id);
+              } else {
+                _selectedZones.remove(zone.id);
+              }
+            });
+          },
+        ),
+
+        // Packages section
+        if (packages.isNotEmpty) ...[
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.xs,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.inventory_2_outlined,
+                  size: 16,
+                  color: AppColors.purple,
+                ),
+                SizedBox(width: AppSpacing.xs),
+                Text(
+                  'Available Packages (${packages.length})',
+                  style: AppTextStyle.labelMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.purple,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            height: 140,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              itemCount: packages.length,
+              itemBuilder: (context, index) {
+                final package = packages[index];
+                return _buildPackageCard(package);
+              },
+            ),
+          ),
+          SizedBox(height: AppSpacing.sm),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildPackageCard(FreezonePackage package) {
+    return Container(
+      width: 280,
+      margin: EdgeInsets.only(right: AppSpacing.md),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.white, AppColors.purple.withValues(alpha: 0.05)],
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: AppColors.purple.withValues(alpha: 0.2),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.purple.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Package name
+          Text(
+            package.packageName,
+            style: AppTextStyle.titleMedium.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.purple,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          SizedBox(height: AppSpacing.xs),
+
+          // Price
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xs,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.purple.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: Text(
+              package.formattedPrice,
+              style: AppTextStyle.titleMedium.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.purple,
+              ),
+            ),
+          ),
+          SizedBox(height: AppSpacing.sm),
+
+          // Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildPackageDetail(
+                  Icons.business_center_outlined,
+                  'Activities: ${package.noOfActivitiesAllowed}',
+                ),
+                SizedBox(height: AppSpacing.xs),
+                _buildPackageDetail(
+                  Icons.people_outline,
+                  'Shareholders: ${package.noOfShareholdersAllowed}',
+                ),
+                SizedBox(height: AppSpacing.xs),
+                _buildPackageDetail(
+                  Icons.card_travel_outlined,
+                  'Visas: ${package.noOfVisasIncluded}',
+                ),
+                SizedBox(height: AppSpacing.xs),
+                _buildPackageDetail(
+                  Icons.calendar_today_outlined,
+                  '${package.tenureYears} year(s)',
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPackageDetail(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: AppColors.textSecondary),
+        SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: Text(
+            text,
+            style: AppTextStyle.bodySmall.copyWith(
+              color: AppColors.textSecondary,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 
@@ -609,7 +883,44 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
   List<FreeZone> _applySearchAndFilters(List<FreeZone> zones) {
     var filtered = zones;
 
-    // Apply search
+    // If in recommendations mode, filter by AI recommendations first
+    if (_recommendationsMode && _normalizedRecommendations.isNotEmpty) {
+      debugPrint('🔍 Filtering ${zones.length} zones in recommendations mode');
+      debugPrint('🎯 Looking for: $_normalizedRecommendations');
+
+      filtered = filtered.where((zone) {
+        // Match against normalized IDs
+        final normalizedZoneId = FreezoneNormalizer.normalize(zone.id);
+        final normalizedZoneName = FreezoneNormalizer.normalize(zone.name);
+        final normalizedAbbr = FreezoneNormalizer.normalize(zone.abbreviation);
+
+        final matches = _normalizedRecommendations.any(
+          (recId) =>
+              recId == normalizedZoneId ||
+              recId == normalizedZoneName ||
+              recId == normalizedAbbr ||
+              normalizedZoneId.contains(recId) ||
+              normalizedZoneName.contains(recId) ||
+              normalizedAbbr.contains(recId),
+        );
+
+        if (matches) {
+          debugPrint(
+            '✅ Match found: ${zone.name} (id: ${zone.id}, abbr: ${zone.abbreviation})',
+          );
+        }
+
+        return matches;
+      }).toList();
+
+      debugPrint('📊 Found ${filtered.length} matching zones');
+
+      // Don't apply other filters in recommendations mode
+      // Apply sorting and return
+      return _service.sortZones(filtered, _sortBy);
+    }
+
+    // Normal filtering mode: apply search
     if (_searchQuery.isNotEmpty) {
       final queryLower = _searchQuery.toLowerCase();
       filtered = filtered
@@ -635,6 +946,13 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
     filtered = _service.sortZones(filtered, _sortBy);
 
     return filtered;
+  }
+
+  void _clearRecommendationsMode() {
+    setState(() {
+      _recommendationsMode = false;
+      _normalizedRecommendations = [];
+    });
   }
 
   void _openZoneDetails(FreeZone zone) {

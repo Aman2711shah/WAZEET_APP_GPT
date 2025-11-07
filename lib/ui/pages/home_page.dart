@@ -3,11 +3,15 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wazeet/company_setup_flow.dart';
 import '../../providers/services_provider.dart';
+import '../../providers/user_profile_provider.dart';
 import 'service_type_page.dart';
-import 'freezone_selection_page.dart';
 import 'freezone_browser_page.dart';
 import 'freezone_investment_map_page.dart';
+import 'ai_business_chat_page.dart';
+import 'edit_profile_page.dart';
+import '../widgets/hero/hero_header.dart';
 import '../theme.dart';
+import '../animations/page_transitions.dart';
 
 class HomePage extends ConsumerWidget {
   final Function(int)? onNavigateToTab;
@@ -17,29 +21,41 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final serviceCategories = ref.watch(servicesProvider);
+    final profile = ref.watch(userProfileProvider);
+    final userName = profile?.name ?? 'User';
+
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 320,
+            expandedHeight: 220,
             pinned: true,
             floating: false,
-            backgroundColor: AppColors.purple,
+            backgroundColor: scheme.primary,
             actions: [
+              // Profile icon in top right corner
               Padding(
-                padding: const EdgeInsets.only(right: 12),
+                padding: EdgeInsets.only(right: AppSpacing.md),
                 child: GestureDetector(
-                  onTap: () => _showProfileMessage(context),
+                  onTap: () {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (context.mounted) {
+                        context.pushWithSlide(const EditProfilePage());
+                      }
+                    });
+                  },
                   child: CircleAvatar(
                     radius: 20,
                     backgroundColor: Colors.white,
                     child: Text(
-                      'D',
+                      userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
                       style: TextStyle(
                         fontSize: 18,
-                        color: AppColors.purple,
+                        color: scheme.primary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -48,28 +64,19 @@ class HomePage extends ConsumerWidget {
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              title: const Text(
-                '✨ WAZEET',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  shadows: [Shadow(color: Colors.black38, blurRadius: 8)],
-                ),
-              ),
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // Gradient background instead of image
+                  // Gradient background
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          const Color(0xFF6200EE),
-                          const Color(0xFF9D4EDD),
-                          const Color(0xFFE0AAFF),
+                          scheme.primary,
+                          scheme.primary.withValues(alpha: 0.75),
+                          scheme.primary.withValues(alpha: 0.5),
                         ],
                       ),
                     ),
@@ -111,69 +118,22 @@ class HomePage extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  // Content overlay
+                  // Hero Header - No overlap!
                   Positioned(
-                    left: 20,
-                    right: 20,
-                    bottom: 70,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Welcome Back! 👋',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            height: 1.2,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withValues(alpha: 0.3),
-                                blurRadius: 10,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.rocket_launch,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Your Business Journey Starts Here',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.95),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                    left: 0,
+                    right: 0,
+                    bottom: 24,
+                    child: HeroHeader(
+                      title: 'Welcome Back!',
+                      brand: 'WAZEET',
+                      subtitle: 'Your Business Journey Starts',
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
                     ),
                   ),
                 ],
               ),
+              titlePadding: EdgeInsets.zero,
+              title: const SizedBox.shrink(), // Hide default title
             ),
           ),
           SliverToBoxAdapter(
@@ -182,137 +142,52 @@ class HomePage extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Quick Stats Card
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.purple,
-                          AppColors.purple.withValues(alpha: 0.7),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.purple.withValues(alpha: 0.3),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Your Business Journey',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildStatItem(
-                                '3',
-                                'Active Services',
-                                Icons.check_circle,
-                              ),
-                            ),
-                            Container(
-                              width: 1,
-                              height: 40,
-                              color: Colors.white.withValues(alpha: 0.3),
-                            ),
-                            Expanded(
-                              child: _buildStatItem(
-                                '5',
-                                'Pending Tasks',
-                                Icons.pending_actions,
-                              ),
-                            ),
-                            Container(
-                              width: 1,
-                              height: 40,
-                              color: Colors.white.withValues(alpha: 0.3),
-                            ),
-                            Expanded(
-                              child: _buildStatItem(
-                                '12',
-                                'Documents',
-                                Icons.description,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Quick Actions
+                  // Quick Actions Header
                   Row(
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppColors.purple.withValues(alpha: 0.15),
-                                  AppColors.purple.withValues(alpha: 0.05),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              Icons.flash_on,
-                              color: AppColors.purple,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          const Text(
-                            'Quick Actions',
-                            style: TextStyle(
-                              fontSize: 19,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
                       Container(
+                        padding: EdgeInsets.all(AppSpacing.sm),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
+                              AppColors.purple.withValues(alpha: 0.2),
                               AppColors.purple.withValues(alpha: 0.1),
-                              AppColors.purple.withValues(alpha: 0.05),
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
-                        child: TextButton.icon(
-                          onPressed: () {
-                            // Navigate to services tab (index 1)
-                            onNavigateToTab?.call(1);
-                          },
-                          icon: Icon(
-                            Icons.arrow_forward,
-                            color: AppColors.purple,
-                            size: 16,
+                        child: Icon(
+                          Icons.flash_on_rounded,
+                          color: AppColors.purple,
+                          size: 24,
+                        ),
+                      ),
+                      SizedBox(width: AppSpacing.md),
+                      Text(
+                        'Quick Actions',
+                        style: AppTextStyle.headlineSmall.copyWith(
+                          color: AppColors.text,
+                        ),
+                      ),
+                      const Spacer(),
+                      TextButton.icon(
+                        onPressed: () {
+                          // Navigate to services tab (index 1)
+                          onNavigateToTab?.call(1);
+                        },
+                        icon: Icon(Icons.arrow_forward_rounded, size: 18),
+                        label: Text('View All'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.purple,
+                          backgroundColor: AppColors.purple.withValues(
+                            alpha: 0.1,
                           ),
-                          label: Text(
-                            'View All',
-                            style: TextStyle(
-                              color: AppColors.purple,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                            vertical: AppSpacing.sm,
                           ),
                         ),
                       ),
@@ -356,14 +231,9 @@ class HomePage extends ConsumerWidget {
                         context,
                         'Find Your\nFree Zone',
                         Icons.explore,
-                        AppColors.purple,
+                        scheme.primary,
                         () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const FreezoneBrowserPage(),
-                            ),
-                          );
+                          context.pushWithSlide(const FreezoneBrowserPage());
                         },
                       ),
                       _buildQuickActionCard(
@@ -403,50 +273,42 @@ class HomePage extends ConsumerWidget {
                       ),
                       _buildQuickActionCard(
                         context,
-                        'Freezone\nFinder',
-                        Icons.location_city,
-                        Colors.pink,
+                        'AI Business\nExpert',
+                        Icons.smart_toy,
+                        const Color(0xFF06B6D4), // cyan
                         () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const FreezoneSelectionPage(),
-                            ),
-                          );
+                          context.pushWithSlide(const AIBusinessChatPage());
                         },
                       ),
                     ],
                   ),
                   const SizedBox(height: 28),
 
-                  // Tips & Insights
+                  // Tips & Insights Section
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: EdgeInsets.all(AppSpacing.sm),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              Colors.amber.withValues(alpha: 0.2),
-                              Colors.amber.withValues(alpha: 0.08),
+                              AppColors.gold.withValues(alpha: 0.25),
+                              AppColors.gold.withValues(alpha: 0.12),
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
-                        child: const Icon(
-                          Icons.lightbulb,
-                          color: Colors.amber,
-                          size: 20,
+                        child: Icon(
+                          Icons.lightbulb_rounded,
+                          color: AppColors.gold,
+                          size: 24,
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      const Text(
+                      SizedBox(width: AppSpacing.md),
+                      Text(
                         'Tips & Insights',
-                        style: TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.3,
+                        style: AppTextStyle.headlineSmall.copyWith(
+                          color: AppColors.text,
                         ),
                       ),
                     ],
@@ -459,22 +321,18 @@ class HomePage extends ConsumerWidget {
                       children: [
                         _buildAskAdvisorCard(context),
                         _buildTipCard(
-                          '�️',
+                          '🗺️',
                           'Investment Map',
-                          'Anchor tenants & revenue proxies across UAE free zones',
-                          Colors.deepPurple,
+                          'Explore investment opportunities across UAE freezones',
+                          Colors.purple,
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const FreezoneInvestmentMapPage(),
-                              ),
+                            context.pushWithSlide(
+                              const FreezoneInvestmentMapPage(),
                             );
                           },
                         ),
                         _buildTipCard(
-                          '�💼',
+                          '💼',
                           'Corporate Tax',
                           'UAE Corporate Tax rate: 9% for taxable income above AED 375,000',
                           Colors.blue,
@@ -503,35 +361,34 @@ class HomePage extends ConsumerWidget {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: EdgeInsets.all(AppSpacing.sm),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              Colors.blue.withValues(alpha: 0.15),
-                              Colors.blue.withValues(alpha: 0.05),
+                              AppColors.blue.withValues(alpha: 0.2),
+                              AppColors.blue.withValues(alpha: 0.1),
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
-                        child: const Icon(
-                          Icons.history,
-                          color: Colors.blue,
-                          size: 20,
+                        child: Icon(
+                          Icons.history_rounded,
+                          color: AppColors.blue,
+                          size: 24,
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      const Text(
+                      SizedBox(width: AppSpacing.md),
+                      Text(
                         'Recent Activity',
-                        style: TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.3,
+                        style: AppTextStyle.headlineSmall.copyWith(
+                          color: AppColors.text,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   _buildActivityCard(
+                    context,
                     'Employment Visa Renewal',
                     'In Progress',
                     'Expected completion: 3 days',
@@ -540,6 +397,7 @@ class HomePage extends ConsumerWidget {
                     0.7,
                   ),
                   _buildActivityCard(
+                    context,
                     'VAT Registration',
                     'Documents Required',
                     '2 documents pending',
@@ -548,6 +406,7 @@ class HomePage extends ConsumerWidget {
                     0.3,
                   ),
                   _buildActivityCard(
+                    context,
                     'Trade License Renewal',
                     'Completed',
                     'Completed on Oct 25, 2025',
@@ -561,26 +420,26 @@ class HomePage extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: scheme.surface,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade200),
+                      border: Border.all(color: scheme.outlineVariant),
                     ),
                     child: Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppColors.purple.withValues(alpha: 0.1),
+                            color: scheme.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
                             Icons.support_agent,
-                            color: AppColors.purple,
+                            color: scheme.primary,
                             size: 28,
                           ),
                         ),
                         const SizedBox(width: 16),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -589,13 +448,14 @@ class HomePage extends ConsumerWidget {
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
+                                  color: scheme.onSurface,
                                 ),
                               ),
-                              SizedBox(height: 4),
+                              const SizedBox(height: 4),
                               Text(
                                 'Our support team is here 24/7',
                                 style: TextStyle(
-                                  color: Colors.grey,
+                                  color: scheme.onSurfaceVariant,
                                   fontSize: 13,
                                 ),
                               ),
@@ -611,8 +471,8 @@ class HomePage extends ConsumerWidget {
                             );
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.purple,
-                            foregroundColor: Colors.white,
+                            backgroundColor: scheme.primary,
+                            foregroundColor: scheme.onPrimary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -633,12 +493,10 @@ class HomePage extends ConsumerWidget {
 
   // Find Your Free Zone entry card (replacing AI Advisor button)
   Widget _buildAskAdvisorCard(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const FreezoneBrowserPage()),
-        );
+        context.pushWithSlide(const FreezoneBrowserPage());
       },
       borderRadius: BorderRadius.circular(18),
       child: Container(
@@ -647,17 +505,14 @@ class HomePage extends ConsumerWidget {
         margin: const EdgeInsets.only(right: 14),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              AppColors.purple,
-              AppColors.purple.withValues(alpha: 0.85),
-            ],
+            colors: [scheme.primary, scheme.primary.withValues(alpha: 0.85)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: AppColors.purple.withValues(alpha: 0.35),
+              color: scheme.primary.withValues(alpha: 0.35),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -707,37 +562,6 @@ class HomePage extends ConsumerWidget {
 
   // (AI Advisor dialog removed as the entry is now the Free Zone browser)
 
-  Widget _buildStatItem(String value, String label, IconData icon) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.white, size: 20),
-            const SizedBox(width: 6),
-            Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.9),
-            fontSize: 12,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
   Widget _buildQuickActionCard(
     BuildContext context,
     String title,
@@ -745,71 +569,84 @@ class HomePage extends ConsumerWidget {
     Color color,
     VoidCallback onTap,
   ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Colors.white, color.withValues(alpha: 0.02)],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.15), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.1),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                isDark ? AppColors.darkCard : Colors.white,
+                color.withValues(alpha: isDark ? 0.08 : 0.03),
+              ],
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    color.withValues(alpha: 0.15),
-                    color.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(
+              color: color.withValues(alpha: isDark ? 0.2 : 0.15),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.15),
+                blurRadius: 16,
+                offset: Offset(0, AppSpacing.xs),
+                spreadRadius: 0,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      color.withValues(alpha: 0.2),
+                      color.withValues(alpha: 0.12),
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: Offset(0, AppSpacing.xs),
+                    ),
                   ],
                 ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                child: Icon(icon, color: color, size: 32),
+              ),
+              SizedBox(height: AppSpacing.md),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyle.labelLarge.copyWith(
+                    color: isDark ? AppColors.darkText : AppColors.text,
+                    fontSize: 13,
                   ),
-                ],
-              ),
-              child: Icon(icon, color: color, size: 30),
-            ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.2,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 2,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildActivityCard(
+    BuildContext context,
     String title,
     String status,
     String subtitle,
@@ -817,104 +654,110 @@ class HomePage extends ConsumerWidget {
     Color color,
     double progress,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      margin: EdgeInsets.only(bottom: AppSpacing.md),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.white, color.withValues(alpha: 0.02)],
+          colors: [
+            isDark ? AppColors.darkCard : Colors.white,
+            color.withValues(alpha: isDark ? 0.08 : 0.03),
+          ],
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.2), width: 1.5),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: color.withValues(alpha: isDark ? 0.25 : 0.2),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            color: color.withValues(alpha: 0.12),
+            blurRadius: 12,
+            offset: Offset(0, AppSpacing.xs),
+            spreadRadius: 0,
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(AppSpacing.md),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          color.withValues(alpha: 0.15),
-                          color.withValues(alpha: 0.08),
+                          color.withValues(alpha: 0.2),
+                          color.withValues(alpha: 0.12),
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                       boxShadow: [
                         BoxShadow(
-                          color: color.withValues(alpha: 0.2),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
+                          color: color.withValues(alpha: 0.25),
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: Icon(icon, color: color, size: 24),
+                    child: Icon(icon, color: color, size: 26),
                   ),
-                  const SizedBox(width: 14),
+                  SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15.5,
-                            letterSpacing: 0.2,
+                          style: AppTextStyle.titleMedium.copyWith(
+                            color: isDark ? AppColors.darkText : AppColors.text,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: AppSpacing.xs),
                         Text(
                           subtitle,
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 12.5,
+                          style: AppTextStyle.bodySmall.copyWith(
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.textSecondary,
                           ),
                         ),
                       ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
                     ),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          color.withValues(alpha: 0.15),
-                          color.withValues(alpha: 0.1),
+                          color.withValues(alpha: 0.18),
+                          color.withValues(alpha: 0.12),
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                       border: Border.all(
-                        color: color.withValues(alpha: 0.3),
+                        color: color.withValues(alpha: 0.35),
                         width: 1,
                       ),
                     ),
                     child: Text(
                       status,
-                      style: TextStyle(
+                      style: AppTextStyle.labelSmall.copyWith(
                         color: color,
-                        fontSize: 11.5,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 0.3,
                       ),
                     ),
                   ),
@@ -923,15 +766,19 @@ class HomePage extends ConsumerWidget {
             ),
             if (progress < 1.0)
               Container(
-                height: 6,
-                decoration: BoxDecoration(color: Colors.grey.shade100),
+                height: 5,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.darkBorder.withValues(alpha: 0.5)
+                      : AppColors.borderLight,
+                ),
                 child: FractionallySizedBox(
                   alignment: Alignment.centerLeft,
                   widthFactor: progress,
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [color, color.withValues(alpha: 0.7)],
+                        colors: [color, color.withValues(alpha: 0.75)],
                       ),
                     ),
                   ),
@@ -950,86 +797,106 @@ class HomePage extends ConsumerWidget {
     Color color, {
     VoidCallback? onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: 290,
-        height: 140, // Fix: ensure consistent height to avoid overflow
-        margin: const EdgeInsets.only(right: 14),
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [color.withValues(alpha: 0.85), color],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.35),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        child: Container(
+          width: 290,
+          height: 140,
+          margin: EdgeInsets.only(right: AppSpacing.md),
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [color.withValues(alpha: 0.9), color],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            // Decorative circle
-            Positioned(
-              top: -20,
-              right: -20,
-              child: Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.4),
+                blurRadius: 16,
+                offset: Offset(0, AppSpacing.sm),
+                spreadRadius: 0,
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              // Decorative circles
+              Positioned(
+                top: -25,
+                right: -25,
+                child: Container(
+                  width: 110,
+                  height: 110,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.12),
+                  ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(emoji, style: const TextStyle(fontSize: 22)),
+              Positioned(
+                bottom: -15,
+                left: -15,
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.08),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.3,
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.all(AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Text(emoji, style: TextStyle(fontSize: 24)),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Flexible(
-                    child: Text(
-                      description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.95),
-                        fontSize: 13,
-                        height: 1.3,
+                    SizedBox(height: AppSpacing.sm),
+                    Text(
+                      title,
+                      style: AppTextStyle.titleMedium.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                  ),
-                ],
+                    SizedBox(height: AppSpacing.xs),
+                    Flexible(
+                      child: Text(
+                        description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyle.bodySmall.copyWith(
+                          color: Colors.white.withValues(alpha: 0.95),
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1046,7 +913,7 @@ class HomePage extends ConsumerWidget {
         child: ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           child: Material(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             child: SafeArea(
               top: false,
               child: SingleChildScrollView(
@@ -1350,7 +1217,7 @@ class HomePage extends ConsumerWidget {
         child: ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           child: Material(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             child: SafeArea(
               top: false,
               child: SingleChildScrollView(
@@ -1736,7 +1603,7 @@ class HomePage extends ConsumerWidget {
         child: ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           child: Material(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             child: SafeArea(
               top: false,
               child: SingleChildScrollView(
@@ -1920,10 +1787,8 @@ class HomePage extends ConsumerWidget {
     ),
   );
 
-  Widget _bodyText(String text) => Text(
-    text,
-    style: const TextStyle(color: Colors.black87, height: 1.4, fontSize: 13.5),
-  );
+  Widget _bodyText(String text) =>
+      Text(text, style: const TextStyle(height: 1.4, fontSize: 13.5));
 
   Widget _bullets(List<String> items) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2000,17 +1865,6 @@ class HomePage extends ConsumerWidget {
     }
   }
 
-  void _showProfileMessage(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Tap "More" in the bottom navigation to access your profile settings',
-        ),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
-
   void _openCompanySetupModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -2022,7 +1876,7 @@ class HomePage extends ConsumerWidget {
         child: ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           child: Material(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             child: const ProviderScope(child: CompanySetupFlow()),
           ),
         ),

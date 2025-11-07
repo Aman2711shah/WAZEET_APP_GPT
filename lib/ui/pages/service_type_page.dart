@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/service_item.dart';
 import 'sub_service_detail_page.dart';
 import '../theme.dart';
-import '../widgets/gradient_header.dart';
+import '../widgets/hero/service_header.dart';
 
 class ServiceTypePage extends ConsumerWidget {
   final ServiceCategory category;
@@ -12,11 +12,30 @@ class ServiceTypePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Map category name to service key for image
+    final serviceKey = category.id; // Use category ID as service key
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          GradientHeader(title: category.name, showBackButton: true),
+          Stack(
+            children: [
+              ServiceHeader(
+                title: category.name,
+                serviceKey: serviceKey,
+                subtitle: '${category.serviceTypes.length} service types',
+              ),
+              Positioned(
+                top: 40,
+                left: 8,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+            ],
+          ),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -95,11 +114,31 @@ class SubServiceListPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Derive service key from service type name
+    final serviceKey = serviceType.name.toLowerCase().replaceAll(' ', '_');
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          GradientHeader(title: serviceType.name, showBackButton: true),
+          Stack(
+            children: [
+              ServiceHeader(
+                title: serviceType.name,
+                serviceKey: serviceKey,
+                subtitle:
+                    '${serviceType.subServices.length} services available',
+              ),
+              Positioned(
+                top: 40,
+                left: 8,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+            ],
+          ),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/user_profile_provider.dart';
 import '../theme.dart';
+import '../responsive.dart';
+import '../widgets/back_to_top_button.dart';
 import 'edit_profile_page.dart';
 import 'linked_accounts_page.dart';
 import 'account_settings_page.dart';
@@ -22,12 +24,15 @@ class ProfilePage extends ConsumerWidget {
     final title = profile?.title ?? 'Entrepreneur';
     final photoUrl = profile?.photoUrl;
 
+    final ScrollController scrollController = ScrollController();
     return Scaffold(
       backgroundColor: AppColors.background,
+      floatingActionButton: BackToTopButton(controller: scrollController),
       body: CustomScrollView(
+        controller: scrollController,
         slivers: [
           SliverAppBar(
-            expandedHeight: 280,
+            expandedHeight: Responsive.heroHeight(context),
             pinned: true,
             floating: false,
             backgroundColor: AppColors.purple,
@@ -63,6 +68,7 @@ class ProfilePage extends ConsumerWidget {
                 ),
               ),
               background: Stack(
+                clipBehavior: Clip.hardEdge,
                 fit: StackFit.expand,
                 children: [
                   Image.network(
@@ -80,8 +86,8 @@ class ProfilePage extends ConsumerWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.3),
-                          AppColors.purple.withValues(alpha: 0.85),
+                          Colors.black.withValues(alpha: 0.35),
+                          AppColors.purple.withValues(alpha: 0.5),
                         ],
                       ),
                     ),
@@ -98,6 +104,8 @@ class ProfilePage extends ConsumerWidget {
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0.3,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],

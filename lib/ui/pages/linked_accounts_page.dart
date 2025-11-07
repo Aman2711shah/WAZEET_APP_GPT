@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simple_icons/simple_icons.dart';
 import '../../providers/user_profile_provider.dart';
 import '../theme.dart';
 
@@ -114,11 +115,13 @@ class _LinkedAccountsPageState extends ConsumerState<LinkedAccountsPage> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0077B5).withValues(alpha: 0.1),
+                            color: const Color(
+                              0xFF0077B5,
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
-                            Icons.work_outline,
+                            SimpleIcons.linkedin,
                             color: Color(0xFF0077B5),
                           ),
                         ),
@@ -163,7 +166,7 @@ class _LinkedAccountsPageState extends ConsumerState<LinkedAccountsPage> {
                             color: Colors.black.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.tag, color: Colors.black),
+                          child: const Icon(SimpleIcons.x, color: Colors.black),
                         ),
                         const SizedBox(width: 12),
                         const Text(
@@ -203,11 +206,13 @@ class _LinkedAccountsPageState extends ConsumerState<LinkedAccountsPage> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE4405F).withValues(alpha: 0.1),
+                            color: const Color(
+                              0xFFE4405F,
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
-                            Icons.camera_alt,
+                            SimpleIcons.instagram,
                             color: Color(0xFFE4405F),
                           ),
                         ),

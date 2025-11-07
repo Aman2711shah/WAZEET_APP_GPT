@@ -43,7 +43,8 @@ class _FloatingHumanSupportState extends ConsumerState<FloatingHumanSupport>
     final aiExpanded = ref.watch(aiChatExpandedProvider);
     double safeDockBottom() {
       final padding = MediaQuery.of(context).padding.bottom;
-      return 20 + kBottomNavigationBarHeight + padding;
+      // Position button just above the bottom nav
+      return 8 + kBottomNavigationBarHeight + padding;
     }
 
     return Positioned(

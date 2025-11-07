@@ -1,113 +1,123 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/theme_provider.dart';
-import '../theme.dart';
+import 'package:provider/provider.dart' as p;
+import '../../theme/theme_controller.dart';
 
-class AppearanceSettingsPage extends ConsumerWidget {
+class AppearanceSettingsPage extends StatelessWidget {
   const AppearanceSettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
-    final isDarkMode = themeMode == ThemeMode.dark;
+  Widget build(BuildContext context) {
+    final controller = context.watch<ThemeController>();
+    final selectedTheme = controller.themeMode;
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text('Appearance')),
+      backgroundColor: scheme.surface,
+      appBar: AppBar(
+        title: const Text('Appearance'),
+        backgroundColor: scheme.surface,
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text(
-            'Theme Settings',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
+          // Header
+          Text('Theme Settings', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
           Text(
             'Choose how WAZEET looks to you',
-            style: TextStyle(color: Colors.grey.shade600),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 24),
 
-          // Theme selection migrated to RadioGroup API
-          RadioGroup<bool>(
-            groupValue: isDarkMode,
-            onChanged: (value) {
-              final dark = value ?? false;
-              ref
-                  .read(themeModeProvider.notifier)
-                  .setThemeMode(dark ? ThemeMode.dark : ThemeMode.light);
-            },
-            child: Column(
-              children: [
-                // Light Mode Option
-                Card(
-                  child: RadioListTile<bool>(
-                    value: false,
-                    title: const Text('Light Mode'),
-                    subtitle: const Text('Bright and clean interface'),
-                    secondary: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: isDarkMode
-                            ? Colors.grey.shade800
-                            : Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.light_mode,
-                        color: isDarkMode
-                            ? Colors.orange.shade300
-                            : Colors.orange,
-                      ),
-                    ),
-                  ),
+          // Light Mode Option
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: RadioListTile<ThemeMode>(
+              value: ThemeMode.light,
+              groupValue: selectedTheme,
+              onChanged: (value) {
+                if (value != null) controller.setThemeMode(value);
+              },
+              title: Text(
+                'Light Mode',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              subtitle: Text(
+                'Bright and clean interface',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+              ),
+              secondary: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: scheme.secondaryContainer,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 12),
+                child: Icon(Icons.wb_sunny, color: scheme.onSecondaryContainer),
+              ),
+              activeColor: scheme.primary,
+            ),
+          ),
+          const SizedBox(height: 12),
 
-                // Dark Mode Option
-                Card(
-                  child: RadioListTile<bool>(
-                    value: true,
-                    title: const Text('Dark Mode'),
-                    subtitle: const Text('Easy on the eyes'),
-                    secondary: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: isDarkMode
-                            ? Colors.purple.shade900
-                            : Colors.grey.shade800,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.dark_mode, color: Colors.white),
-                    ),
-                  ),
+          // Dark Mode Option
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: RadioListTile<ThemeMode>(
+              value: ThemeMode.dark,
+              groupValue: selectedTheme,
+              onChanged: (value) {
+                if (value != null) controller.setThemeMode(value);
+              },
+              title: Text(
+                'Dark Mode',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              subtitle: Text(
+                'Easy on the eyes',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+              ),
+              secondary: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: scheme.secondaryContainer,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
+                child: Icon(
+                  Icons.nightlight_round,
+                  color: scheme.onSecondaryContainer,
+                ),
+              ),
+              activeColor: scheme.primary,
             ),
           ),
           const SizedBox(height: 24),
 
-          // Info card
+          // Info Box
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.purple.withValues(alpha: 0.1),
+              color: scheme.secondaryContainer,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.purple.withValues(alpha: 0.3),
-              ),
+              border: Border.all(color: scheme.outlineVariant),
             ),
             child: Row(
               children: [
-                Icon(Icons.info_outline, color: AppColors.purple),
+                Icon(Icons.info_outline, color: scheme.onSecondaryContainer),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Theme preference is saved and will persist across app restarts.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: isDarkMode ? AppColors.darkText : AppColors.text,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
               ],

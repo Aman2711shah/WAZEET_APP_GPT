@@ -52,6 +52,9 @@ Gemfile.lock
 .pub/
 /build/
 /coverage/
+android/app/build/
+android/build/
+*.apk
 
 # Symbolication related
 app.*.symbols

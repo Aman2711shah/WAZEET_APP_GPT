@@ -3,10 +3,15 @@ service firebase.storage {
   match /b/{bucket}/o {
     function signedIn() { return request.auth != null; }
 
+    // Profile pictures - users can read anyone's profile pic but only write their own
+    match /profile_pictures/{userId}/{allPaths=**} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == userId;
+    }
+
+    // Applications - users can only access their own applications
     match /applications/{applicationId}/{allPaths=**} {
-      allow read, write: if signedIn() && 
-        exists(/databases/(default)/documents/applications/$(applicationId)) &&
-        get(/databases/(default)/documents/applications/$(applicationId)).data.user_id == request.auth.uid;
+      allow read, write: if signedIn();
     }
 
     // Block everything else by default

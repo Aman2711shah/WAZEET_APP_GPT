@@ -6,12 +6,20 @@ import '../../models/event.dart';
 import '../../models/business_news.dart';
 import '../../providers/community_posts_provider.dart';
 import '../../providers/user_profile_provider.dart';
+import '../../providers/community_provider.dart';
+import '../../community/models.dart' as community;
 import '../../services/event_service.dart';
 import '../../services/business_news_service.dart';
 import '../theme.dart';
+import '../responsive.dart';
+import '../theme/responsive_text.dart';
+import '../widgets/back_to_top_button.dart';
 import '../widgets/post_card.dart';
 import 'industry_selection_page.dart';
 import 'user_profile_detail_page.dart';
+import 'community/trending_tab.dart';
+import 'community/news_tab.dart';
+import 'community/events_tab.dart';
 
 class CommunityPage extends ConsumerStatefulWidget {
   const CommunityPage({super.key});
@@ -33,7 +41,10 @@ class CommunityPage extends ConsumerStatefulWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: Icon(Icons.article, color: AppColors.purple),
+                leading: Icon(
+                  Icons.article,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 title: const Text('Write an article'),
                 onTap: () {
                   Navigator.pop(context);
@@ -41,7 +52,10 @@ class CommunityPage extends ConsumerStatefulWidget {
                 },
               ),
               ListTile(
-                leading: Icon(Icons.poll, color: AppColors.purple),
+                leading: Icon(
+                  Icons.poll,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 title: const Text('Create a poll'),
                 onTap: () {
                   Navigator.pop(context);
@@ -49,7 +63,10 @@ class CommunityPage extends ConsumerStatefulWidget {
                 },
               ),
               ListTile(
-                leading: Icon(Icons.event, color: AppColors.purple),
+                leading: Icon(
+                  Icons.event,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 title: const Text('Create an event'),
                 onTap: () {
                   Navigator.pop(context);
@@ -57,7 +74,10 @@ class CommunityPage extends ConsumerStatefulWidget {
                 },
               ),
               ListTile(
-                leading: Icon(Icons.image, color: AppColors.purple),
+                leading: Icon(
+                  Icons.image,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 title: const Text('Share a photo'),
                 onTap: () {
                   Navigator.pop(context);
@@ -87,7 +107,10 @@ class CommunityPage extends ConsumerStatefulWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.article, color: AppColors.purple),
+                  Icon(
+                    Icons.article,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   const SizedBox(width: 12),
                   const Text(
                     'Write an Article',
@@ -160,8 +183,8 @@ class CommunityPage extends ConsumerStatefulWidget {
                   icon: const Icon(Icons.publish),
                   label: const Text('Publish Article'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.purple,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
@@ -261,7 +284,10 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
             children: [
               Row(
                 children: [
-                  Icon(Icons.article, color: AppColors.purple),
+                  Icon(
+                    Icons.article,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   const SizedBox(width: 12),
                   const Text(
                     'Write an Article',
@@ -334,8 +360,8 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                   icon: const Icon(Icons.publish),
                   label: const Text('Publish Article'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.purple,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
@@ -366,7 +392,10 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
             children: [
               Row(
                 children: [
-                  Icon(Icons.poll, color: AppColors.purple),
+                  Icon(
+                    Icons.poll,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   const SizedBox(width: 12),
                   const Text(
                     'Create a Poll',
@@ -471,8 +500,8 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                   icon: const Icon(Icons.check),
                   label: const Text('Create Poll'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.purple,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
@@ -504,7 +533,10 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
               children: [
                 Row(
                   children: [
-                    Icon(Icons.event, color: AppColors.purple),
+                    Icon(
+                      Icons.event,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                     const SizedBox(width: 12),
                     const Text(
                       'Create an Event',
@@ -631,8 +663,8 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                     icon: const Icon(Icons.check),
                     label: const Text('Create Event'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.purple,
-                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                   ),
@@ -660,7 +692,10 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
             children: [
               Row(
                 children: [
-                  Icon(Icons.image, color: AppColors.purple),
+                  Icon(
+                    Icons.image,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   const SizedBox(width: 12),
                   const Text(
                     'Share a Photo',
@@ -750,8 +785,8 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                   icon: const Icon(Icons.share),
                   label: const Text('Share Photo'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.purple,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
@@ -767,16 +802,21 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
   Widget build(BuildContext context) {
     final currentUser = ref.watch(userProfileProvider);
 
+    final ScrollController scrollController = ScrollController();
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      floatingActionButton: BackToTopButton(controller: scrollController),
       body: NestedScrollView(
+        controller: scrollController,
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
             SliverAppBar(
-              expandedHeight: 280,
+              expandedHeight: Responsive.heroHeight(context),
               pinned: true,
               floating: false,
-              backgroundColor: AppColors.purple,
+              backgroundColor: scheme.primary,
               actions: [
                 // Industry Selection Button
                 IconButton(
@@ -789,7 +829,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                     );
                   },
                   icon: const Icon(Icons.filter_list),
-                  color: Colors.white,
+                  color: scheme.onPrimary,
                   tooltip: 'Filter by Industry',
                 ),
                 // My Profile Button
@@ -816,7 +856,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                             ? Text(
                                 currentUser.initials,
                                 style: TextStyle(
-                                  color: AppColors.purple,
+                                  color: scheme.primary,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
                                 ),
@@ -827,53 +867,63 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                   ),
               ],
               flexibleSpace: FlexibleSpaceBar(
-                title: const Text(
+                title: Text(
                   'Community',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: scheme.onPrimary,
                     fontWeight: FontWeight.bold,
-                    shadows: [Shadow(color: Colors.black38, blurRadius: 8)],
+                    fontSize: rFont(context, sm: 16, md: 18, lg: 20),
+                    shadows: const [
+                      Shadow(color: Colors.black38, blurRadius: 8),
+                    ],
                   ),
                 ),
-                background: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.network(
-                      'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1200&auto=format&fit=crop',
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: AppColors.purple.withValues(alpha: 0.3),
-                        );
-                      },
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.3),
-                            AppColors.purple.withValues(alpha: 0.85),
-                          ],
+                background: SafeArea(
+                  top: true,
+                  child: Stack(
+                    clipBehavior: Clip.hardEdge,
+                    fit: StackFit.expand,
+                    children: [
+                      Image.network(
+                        'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1200&auto=format&fit=crop',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: scheme.primary.withValues(alpha: 0.3),
+                          );
+                        },
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withValues(alpha: 0.35),
+                              scheme.primary.withValues(alpha: 0.5),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    Positioned(
-                      left: 16,
-                      right: 16,
-                      bottom: 56,
-                      child: Text(
-                        'Connect, share and grow together',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.95),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 0.3,
+                      Positioned(
+                        left: 16,
+                        right: 16,
+                        bottom: 56,
+                        child: Text(
+                          'Connect, share and grow together',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.95),
+                            fontSize: rFont(context, sm: 12, md: 13, lg: 14),
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.3,
+                          ),
+                          maxLines: 2,
+                          softWrap: true,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -885,7 +935,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: theme.colorScheme.surface,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.05),
@@ -902,7 +952,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                     Container(
                       width: 1,
                       height: 30,
-                      color: Colors.grey.shade300,
+                      color: scheme.outlineVariant,
                     ),
                     Expanded(
                       child: _buildStatItem('450', 'Posts', Icons.article),
@@ -910,7 +960,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                     Container(
                       width: 1,
                       height: 30,
-                      color: Colors.grey.shade300,
+                      color: scheme.outlineVariant,
                     ),
                     Expanded(
                       child: _buildStatItem(
@@ -930,13 +980,13 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
               delegate: _StickyTabBarDelegate(
                 TabBar(
                   controller: _tabController,
-                  labelColor: AppColors.purple,
-                  unselectedLabelColor: Colors.grey,
+                  labelColor: scheme.primary,
+                  unselectedLabelColor: scheme.onSurfaceVariant,
                   indicator: _UnderlineGradientIndicator(
                     gradient: LinearGradient(
                       colors: [
-                        AppColors.purple,
-                        AppColors.purple.withValues(alpha: 0.7),
+                        scheme.primary,
+                        scheme.primary.withValues(alpha: 0.7),
                       ],
                     ),
                     thickness: 3,
@@ -957,9 +1007,9 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
           controller: _tabController,
           children: [
             _buildFeedTab(),
-            _buildTrendingTab(),
-            _buildEventsTab(),
-            _buildBusinessNewsTab(),
+            const TrendingTab(),
+            const EventsTab(),
+            const NewsTab(),
           ],
         ),
       ),
@@ -1187,16 +1237,6 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
   }
 
   Widget _buildSuggestedConnections() {
-    final suggestions = [
-      {
-        'name': 'Sarah Al Mansouri',
-        'title': 'Business Consultant',
-        'mutual': '12',
-      },
-      {'name': 'Ahmed Hassan', 'title': 'Legal Advisor', 'mutual': '8'},
-      {'name': 'Maria Garcia', 'title': 'Marketing Expert', 'mutual': '15'},
-    ];
-
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -1216,7 +1256,14 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                 ),
                 const Spacer(),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    // TODO: Navigate to full people list page
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Full people list coming soon!'),
+                      ),
+                    );
+                  },
                   child: Text(
                     'See all',
                     style: TextStyle(color: AppColors.purple),
@@ -1225,70 +1272,236 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
               ],
             ),
             const SizedBox(height: 12),
-            ...suggestions.map(
-              (person) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: AppColors.purple.withValues(alpha: 0.1),
-                      child: Text(
-                        person['name']![0],
-                        style: TextStyle(
-                          color: AppColors.purple,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+
+            // Stream real user suggestions from Firestore
+            StreamBuilder<List<community.UserProfile>>(
+              stream: ref.read(peopleRepositoryProvider).suggested(limit: 3),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24.0),
+                      child: CircularProgressIndicator(),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  final errorMessage = snapshot.error.toString();
+                  final isIndexError =
+                      errorMessage.contains('index') ||
+                      errorMessage.contains('Index') ||
+                      errorMessage.contains('FAILED_PRECONDITION');
+
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            person['name']!,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
+                          Icon(
+                            Icons.error_outline,
+                            size: 48,
+                            color: Colors.orange.shade400,
                           ),
+                          const SizedBox(height: 12),
                           Text(
-                            person['title']!,
+                            isIndexError
+                                ? 'Database Index Required'
+                                : 'Error Loading Suggestions',
                             style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade700,
                             ),
                           ),
-                          Text(
-                            '${person['mutual']} mutual connections',
-                            style: TextStyle(
-                              color: Colors.grey.shade500,
-                              fontSize: 11,
+                          const SizedBox(height: 8),
+                          if (isIndexError) ...[
+                            Text(
+                              'This feature requires a Firestore index.',
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 13,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                          ),
+                            const SizedBox(height: 12),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                // Show instructions
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Create Firestore Index'),
+                                    content: const SingleChildScrollView(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            '1. Open Firebase Console',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          SizedBox(height: 8),
+                                          Text(
+                                            '2. Navigate to Firestore Database > Indexes',
+                                          ),
+                                          SizedBox(height: 8),
+                                          Text(
+                                            '3. Click "Create Index" with these fields:',
+                                          ),
+                                          SizedBox(height: 8),
+                                          Text(
+                                            '   Collection: users\n'
+                                            '   Field 1: isDiscoverable (Ascending)\n'
+                                            '   Field 2: lastActiveAt (Descending)',
+                                          ),
+                                          SizedBox(height: 12),
+                                          Text(
+                                            'Or run: firebase deploy --only firestore:indexes',
+                                            style: TextStyle(
+                                              fontFamily: 'monospace',
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text('Close'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.info_outline, size: 18),
+                              label: const Text('How to Fix'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orange,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ] else ...[
+                            Text(
+                              errorMessage.length > 100
+                                  ? '${errorMessage.substring(0, 100)}...'
+                                  : errorMessage,
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 12,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            TextButton(
+                              onPressed: () {
+                                // Retry
+                                setState(() {});
+                              },
+                              child: const Text('Retry'),
+                            ),
+                          ],
                         ],
                       ),
                     ),
-                    OutlinedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Connected with ${person['name']}!'),
-                          ),
-                        );
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.purple,
-                        side: BorderSide(color: AppColors.purple),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                  );
+                }
+
+                final users = snapshot.data ?? [];
+
+                if (users.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Text(
+                        'No suggestions right now\nCreate user profiles to see connections here',
+                        style: TextStyle(color: Colors.grey.shade500),
+                        textAlign: TextAlign.center,
                       ),
-                      child: const Text('Connect'),
                     ),
-                  ],
-                ),
-              ),
+                  );
+                }
+
+                return Column(
+                  children: users.map((user) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundImage: user.photoURL.isNotEmpty
+                                ? NetworkImage(user.photoURL)
+                                : null,
+                            backgroundColor: AppColors.purple.withValues(
+                              alpha: 0.1,
+                            ),
+                            child: user.photoURL.isEmpty
+                                ? Text(
+                                    user.displayName.isNotEmpty
+                                        ? user.displayName[0].toUpperCase()
+                                        : '?',
+                                    style: TextStyle(
+                                      color: AppColors.purple,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  user.displayName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                Text(
+                                  user.headline,
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 12,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (user.mutualConnectionsCount > 0)
+                                  Text(
+                                    '${user.mutualConnectionsCount} mutual ${user.mutualConnectionsCount == 1 ? "connection" : "connections"}',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade500,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          _ConnectionButton(
+                            userId: user.uid,
+                            onConnectionSent: () {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Connection request sent!'),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
             ),
           ],
         ),
@@ -1296,6 +1509,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
     );
   }
 
+  // ignore: unused_element
   Widget _buildTrendingTab() {
     final trendingTopics = [
       {'tag': '#DubaiStartup', 'posts': '1.2K', 'trend': 'up'},
@@ -1438,6 +1652,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
     );
   }
 
+  // ignore: unused_element
   Widget _buildEventsTab() {
     final upcomingEventsAsync = ref.watch(upcomingEventsProvider);
 
@@ -1569,6 +1784,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
     );
   }
 
+  // ignore: unused_element
   Widget _buildBusinessNewsTab() {
     final industries = const [
       'All Industries',
@@ -2183,6 +2399,78 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
       default:
         return Icons.event;
     }
+  }
+}
+
+/// Stateful connection button with loading state
+class _ConnectionButton extends ConsumerStatefulWidget {
+  final String userId;
+  final VoidCallback? onConnectionSent;
+
+  const _ConnectionButton({required this.userId, this.onConnectionSent});
+
+  @override
+  ConsumerState<_ConnectionButton> createState() => _ConnectionButtonState();
+}
+
+class _ConnectionButtonState extends ConsumerState<_ConnectionButton> {
+  bool _loading = false;
+  bool _requestSent = false;
+
+  @override
+  Widget build(BuildContext context) {
+    // If request already sent, show disabled state
+    if (_requestSent) {
+      return OutlinedButton(
+        onPressed: null,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.grey,
+          side: BorderSide(color: Colors.grey.shade300),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: const Text('Pending'),
+      );
+    }
+
+    return OutlinedButton(
+      onPressed: _loading
+          ? null
+          : () async {
+              setState(() => _loading = true);
+              try {
+                await ref
+                    .read(peopleRepositoryProvider)
+                    .sendRequest(widget.userId);
+                setState(() {
+                  _loading = false;
+                  _requestSent = true;
+                });
+                widget.onConnectionSent?.call();
+              } catch (e) {
+                setState(() => _loading = false);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(e.toString().replaceAll('Exception: ', '')),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.purple,
+        side: BorderSide(color: AppColors.purple),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      child: _loading
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Text('Connect'),
+    );
   }
 }
 

@@ -3,7 +3,7 @@ import '../models/freezone.dart';
 
 class FreeZoneService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final String _collection = 'free_zones';
+  final String _collection = 'freezones';
 
   // Cache for repeated queries
   final Map<String, List<FreeZone>> _cache = {};

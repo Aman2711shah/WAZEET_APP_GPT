@@ -7,8 +7,10 @@ import 'services_page.dart';
 import 'community_page.dart';
 import 'applications_page.dart';
 import 'profile_page.dart';
-import '../widgets/floating_ai_chatbot.dart';
-import '../widgets/floating_human_support.dart';
+// Replaced legacy floating chat/support buttons with a merged AI assistant orb.
+// import '../widgets/floating_ai_chatbot.dart';
+// import '../widgets/floating_human_support.dart';
+import '../widgets/ai_assistant_orb.dart';
 
 class MainNav extends ConsumerStatefulWidget {
   const MainNav({super.key});
@@ -37,11 +39,7 @@ class _MainNavState extends ConsumerState<MainNav> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
-        children: [
-          pages[_index],
-          const FloatingAIChatbot(),
-          const FloatingHumanSupport(),
-        ],
+        children: [pages[_index], if (_index == 0) const AiAssistantOrb()],
       ),
       bottomNavigationBar: _CustomBottomNavBar(
         currentIndex: _index,

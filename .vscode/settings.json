@@ -1,4 +1,5 @@
 {
     "java.configuration.updateBuildConfiguration": "interactive",
-    "markdown.validate.enabled": true
+    "markdown.validate.enabled": true,
+    "cmake.ignoreCMakeListsMissing": true
 }

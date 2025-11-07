@@ -129,7 +129,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       final fileName =
           '${profile.id}_${DateTime.now().millisecondsSinceEpoch}.${file.extension}';
       final storageRef = FirebaseStorage.instance.ref().child(
-        'profile_pictures/$fileName',
+        'profile_pictures/${profile.id}/$fileName',
       );
 
       // Upload file bytes
@@ -205,7 +205,11 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile updated successfully!')),
       );
-      Navigator.of(context).pop();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      });
     }
   }
 

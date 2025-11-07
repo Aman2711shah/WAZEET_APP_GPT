@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/ai_business_expert_service.dart';
-import '../pages/freezone_browser_page.dart';
 
 /// Chat message model
 class ChatMessage {
@@ -63,7 +62,6 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isTyping = false;
-  Map<String, dynamic>? _extractedRequirements;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   // 3D interactions
@@ -148,13 +146,6 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
       final aiMessage = ChatMessage(text: response, isUser: false);
       ref.read(conversationProvider.notifier).addMessage(aiMessage);
 
-      final requirements = AIBusinessExpertService.extractBusinessRequirements(
-        response,
-      );
-      if (requirements != null) {
-        setState(() => _extractedRequirements = requirements);
-      }
-
       _scrollToBottom();
     } catch (e) {
       final errorMessage = ChatMessage(
@@ -168,29 +159,12 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
     }
   }
 
-  void _navigateToFreezoneBrowser() {
-    if (_extractedRequirements == null) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FreezoneBrowserPage(
-          prefilledRecommendations:
-              _extractedRequirements!['recommendations'] as List<String>?,
-          minVisas: _extractedRequirements!['visaCount'] as int?,
-          searchQuery: _extractedRequirements!['activity'] as String?,
-        ),
-      ),
-    );
-    _minimizeChat();
-  }
-
   @override
   Widget build(BuildContext context) {
     double safeDockBottom() {
       final padding = MediaQuery.of(context).padding.bottom;
-      // Keep the button clear of the bottom nav and device insets
-      return 20 + kBottomNavigationBarHeight + padding;
+      // Position button just above the bottom nav
+      return 8 + kBottomNavigationBarHeight + padding;
     }
 
     return Stack(
@@ -455,7 +429,6 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
                   icon: const Icon(Icons.refresh, color: Colors.white),
                   onPressed: () {
                     ref.read(conversationProvider.notifier).reset();
-                    setState(() => _extractedRequirements = null);
                   },
                   tooltip: 'Start Over',
                 ),
@@ -482,43 +455,6 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
               },
             ),
           ),
-
-          // Recommendation action
-          if (_extractedRequirements != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.green[50],
-                border: Border(top: BorderSide(color: Colors.green[200]!)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.lightbulb, color: Colors.orange, size: 18),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'View recommendations?',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: _navigateToFreezoneBrowser,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                    ),
-                    child: const Text('View', style: TextStyle(fontSize: 13)),
-                  ),
-                ],
-              ),
-            ),
 
           // Input area
           Container(

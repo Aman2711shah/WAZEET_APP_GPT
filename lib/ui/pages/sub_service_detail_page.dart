@@ -5,8 +5,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/service_item.dart';
+import '../../models/service_tier.dart';
+import '../../services/tier_rules.dart';
 import '../theme.dart';
 import '../widgets/gradient_header.dart';
+import '../widgets/tier_selector.dart';
 import 'applications_page.dart';
 
 class SubServiceDetailPage extends ConsumerStatefulWidget {
@@ -27,18 +30,57 @@ class SubServiceDetailPage extends ConsumerStatefulWidget {
 }
 
 class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
-  bool isPremiumSelected = false;
+  late ServiceTier _selectedTier;
+  late TierPair _tiers;
   final Map<String, PlatformFile?> _uploadedFiles = {};
   final Map<String, bool> _uploadingStatus = {};
   final Map<String, String> _uploadedUrls = {};
 
   @override
-  Widget build(BuildContext context) {
-    final selectedTier = isPremiumSelected
-        ? widget.subService.premium
-        : widget.subService.standard;
-    final tierName = isPremiumSelected ? 'Premium' : 'Standard';
+  void initState() {
+    super.initState();
+    // Parse existing timeline to extract base days
+    final premiumTimeline = widget.subService.premium.timeline;
 
+    // Extract days from timeline strings like "7-10 days" or "5 days"
+    final premiumDays = _parseTimeline(premiumTimeline);
+
+    // Calculate base timeline from premium (since it's faster)
+    // Reverse-engineer the base from the premium timeline
+    final baseMinDays = premiumDays.min + kPremiumMinusMin;
+    final baseMaxDays =
+        premiumDays.max +
+        kPremiumMinusMax; // Build tiers with proper adjustments
+    _tiers = buildTiers(
+      standardName: 'Standard',
+      premiumName: 'Premium',
+      baseMinDays: baseMinDays,
+      baseMaxDays: baseMaxDays,
+      standardPrice: _parsePrice(widget.subService.standardCostDisplay),
+      premiumPrice: _parsePrice(widget.subService.premiumCostDisplay),
+    );
+
+    _selectedTier = _tiers.standard;
+  }
+
+  /// Parse timeline string like "7-10 days" or "5 days" to extract min/max
+  ({int min, int max}) _parseTimeline(String timeline) {
+    final numbers = RegExp(
+      r'\d+',
+    ).allMatches(timeline).map((m) => int.parse(m.group(0)!)).toList();
+    if (numbers.isEmpty) return (min: 5, max: 7); // fallback
+    if (numbers.length == 1) return (min: numbers[0], max: numbers[0]);
+    return (min: numbers[0], max: numbers[1]);
+  }
+
+  /// Parse price string like "AED 2000" to extract number
+  int _parsePrice(String priceStr) {
+    final match = RegExp(r'\d+').firstMatch(priceStr);
+    return match != null ? int.parse(match.group(0)!) : 0;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
@@ -99,36 +141,16 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Pricing Tier Selection
-                  const Text(
-                    'Select Service Tier',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildTierCard(
-                          title: 'Standard',
-                          cost: widget.subService.standardCostDisplay,
-                          timeline: widget.subService.standard.timeline,
-                          isSelected: !isPremiumSelected,
-                          onTap: () =>
-                              setState(() => isPremiumSelected = false),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildTierCard(
-                          title: 'Premium',
-                          cost: widget.subService.premiumCostDisplay,
-                          timeline: widget.subService.premium.timeline,
-                          isSelected: isPremiumSelected,
-                          isPremium: true,
-                          onTap: () => setState(() => isPremiumSelected = true),
-                        ),
-                      ),
-                    ],
+                  // Pricing Tier Selection with shared component
+                  TierSelector(
+                    standardTier: _tiers.standard,
+                    premiumTier: _tiers.premium,
+                    initialTier: _selectedTier,
+                    onChanged: (tier) {
+                      setState(() {
+                        _selectedTier = tier;
+                      });
+                    },
                   ),
                   const SizedBox(height: 24),
 
@@ -143,15 +165,13 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                           _buildDetailRow(
                             icon: Icons.payment,
                             label: 'Price',
-                            value: isPremiumSelected
-                                ? widget.subService.premiumCostDisplay
-                                : widget.subService.standardCostDisplay,
+                            value: _selectedTier.priceLabel,
                           ),
                           const Divider(height: 24),
                           _buildDetailRow(
                             icon: Icons.schedule,
                             label: 'Processing Time',
-                            value: selectedTier.timeline,
+                            value: _selectedTier.daysLabel,
                           ),
                           const Divider(height: 24),
                           _buildDetailRow(
@@ -253,7 +273,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
             ],
           ),
           child: ElevatedButton(
-            onPressed: () => _showDocumentUpload(context, tierName),
+            onPressed: () => _showDocumentUpload(context),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.purple,
               foregroundColor: Colors.white,
@@ -263,104 +283,10 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
               ),
             ),
             child: Text(
-              'Proceed with $tierName Tier',
+              ctaLabel(_selectedTier),
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTierCard({
-    required String title,
-    required String cost,
-    required String timeline,
-    required bool isSelected,
-    required VoidCallback onTap,
-    bool isPremium = false,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.purple.withValues(alpha: 0.1) : Colors.white,
-          border: Border.all(
-            color: isSelected ? AppColors.purple : Colors.grey.shade300,
-            width: isSelected ? 2 : 1,
-          ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: isSelected ? AppColors.purple : Colors.black,
-                  ),
-                ),
-                const Spacer(),
-                if (isSelected)
-                  Icon(Icons.check_circle, color: AppColors.purple, size: 20),
-                if (isPremium && !isSelected)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade100,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'FAST',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.orange,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              cost,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? AppColors.purple : Colors.black,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(
-                  Icons.schedule,
-                  size: 14,
-                  color: isSelected ? AppColors.purple : Colors.grey,
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    timeline,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isSelected
-                          ? AppColors.purple
-                          : Colors.grey.shade600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
         ),
       ),
     );
@@ -405,7 +331,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
     );
   }
 
-  void _showDocumentUpload(BuildContext context, String tierName) {
+  void _showDocumentUpload(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -520,7 +446,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                 child: ElevatedButton(
                   onPressed: _uploadedFiles.isEmpty
                       ? null
-                      : () => _submitRequest(context, tierName),
+                      : () => _submitRequest(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.purple,
                     foregroundColor: Colors.white,
@@ -637,26 +563,22 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
     }
   }
 
-  Future<void> _submitRequest(BuildContext context, String tierName) async {
+  Future<void> _submitRequest(BuildContext context) async {
     try {
-      // Save request to Firestore
+      // Save request to Firestore with tier information
       final ref = await FirebaseFirestore.instance
           .collection('service_requests')
           .add({
             'serviceName': widget.subService.name,
             'serviceType': widget.serviceTypeName,
-            'tier': tierName,
+            'tier': _selectedTier.id, // 'standard' or 'premium'
             'userId': 'demo_user', // Replace with actual user ID
             'documents': _uploadedUrls,
             'status': 'pending',
             'createdAt': FieldValue.serverTimestamp(),
-            'premium': isPremiumSelected,
-            'cost': isPremiumSelected
-                ? widget.subService.premium.cost.toString()
-                : widget.subService.standard.cost.toString(),
-            'timeline': isPremiumSelected
-                ? widget.subService.premium.timeline
-                : widget.subService.standard.timeline,
+            'processing_min_days': _selectedTier.minDays,
+            'processing_max_days': _selectedTier.maxDays,
+            'price_aed': _selectedTier.price,
           });
 
       if (mounted) {

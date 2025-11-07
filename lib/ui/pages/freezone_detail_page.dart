@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../models/freezone.dart';
 import '../theme.dart';
 import '../../providers/bookmarks_provider.dart';
+import '../../services/email_service.dart';
+import '../../services/phone_service.dart';
+import '../widgets/share_freezones_sheet.dart';
+import '../widgets/ask_with_ai_sheet.dart';
 
 class FreeZoneDetailPage extends ConsumerWidget {
   final FreeZone zone;
@@ -363,19 +365,6 @@ class FreeZoneDetailPage extends ConsumerWidget {
     );
   }
 
-  Future<void> _launchEmail({
-    required String subject,
-    required String body,
-  }) async {
-    final uri = Uri(
-      scheme: 'mailto',
-      // No recipient to let user choose
-      path: '',
-      queryParameters: {'subject': subject, 'body': body},
-    );
-    await launchUrl(uri, mode: LaunchMode.platformDefault);
-  }
-
   void _showContactSheet(BuildContext context) {
     final subject = 'Inquiry about ${zone.name}';
     final body =
@@ -392,35 +381,55 @@ class FreeZoneDetailPage extends ConsumerWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.email_outlined),
-              title: const Text('Contact via Email'),
+              title: const Text('Send Email'),
+              subtitle: const Text('Contact us via email'),
               onTap: () async {
                 Navigator.of(ctx).pop();
-                await _launchEmail(subject: subject, body: body);
+                await EmailService.sendEmail(
+                  subject: subject,
+                  body: body,
+                  context: context,
+                );
               },
             ),
             ListTile(
               leading: const Icon(Icons.share_outlined),
-              title: const Text('Share Free Zone'),
+              title: const Text('Share Freezones & Mention'),
+              subtitle: const Text('Share with team members'),
               onTap: () {
                 Navigator.of(ctx).pop();
-                final shareText =
-                    'Free Zone: ${zone.name} (${_getEmirateDisplayName(zone.emirate)})\nStarting from: ${zone.startingPriceFormatted}';
-                Share.share(shareText, subject: 'Check this Free Zone');
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => const ShareFreezonesSheet(),
+                );
               },
             ),
             ListTile(
-              leading: const Icon(Icons.copy_all_outlined),
-              title: const Text('Copy details'),
-              onTap: () async {
+              leading: const Icon(Icons.call_outlined),
+              title: const Text('Call Now'),
+              subtitle: const Text('+971 55 998 6386'),
+              onTap: () {
                 Navigator.of(ctx).pop();
-                final copy =
-                    '${zone.name} (${_getEmirateDisplayName(zone.emirate)}) — ${zone.startingPriceFormatted}';
-                await Clipboard.setData(ClipboardData(text: copy));
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Copied to clipboard')),
-                  );
-                }
+                PhoneService.makeCall(context);
+              },
+              onLongPress: () {
+                PhoneService.copyPhoneNumber(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.smart_toy_outlined),
+              title: const Text('Ask with AI (ChatGPT)'),
+              subtitle: const Text('Get instant answers'),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const AskWithAISheet(),
+                    fullscreenDialog: true,
+                  ),
+                );
               },
             ),
             const SizedBox(height: 8),

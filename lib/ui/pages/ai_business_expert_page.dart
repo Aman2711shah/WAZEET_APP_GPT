@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme.dart';
 import '../../services/ai_business_expert_service.dart';
-import 'freezone_browser_page.dart';
 
 /// Chat message model
 class ChatMessage {
@@ -12,6 +13,22 @@ class ChatMessage {
 
   ChatMessage({required this.text, required this.isUser, DateTime? timestamp})
     : timestamp = timestamp ?? DateTime.now();
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'text': text,
+      'isUser': isUser,
+      'timestamp': Timestamp.fromDate(timestamp),
+    };
+  }
+
+  factory ChatMessage.fromFirestore(Map<String, dynamic> data) {
+    return ChatMessage(
+      text: data['text'] as String,
+      isUser: data['isUser'] as bool,
+      timestamp: (data['timestamp'] as Timestamp).toDate(),
+    );
+  }
 }
 
 /// Conversation state provider
@@ -21,8 +38,56 @@ final conversationProvider =
     });
 
 class ConversationNotifier extends StateNotifier<List<ChatMessage>> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  String? _conversationId;
+
   ConversationNotifier() : super([]) {
-    _initializeConversation();
+    _loadOrInitializeConversation();
+  }
+
+  Future<void> _loadOrInitializeConversation() async {
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) {
+      _initializeConversation();
+      return;
+    }
+
+    try {
+      // Try to load the most recent conversation
+      final conversationsSnap = await _firestore
+          .collection('ai_conversations')
+          .where('userId', isEqualTo: userId)
+          .orderBy('createdAt', descending: true)
+          .limit(1)
+          .get();
+
+      if (conversationsSnap.docs.isNotEmpty) {
+        final doc = conversationsSnap.docs.first;
+        _conversationId = doc.id;
+
+        // Load messages
+        final messagesSnap = await _firestore
+            .collection('ai_conversations')
+            .doc(_conversationId)
+            .collection('messages')
+            .orderBy('timestamp', descending: false)
+            .get();
+
+        if (messagesSnap.docs.isNotEmpty) {
+          state = messagesSnap.docs
+              .map((doc) => ChatMessage.fromFirestore(doc.data()))
+              .toList();
+          return;
+        }
+      }
+
+      // If no conversation found, create new one
+      _initializeConversation();
+    } catch (e) {
+      debugPrint('Error loading conversation: $e');
+      _initializeConversation();
+    }
   }
 
   void _initializeConversation() {
@@ -30,11 +95,63 @@ class ConversationNotifier extends StateNotifier<List<ChatMessage>> {
     state = [ChatMessage(text: greeting, isUser: false)];
   }
 
-  void addMessage(ChatMessage message) {
+  Future<void> addMessage(ChatMessage message) async {
     state = [...state, message];
+
+    // Persist to Firestore
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) return;
+
+    try {
+      // Create conversation if it doesn't exist
+      if (_conversationId == null) {
+        final conversationRef = _firestore.collection('ai_conversations').doc();
+        _conversationId = conversationRef.id;
+
+        await conversationRef.set({
+          'userId': userId,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+          'messageCount': 1,
+        });
+      } else {
+        // Update conversation timestamp
+        await _firestore
+            .collection('ai_conversations')
+            .doc(_conversationId)
+            .update({
+              'updatedAt': FieldValue.serverTimestamp(),
+              'messageCount': FieldValue.increment(1),
+            });
+      }
+
+      // Save message
+      await _firestore
+          .collection('ai_conversations')
+          .doc(_conversationId)
+          .collection('messages')
+          .add(message.toFirestore());
+    } catch (e) {
+      debugPrint('Error saving message: $e');
+      // Don't throw - allow the app to continue working even if save fails
+    }
   }
 
-  void reset() {
+  Future<void> reset() async {
+    final userId = _auth.currentUser?.uid;
+    if (userId != null && _conversationId != null) {
+      try {
+        // Archive the old conversation by marking it
+        await _firestore
+            .collection('ai_conversations')
+            .doc(_conversationId)
+            .update({'archived': true});
+      } catch (e) {
+        debugPrint('Error archiving conversation: $e');
+      }
+    }
+
+    _conversationId = null;
     _initializeConversation();
   }
 
@@ -63,7 +180,6 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isTyping = false;
-  Map<String, dynamic>? _extractedRequirements;
 
   @override
   void dispose() {
@@ -113,14 +229,6 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
       final aiMessage = ChatMessage(text: response, isUser: false);
       ref.read(conversationProvider.notifier).addMessage(aiMessage);
 
-      // Check if recommendations are provided
-      final requirements = AIBusinessExpertService.extractBusinessRequirements(
-        response,
-      );
-      if (requirements != null) {
-        setState(() => _extractedRequirements = requirements);
-      }
-
       _scrollToBottom();
     } catch (e) {
       debugPrint('Error sending message: $e');
@@ -133,22 +241,6 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
     } finally {
       setState(() => _isTyping = false);
     }
-  }
-
-  void _navigateToFreezoneBrowser() {
-    if (_extractedRequirements == null) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FreezoneBrowserPage(
-          prefilledRecommendations:
-              _extractedRequirements!['recommendations'] as List<String>?,
-          minVisas: _extractedRequirements!['visaCount'] as int?,
-          searchQuery: _extractedRequirements!['activity'] as String?,
-        ),
-      ),
-    );
   }
 
   @override
@@ -171,7 +263,6 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
             tooltip: 'Start Over',
             onPressed: () {
               ref.read(conversationProvider.notifier).reset();
-              setState(() => _extractedRequirements = null);
             },
           ),
         ],
@@ -192,39 +283,6 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
               },
             ),
           ),
-
-          // Recommendation action button
-          if (_extractedRequirements != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                border: Border(
-                  top: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.lightbulb, color: Colors.orange, size: 20),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Ready to explore these options?',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: _navigateToFreezoneBrowser,
-                    icon: const Icon(Icons.arrow_forward, size: 18),
-                    label: const Text('View Freezones'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
           // Input area
           Container(

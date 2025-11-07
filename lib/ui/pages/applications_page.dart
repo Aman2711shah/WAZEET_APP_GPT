@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme.dart';
+import '../responsive.dart';
+import '../widgets/back_to_top_button.dart';
 
 class ApplicationsPage extends StatefulWidget {
   final String? initialId;
@@ -100,12 +102,15 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final ScrollController scrollController = ScrollController();
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      floatingActionButton: BackToTopButton(controller: scrollController),
       body: CustomScrollView(
+        controller: scrollController,
         slivers: [
           SliverAppBar(
-            expandedHeight: 280,
+            expandedHeight: Responsive.heroHeight(context),
             floating: false,
             pinned: true,
             backgroundColor: AppColors.purple,
@@ -114,11 +119,11 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
                 'Track Application',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               background: Stack(
+                clipBehavior: Clip.hardEdge,
                 fit: StackFit.expand,
                 children: [
                   Image.network(
@@ -137,8 +142,8 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.3),
-                          AppColors.purple.withValues(alpha: 0.85),
+                          Colors.black.withValues(alpha: 0.35),
+                          AppColors.purple.withValues(alpha: 0.5),
                         ],
                       ),
                     ),
@@ -155,6 +160,8 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0.3,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],

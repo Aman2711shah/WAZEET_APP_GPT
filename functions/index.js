@@ -1,6 +1,7 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const Stripe = require("stripe");
+const OpenAI = require("openai");
 
 admin.initializeApp();
 
@@ -117,4 +118,83 @@ exports.handleStripeWebhook = functions
         }
 
         res.json({ received: true });
+    });
+
+/**
+ * AI Chat endpoint using OpenAI API
+ * Handles chat completions for UAE company setup assistance
+ * 
+ * @param {Object} data - Request data
+ * @param {Array} data.messages - Array of chat messages {role, content}
+ * @param {Object} context - Firebase Functions context
+ * @returns {Object} - Contains response text from AI
+ */
+exports.aiChat = functions
+    .region('me-central1')
+    .https.onCall(async (data, context) => {
+        try {
+            // Validate request
+            if (!data.messages || !Array.isArray(data.messages)) {
+                throw new functions.https.HttpsError(
+                    'invalid-argument',
+                    'Messages array is required'
+                );
+            }
+
+            // Optional: Require authentication
+            // Uncomment to enforce user authentication:
+            // if (!context.auth) {
+            //     throw new functions.https.HttpsError(
+            //         'unauthenticated',
+            //         'Sign in required to use AI chat'
+            //     );
+            // }
+
+            // Initialize OpenAI client
+            const openai = new OpenAI({
+                apiKey: process.env.OPENAI_API_KEY,
+            });
+
+            const SYSTEM_PROMPT =
+                'You are a helpful assistant for UAE company setup, free zones, licensing, ' +
+                'costs, and documentation. Answer concisely, state assumptions, and suggest ' +
+                'next steps when uncertain.';
+
+            // Build messages with system prompt
+            const messages = [
+                { role: 'system', content: SYSTEM_PROMPT },
+                ...data.messages,
+            ];
+
+            // Call OpenAI API
+            const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+            const completion = await openai.chat.completions.create({
+                model: model,
+                messages: messages,
+                temperature: 0.3,
+                max_tokens: 1000,
+                stream: false,
+            });
+
+            const responseText = completion.choices?.[0]?.message?.content ?? '';
+
+            // Log usage for monitoring
+            console.log(`AI Chat - User: ${context.auth?.uid || 'anonymous'}, ` +
+                `Model: ${model}, Tokens: ${completion.usage?.total_tokens || 0}`);
+
+            return {
+                text: responseText,
+                model: model,
+                usage: completion.usage,
+            };
+        } catch (error) {
+            console.error('AI Chat Error:', error);
+
+            // Return user-friendly error
+            throw new functions.https.HttpsError(
+                'internal',
+                'Failed to get AI response',
+                { detail: error.message }
+            );
+        }
     });

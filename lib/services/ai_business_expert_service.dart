@@ -40,6 +40,56 @@ VISA_COUNT: [number]
 BUDGET: [low/medium/high]
 ''';
 
+  // Context window configuration
+  static const int _maxContextMessages =
+      20; // Keep last 20 messages (10 exchanges)
+  static const int _maxTokensEstimate =
+      8000; // gpt-4o-mini has 128k context, but we'll be conservative
+
+  /// Estimate token count for a message (rough approximation: 1 token ≈ 4 characters)
+  static int _estimateTokens(String text) {
+    return (text.length / 4).ceil();
+  }
+
+  /// Trim conversation history to prevent context overflow using sliding window
+  static List<Map<String, String>> _trimConversationHistory(
+    List<Map<String, String>> history,
+  ) {
+    if (history.isEmpty) return history;
+
+    // First, limit by message count (sliding window)
+    var trimmedHistory = history.length > _maxContextMessages
+        ? history.sublist(history.length - _maxContextMessages)
+        : history;
+
+    // Then, check estimated token count
+    int totalTokens = _estimateTokens(_systemPrompt);
+    final List<Map<String, String>> finalHistory = [];
+
+    // Add messages from most recent to oldest until we hit token limit
+    for (int i = trimmedHistory.length - 1; i >= 0; i--) {
+      final message = trimmedHistory[i];
+      final messageTokens = _estimateTokens(message['content'] ?? '');
+
+      if (totalTokens + messageTokens > _maxTokensEstimate) {
+        debugPrint(
+          'Context window limit reached. Keeping last ${finalHistory.length} messages.',
+        );
+        break;
+      }
+
+      finalHistory.insert(0, message);
+      totalTokens += messageTokens;
+    }
+
+    // Always keep at least the last 4 messages (2 exchanges) if possible
+    if (finalHistory.length < 4 && trimmedHistory.length >= 4) {
+      return trimmedHistory.sublist(trimmedHistory.length - 4);
+    }
+
+    return finalHistory;
+  }
+
   /// Send a message and get AI response with conversation history
   static Future<String> sendMessage({
     required String userMessage,
@@ -50,10 +100,19 @@ BUDGET: [low/medium/high]
         return _getFallbackResponse(conversationHistory.length);
       }
 
-      // Build messages array with system prompt + history + new message
+      // Trim conversation history to prevent context overflow
+      final trimmedHistory = _trimConversationHistory(conversationHistory);
+
+      if (trimmedHistory.length < conversationHistory.length) {
+        debugPrint(
+          'Trimmed conversation from ${conversationHistory.length} to ${trimmedHistory.length} messages',
+        );
+      }
+
+      // Build messages array with system prompt + trimmed history + new message
       final messages = [
         {'role': 'system', 'content': _systemPrompt},
-        ...conversationHistory,
+        ...trimmedHistory,
         {'role': 'user', 'content': userMessage},
       ];
 
@@ -76,6 +135,25 @@ BUDGET: [low/medium/high]
         return data['choices'][0]['message']['content'];
       } else {
         debugPrint('API Error: ${response.statusCode} - ${response.body}');
+
+        // Handle specific error cases
+        if (response.statusCode == 400) {
+          final errorBody = jsonDecode(response.body);
+          if (errorBody['error']?['message']?.contains('maximum context') ==
+              true) {
+            debugPrint(
+              'Context length exceeded even after trimming. Reducing further...',
+            );
+            // Retry with even more aggressive trimming
+            return sendMessage(
+              userMessage: userMessage,
+              conversationHistory: conversationHistory.length > 4
+                  ? conversationHistory.sublist(conversationHistory.length - 4)
+                  : conversationHistory,
+            );
+          }
+        }
+
         return _getFallbackResponse(conversationHistory.length);
       }
     } catch (e) {
