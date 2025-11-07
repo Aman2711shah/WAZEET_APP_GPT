@@ -3,7 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../models/community_models.dart';
 import '../../../services/community/events_service.dart';
 
-const List<String> INDUSTRIES = [
+const List<String> industries = [
   'All Industries',
   'E-commerce',
   'FinTech',
@@ -97,7 +97,7 @@ class _EventsTabState extends State<EventsTab> {
                   child: DropdownButton<String>(
                     value: _selectedIndustry,
                     isExpanded: true,
-                    items: INDUSTRIES.map((industry) {
+                    items: industries.map((industry) {
                       return DropdownMenuItem(
                         value: industry,
                         child: Text(industry),

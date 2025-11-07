@@ -28,13 +28,39 @@ class ServiceHeader extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Background gradient (no image for cleaner look)
+            // Background gradient with 3D depth
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [const Color(0xFF6200EE), const Color(0xFF9D4EDD)],
+                  colors: [
+                    const Color(0xFF6200EE),
+                    const Color(0xFF7E3FF2),
+                    const Color(0xFF9D4EDD),
+                  ],
+                  stops: const [0.0, 0.5, 1.0],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+            ),
+            // Overlay pattern for depth
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.1),
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.2),
+                  ],
                 ),
               ),
             ),
@@ -44,19 +70,31 @@ class ServiceHeader extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // Icon
+                  // Icon with 3D effect
                   if (icon != null)
                     Container(
                       width: 48,
                       height: 48,
                       margin: const EdgeInsets.only(right: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                          BoxShadow(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            blurRadius: 4,
+                            offset: const Offset(-2, -2),
+                          ),
+                        ],
                       ),
                       child: Icon(icon, color: Colors.white, size: 28),
                     ),
-                  // Text
+                  // Text with shadow for 3D depth
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,6 +114,18 @@ class ServiceHeader extends StatelessWidget {
                                   md: 22,
                                   lg: 24,
                                 ),
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withValues(alpha: 0.5),
+                                    blurRadius: 8,
+                                    offset: const Offset(2, 3),
+                                  ),
+                                  Shadow(
+                                    color: Colors.black.withValues(alpha: 0.3),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                               ),
                         ),
                         if (subtitle != null) ...[
@@ -93,6 +143,15 @@ class ServiceHeader extends StatelessWidget {
                                     md: 13,
                                     lg: 14,
                                   ),
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.4,
+                                      ),
+                                      blurRadius: 4,
+                                      offset: const Offset(1, 2),
+                                    ),
+                                  ],
                                 ),
                           ),
                         ],

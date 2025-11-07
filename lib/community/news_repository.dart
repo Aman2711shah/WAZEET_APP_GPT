@@ -1,5 +1,6 @@
 // lib/community/news_repository.dart
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
 import 'models.dart';
 
@@ -66,8 +67,13 @@ class NewsRepository {
       _cache[cacheKey] = _CachedResult(data: result, timestamp: DateTime.now());
 
       return result;
-    } catch (e) {
-      print('Error fetching news: $e');
+    } catch (e, stack) {
+      developer.log(
+        'Error fetching news: $e',
+        name: 'NewsRepository',
+        error: e,
+        stackTrace: stack,
+      );
       rethrow;
     }
   }

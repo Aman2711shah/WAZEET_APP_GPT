@@ -97,7 +97,7 @@ class EmailService {
           FilledButton(
             onPressed: () async {
               Navigator.of(ctx).pop();
-              // TODO: Replace with actual API call to /send-email endpoint
+              // Placeholder for future /send-email API integration.
               await Future.delayed(const Duration(milliseconds: 500));
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

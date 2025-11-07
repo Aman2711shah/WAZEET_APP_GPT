@@ -73,7 +73,7 @@ class _AiAssistantOrbState extends State<AiAssistantOrb>
                           BoxShadow(
                             color: const Color(
                               0xFF7B5CF9,
-                            ).withOpacity(isDark ? 0.65 : 0.35),
+                            ).withValues(alpha: isDark ? 0.65 : 0.35),
                             blurRadius: isDark ? 26 : 18,
                             spreadRadius: 2,
                           ),
@@ -107,7 +107,7 @@ class _AiAssistantOrbState extends State<AiAssistantOrb>
                                 BoxShadow(
                                   color: const Color(
                                     0xFF7B5CF9,
-                                  ).withOpacity(isDark ? 0.7 : 0.45),
+                                  ).withValues(alpha: isDark ? 0.7 : 0.45),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),
@@ -127,8 +127,8 @@ class _AiAssistantOrbState extends State<AiAssistantOrb>
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
                                   colors: [
-                                    Colors.white.withOpacity(0.55),
-                                    Colors.white.withOpacity(0.0),
+                                    Colors.white.withValues(alpha: 0.55),
+                                    Colors.white.withValues(alpha: 0.0),
                                   ],
                                 ),
                               ),
@@ -174,7 +174,7 @@ class _AiAssistantOrbState extends State<AiAssistantOrb>
               height: 40,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [color.withOpacity(0.85), color],
+                  colors: [color.withValues(alpha: 0.85), color],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),

@@ -30,74 +30,78 @@ class AppearanceSettingsPage extends StatelessWidget {
             ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 24),
+          RadioGroup<ThemeMode>(
+            groupValue: selectedTheme,
+            onChanged: (value) {
+              if (value != null) controller.setThemeMode(value);
+            },
+            child: Column(
+              children: [
+                // Light Mode Option
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: RadioListTile<ThemeMode>(
+                    value: ThemeMode.light,
+                    title: Text(
+                      'Light Mode',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    subtitle: Text(
+                      'Bright and clean interface',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                    secondary: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: scheme.secondaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.wb_sunny,
+                        color: scheme.onSecondaryContainer,
+                      ),
+                    ),
+                    activeColor: scheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 12),
 
-          // Light Mode Option
-          Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: RadioListTile<ThemeMode>(
-              value: ThemeMode.light,
-              groupValue: selectedTheme,
-              onChanged: (value) {
-                if (value != null) controller.setThemeMode(value);
-              },
-              title: Text(
-                'Light Mode',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              subtitle: Text(
-                'Bright and clean interface',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-              ),
-              secondary: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: scheme.secondaryContainer,
-                  borderRadius: BorderRadius.circular(12),
+                // Dark Mode Option
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: RadioListTile<ThemeMode>(
+                    value: ThemeMode.dark,
+                    title: Text(
+                      'Dark Mode',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    subtitle: Text(
+                      'Easy on the eyes',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                    secondary: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: scheme.secondaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.nightlight_round,
+                        color: scheme.onSecondaryContainer,
+                      ),
+                    ),
+                    activeColor: scheme.primary,
+                  ),
                 ),
-                child: Icon(Icons.wb_sunny, color: scheme.onSecondaryContainer),
-              ),
-              activeColor: scheme.primary,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Dark Mode Option
-          Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: RadioListTile<ThemeMode>(
-              value: ThemeMode.dark,
-              groupValue: selectedTheme,
-              onChanged: (value) {
-                if (value != null) controller.setThemeMode(value);
-              },
-              title: Text(
-                'Dark Mode',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              subtitle: Text(
-                'Easy on the eyes',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-              ),
-              secondary: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: scheme.secondaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.nightlight_round,
-                  color: scheme.onSecondaryContainer,
-                ),
-              ),
-              activeColor: scheme.primary,
+              ],
             ),
           ),
           const SizedBox(height: 24),

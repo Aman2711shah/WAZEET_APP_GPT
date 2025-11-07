@@ -384,58 +384,94 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
 
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: isUploaded
-                              ? Colors.green.withValues(alpha: 0.1)
-                              : AppColors.purple.withValues(alpha: 0.1),
-                          child: isUploading
-                              ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      AppColors.purple,
-                                    ),
-                                  ),
-                                )
-                              : Icon(
-                                  isUploaded ? Icons.check : Icons.description,
-                                  color: isUploaded
-                                      ? Colors.green
-                                      : AppColors.purple,
-                                  size: 20,
-                                ),
-                        ),
-                        title: Text(doc),
-                        subtitle: Text(
-                          isUploaded
-                              ? _uploadedFiles[doc]!.name
-                              : 'Tap to upload',
-                          style: TextStyle(
-                            color: isUploaded ? Colors.green : Colors.grey,
-                            fontSize: 12,
-                          ),
-                        ),
-                        trailing: isUploaded
-                            ? IconButton(
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () {
-                                  setModalState(() {
-                                    _uploadedFiles.remove(doc);
-                                    _uploadedUrls.remove(doc);
-                                  });
-                                  setState(() {});
-                                },
-                              )
-                            : const Icon(Icons.upload_file),
+                      elevation: isUploading ? 4 : 1,
+                      child: InkWell(
                         onTap: isUploading
                             ? null
                             : () => _pickAndUploadFile(doc, setModalState),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: isUploaded
+                                    ? Colors.green.withValues(alpha: 0.1)
+                                    : AppColors.purple.withValues(alpha: 0.1),
+                                child: isUploading
+                                    ? SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                AppColors.purple,
+                                              ),
+                                        ),
+                                      )
+                                    : Icon(
+                                        isUploaded
+                                            ? Icons.check_circle
+                                            : Icons.upload_file,
+                                        color: isUploaded
+                                            ? Colors.green
+                                            : AppColors.purple,
+                                        size: 24,
+                                      ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      doc,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      isUploaded
+                                          ? _uploadedFiles[doc]!.name
+                                          : 'Tap to upload (PDF, JPG, PNG, DOC)',
+                                      style: TextStyle(
+                                        color: isUploaded
+                                            ? Colors.green
+                                            : Colors.grey,
+                                        fontSize: 12,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (isUploaded)
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.red,
+                                  ),
+                                  onPressed: () {
+                                    setModalState(() {
+                                      _uploadedFiles.remove(doc);
+                                      _uploadedUrls.remove(doc);
+                                    });
+                                    setState(() {});
+                                  },
+                                )
+                              else if (!isUploading)
+                                Icon(
+                                  Icons.arrow_forward_ios,
+                                  size: 16,
+                                  color: Colors.grey.shade400,
+                                ),
+                            ],
+                          ),
+                        ),
                       ),
                     );
                   },
@@ -480,15 +516,30 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
     StateSetter setModalState,
   ) async {
     try {
-      // Pick file
+      // Pick file with web-compatible settings
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'],
         allowMultiple: false,
+        withData: true, // Important for web - loads file data
+        withReadStream: false, // Disable stream for web compatibility
       );
 
       if (result != null && result.files.isNotEmpty) {
         final file = result.files.first;
+
+        // Check if file data is available
+        if (file.bytes == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Could not read file. Please try again.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
 
         // Validate file size (max 10MB)
         if (file.size > 10 * 1024 * 1024) {
@@ -515,35 +566,46 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
           'service_documents/${widget.subService.id}/$fileName',
         );
 
+        // Determine content type
+        String contentType = 'application/octet-stream';
+        final extension = file.extension?.toLowerCase();
+        if (extension == 'pdf') {
+          contentType = 'application/pdf';
+        } else if (extension == 'jpg' || extension == 'jpeg') {
+          contentType = 'image/jpeg';
+        } else if (extension == 'png') {
+          contentType = 'image/png';
+        } else if (extension == 'doc') {
+          contentType = 'application/msword';
+        } else if (extension == 'docx') {
+          contentType =
+              'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        }
+
         // Upload file bytes
-        if (file.bytes != null) {
-          await storageRef.putData(
-            file.bytes!,
-            SettableMetadata(
-              contentType: file.extension == 'pdf'
-                  ? 'application/pdf'
-                  : 'image/${file.extension}',
+        await storageRef.putData(
+          file.bytes!,
+          SettableMetadata(contentType: contentType),
+        );
+
+        // Get download URL
+        final downloadUrl = await storageRef.getDownloadURL();
+
+        setModalState(() {
+          _uploadedFiles[documentName] = file;
+          _uploadedUrls[documentName] = downloadUrl;
+          _uploadingStatus[documentName] = false;
+        });
+        setState(() {});
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$documentName uploaded successfully!'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
             ),
           );
-
-          // Get download URL
-          final downloadUrl = await storageRef.getDownloadURL();
-
-          setModalState(() {
-            _uploadedFiles[documentName] = file;
-            _uploadedUrls[documentName] = downloadUrl;
-            _uploadingStatus[documentName] = false;
-          });
-          setState(() {});
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('$documentName uploaded successfully!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
         }
       }
     } catch (e) {
@@ -553,10 +615,29 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
       setState(() {});
 
       if (mounted) {
+        // Provide more helpful error messages
+        String errorMessage = 'Upload failed';
+        if (e.toString().contains('permission')) {
+          errorMessage =
+              'Permission denied. Please check Firebase Storage rules.';
+        } else if (e.toString().contains('network')) {
+          errorMessage = 'Network error. Please check your connection.';
+        } else if (e.toString().contains('canceled')) {
+          errorMessage = 'Upload canceled';
+        } else {
+          errorMessage = 'Upload failed: ${e.toString()}';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Upload failed: ${e.toString()}'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: () => _pickAndUploadFile(documentName, setModalState),
+            ),
           ),
         );
       }

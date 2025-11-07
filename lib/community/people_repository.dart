@@ -1,4 +1,5 @@
 // lib/community/people_repository.dart
+import 'dart:developer' as developer;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'models.dart';
@@ -85,8 +86,13 @@ class PeopleRepository {
 
         user.mutualConnectionsCount = mutualCount;
       }
-    } catch (e) {
-      print('Error computing mutual connections: $e');
+    } catch (e, stack) {
+      developer.log(
+        'Error computing mutual connections: $e',
+        name: 'PeopleRepository',
+        error: e,
+        stackTrace: stack,
+      );
       // Silent fail, counts remain 0
     }
   }
@@ -268,8 +274,13 @@ class PeopleRepository {
           if (userDoc.exists) {
             profiles.add(UserProfile.fromFirestore(userDoc));
           }
-        } catch (e) {
-          print('Error fetching user $uid: $e');
+        } catch (e, stack) {
+          developer.log(
+            'Error fetching user $uid: $e',
+            name: 'PeopleRepository',
+            error: e,
+            stackTrace: stack,
+          );
         }
       }
 

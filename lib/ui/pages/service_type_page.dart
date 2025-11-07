@@ -27,8 +27,8 @@ class ServiceTypePage extends ConsumerWidget {
                 subtitle: '${category.serviceTypes.length} service types',
               ),
               Positioned(
-                top: 40,
-                left: 8,
+                top: MediaQuery.of(context).padding.top + 4,
+                left: 4,
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
                   onPressed: () => Navigator.of(context).pop(),
@@ -130,8 +130,8 @@ class SubServiceListPage extends ConsumerWidget {
                     '${serviceType.subServices.length} services available',
               ),
               Positioned(
-                top: 40,
-                left: 8,
+                top: MediaQuery.of(context).padding.top + 4,
+                left: 4,
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
                   onPressed: () => Navigator.of(context).pop(),

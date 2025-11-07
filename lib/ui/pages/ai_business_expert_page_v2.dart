@@ -397,9 +397,11 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
               return Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   border: Border(
-                    top: BorderSide(color: AppColors.primary.withOpacity(0.3)),
+                    top: BorderSide(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                    ),
                   ),
                 ),
                 child: Row(
@@ -438,7 +440,7 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
                   return ActionChip(
                     label: Text(reply),
                     onPressed: () => _sendMessage(reply),
-                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                     labelStyle: TextStyle(color: AppColors.primary),
                   );
                 }).toList(),
@@ -452,7 +454,7 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 4,
                   offset: const Offset(0, -2),
                 ),
@@ -513,7 +515,7 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -537,7 +539,7 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 3,
                     offset: const Offset(0, 1),
                   ),
@@ -583,7 +585,7 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -606,7 +608,7 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 3,
                     offset: const Offset(0, 1),
                   ),
@@ -653,7 +655,7 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -697,7 +699,7 @@ class _AIBusinessExpertPageState extends ConsumerState<AIBusinessExpertPage> {
           width: 6,
           height: 6,
           decoration: BoxDecoration(
-            color: Colors.grey[600]!.withOpacity(opacity),
+            color: Colors.grey[600]!.withValues(alpha: opacity),
             shape: BoxShape.circle,
           ),
         );

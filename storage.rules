@@ -2,6 +2,13 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     function signedIn() { return request.auth != null; }
+    function validImageOrDoc() {
+      return request.resource.contentType.matches('image/.*') 
+          || request.resource.contentType.matches('application/pdf')
+          || request.resource.contentType.matches('application/msword')
+          || request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    }
+    function validSize() { return request.resource.size < 10 * 1024 * 1024; } // 10MB max
 
     // Profile pictures - users can read anyone's profile pic but only write their own
     match /profile_pictures/{userId}/{allPaths=**} {
@@ -12,6 +19,12 @@ service firebase.storage {
     // Applications - users can only access their own applications
     match /applications/{applicationId}/{allPaths=**} {
       allow read, write: if signedIn();
+    }
+
+    // Service documents - authenticated users can upload documents
+    match /service_documents/{serviceId}/{fileName} {
+      allow read: if signedIn();
+      allow write: if signedIn() && validImageOrDoc() && validSize();
     }
 
     // Block everything else by default

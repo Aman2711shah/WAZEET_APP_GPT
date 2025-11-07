@@ -8,6 +8,7 @@ import '../../providers/community_posts_provider.dart';
 import '../../providers/user_profile_provider.dart';
 import '../../providers/community_provider.dart';
 import '../../community/models.dart' as community;
+import '../../models/user_profile.dart' as app_profile;
 import '../../services/event_service.dart';
 import '../../services/business_news_service.dart';
 import '../theme.dart';
@@ -1257,10 +1258,9 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                 const Spacer(),
                 TextButton(
                   onPressed: () {
-                    // TODO: Navigate to full people list page
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Full people list coming soon!'),
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const SuggestedConnectionsPage(),
                       ),
                     );
                   },
@@ -2411,6 +2411,97 @@ class _ConnectionButton extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<_ConnectionButton> createState() => _ConnectionButtonState();
+}
+
+class SuggestedConnectionsPage extends ConsumerWidget {
+  const SuggestedConnectionsPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Suggested Connections')),
+      body: StreamBuilder<List<community.UserProfile>>(
+        stream: ref.read(peopleRepositoryProvider).suggested(limit: 20),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final profiles = snapshot.data ?? [];
+
+          if (profiles.isEmpty) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'No suggestions available right now.\nCheck back soon!',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemBuilder: (context, index) {
+              final profile = profiles[index];
+              final hasPhoto = profile.photoURL.isNotEmpty;
+              final headlineText = profile.headline.isNotEmpty
+                  ? profile.headline
+                  : 'No headline provided';
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundImage: hasPhoto
+                      ? NetworkImage(profile.photoURL)
+                      : null,
+                  child: hasPhoto
+                      ? null
+                      : Text(
+                          profile.displayName.isNotEmpty
+                              ? profile.displayName[0].toUpperCase()
+                              : '?',
+                        ),
+                ),
+                title: Text(profile.displayName),
+                subtitle: Text(headlineText),
+                trailing: _ConnectionButton(
+                  userId: profile.uid,
+                  onConnectionSent: () =>
+                      ref.invalidate(peopleRepositoryProvider),
+                ),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => UserProfileDetailPage(
+                      profile: _mapCommunityProfile(profile),
+                    ),
+                  ),
+                ),
+              );
+            },
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemCount: profiles.length,
+          );
+        },
+      ),
+    );
+  }
+}
+
+app_profile.UserProfile _mapCommunityProfile(community.UserProfile profile) {
+  String? _nullable(String value) => value.isNotEmpty ? value : null;
+
+  return app_profile.UserProfile(
+    id: profile.uid,
+    name: profile.displayName,
+    email: '${profile.uid}@community.wazeet',
+    title: _nullable(profile.headline),
+    location: _nullable(profile.location),
+    photoUrl: _nullable(profile.photoURL),
+    industries: profile.industries,
+    connectionsCount: profile.connectionsCount,
+    joinedDate: profile.createdAt,
+    isVerified: profile.isDiscoverable,
+  );
 }
 
 class _ConnectionButtonState extends ConsumerState<_ConnectionButton> {

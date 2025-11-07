@@ -1,6 +1,7 @@
 // Integration test for Community Page - Connection Flow
 // Run with: flutter test integration_test/connection_flow_test.dart
 
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -225,8 +226,9 @@ void main() {
           reason: 'Test requires some applications to exist',
         );
 
-        print(
-          'INFO: Found ${allApps.docs.length} total applications, user has ${expectedApps.docs.length}',
+        developer.log(
+          'Found ${allApps.docs.length} total applications, user has ${expectedApps.docs.length}',
+          name: 'connection_flow_test',
         );
       }
     });
