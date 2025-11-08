@@ -1,21 +1,11 @@
 /* eslint-disable */
-import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as logger from "firebase-functions/logger";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import OpenAI from "openai";
 
+// Ensure admin is initialized by index.ts
 const db = admin.firestore();
-
-function getApiKey(): string {
-    const key = process.env.OPENAI_API_KEY || (functions.config().openai?.api_key as string | undefined);
-    if (!key) {
-        throw new functions.https.HttpsError(
-            "failed-precondition",
-            "OpenAI API key not configured. Set env OPENAI_API_KEY or functions config openai.api_key"
-        );
-    }
-    return key;
-}
 
 async function checkRateLimit(uid: string): Promise<void> {
     // Simple per-user per-hour rate limit using Firestore
@@ -29,66 +19,51 @@ async function checkRateLimit(uid: string): Promise<void> {
 
     const MAX_CALLS = 10;
     if (snap.size >= MAX_CALLS) {
-        throw new functions.https.HttpsError("resource-exhausted", "Rate limit exceeded. Try again later.");
+        throw new HttpsError("resource-exhausted", "Rate limit exceeded. Try again later.");
     }
     // record this call
     await ref.add({ timestamp: now });
 }
 
-function validatePayload(data: any): { type: "vat" | "corporate"; input: any; result: any } {
-    const type = data?.type;
-    if (type !== "vat" && type !== "corporate") {
-        throw new functions.https.HttpsError("invalid-argument", "type must be 'vat' or 'corporate'");
-    }
-    if (typeof data?.input !== "object" || typeof data?.result !== "object") {
-        throw new functions.https.HttpsError("invalid-argument", "input and result are required objects");
-    }
-    return { type, input: data.input, result: data.result };
-}
-
-export const aiTaxExplain = functions.https.onCall(async (data, context) => {
+export const aiTaxExplain = onCall({
+    secrets: ["OPENAI_API_KEY"],
+    region: "us-central1",
+    maxInstances: 10,
+}, async (request) => {
     try {
-        if (!context.auth) {
-            throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
+        const auth = request.auth;
+        if (!auth) {
+            throw new HttpsError("unauthenticated", "User must be authenticated");
         }
 
-        await checkRateLimit(context.auth.uid);
+        await checkRateLimit(auth.uid);
 
-        const { type, input, result } = validatePayload(data);
+        const data = request.data || {};
+        const { mode, inputs, results, locale = "en", currency = "AED" } = data;
+        if (!mode || !inputs || !results) {
+            throw new HttpsError("invalid-argument", "Missing mode, inputs, or results");
+        }
 
-        const apiKey = getApiKey();
-        const openai = new OpenAI({ apiKey });
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-        const sys =
-            "You are a helpful UAE tax assistant. Explain calculations clearly and briefly. " +
-            "Use AED currency, concise steps, and include a short non-legal-advice disclaimer.";
+        const sysPrompt = `You are a UAE tax assistant.\nExplain the ${mode === "vat" ? "VAT (Value Added Tax)" : "Corporate Tax"} calculation clearly using the provided numbers. Show each step and formula, mention thresholds and rates where relevant, and end with a short summary. Respond in ${locale} and keep it under 180 words. Use ${currency} for currency values.`;
 
-        const user = JSON.stringify({ type, input, result });
-
-        // Use small token footprint, aim for ~150-250 words
-        const chat = await openai.chat.completions.create({
+        const completion = await openai.chat.completions.create({
             model: "gpt-4o-mini",
             messages: [
-                { role: "system", content: sys },
-                {
-                    role: "user",
-                    content:
-                        "Explain this UAE " +
-                        (type === "vat" ? "VAT" : "Corporate Tax") +
-                        " calculation for a business owner in 4-7 bullets and 1 tip. JSON: " +
-                        user,
-                },
+                { role: "system", content: sysPrompt },
+                { role: "user", content: JSON.stringify({ mode, inputs, results }) },
             ],
-            temperature: 0.2,
-            max_tokens: 500,
+            temperature: 0.4,
         });
 
-        const text = chat.choices?.[0]?.message?.content?.trim() || "Explanation unavailable.";
-
-        return { ok: true, text };
+        const explanation = completion.choices?.[0]?.message?.content?.trim();
+        return {
+            explanation: explanation || "Sorry, I couldn’t generate an explanation. Please try again later.",
+        };
     } catch (err: any) {
-        logger.error("aiTaxExplain error", err);
-        if (err instanceof functions.https.HttpsError) throw err;
-        throw new functions.https.HttpsError("internal", err?.message || "Unknown error");
+        logger.error("AI Explain Error", err);
+        if (err instanceof HttpsError) throw err;
+        throw new HttpsError("internal", err?.message || "Unexpected error");
     }
 });
