@@ -118,7 +118,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
       decoration: BoxDecoration(gradient: AppColors.gradientPurple),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -142,34 +142,34 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                   ),
                 ],
               ),
-              const Spacer(),
+              const SizedBox(height: 4),
               Text(
                 'Connect, share and grow together',
                 style: Theme.of(
                   context,
-                ).textTheme.titleMedium?.copyWith(color: Colors.white70),
+                ).textTheme.titleSmall?.copyWith(color: Colors.white70),
               ),
               Text(
                 'Community',
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     _buildStatItem('2.5K', 'Members', Icons.people),
-                    Container(width: 1, height: 30, color: Colors.white30),
+                    Container(width: 1, height: 24, color: Colors.white30),
                     _buildStatItem('450', 'Posts', Icons.article),
-                    Container(width: 1, height: 30, color: Colors.white30),
+                    Container(width: 1, height: 24, color: Colors.white30),
                     _buildStatItem(
                       '15',
                       'Active Now',

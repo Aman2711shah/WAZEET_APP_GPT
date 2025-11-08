@@ -27,6 +27,12 @@ service firebase.storage {
       allow write: if signedIn() && validImageOrDoc() && validSize();
     }
 
+    // Community posts media - authenticated users can upload images for posts
+    match /posts/{postId}/{fileName} {
+      allow read: if signedIn();
+      allow write: if signedIn() && validImageOrDoc() && validSize();
+    }
+
     // Block everything else by default
     match /{path=**} {
       allow read, write: if false;
