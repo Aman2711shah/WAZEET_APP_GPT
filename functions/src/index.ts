@@ -10,6 +10,8 @@ admin.initializeApp();
 import { findBestPackages } from "./quotes";
 import { FinderInput, FreezonePackage } from "./types";
 import { discoverEventsWithOpenAI, validateEvent } from "./event-discovery";
+// AI Tax Explain function
+export { aiTaxExplain } from "./aiTaxExplain";
 
 // Export AI Business Chat function
 export { aiBusinessChat } from "./aiBusinessChat";

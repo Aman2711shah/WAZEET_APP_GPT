@@ -12,6 +12,7 @@ import 'edit_profile_page.dart';
 import '../widgets/hero/hero_header.dart';
 import '../theme.dart';
 import '../animations/page_transitions.dart';
+import '../../features/tax_calculator/ai_tax_calculator_screen.dart';
 
 class HomePage extends ConsumerWidget {
   final Function(int)? onNavigateToTab;
@@ -69,18 +70,20 @@ class HomePage extends ConsumerWidget {
                 children: [
                   // Gradient background
                   Container(
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          scheme.primary,
-                          scheme.primary.withValues(alpha: 0.75),
-                          scheme.primary.withValues(alpha: 0.5),
+                          Color(0xFF6D28D9),
+                          Color(0xFF7C3AED),
+                          Color.fromARGB(255, 134, 111, 206),
                         ],
                       ),
                     ),
                   ),
+                  // Upper soft glow & sheen
+                  const _HeroTopOverlay(),
                   // Decorative circles
                   Positioned(
                     top: -50,
@@ -130,6 +133,8 @@ class HomePage extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                     ),
                   ),
+                  // Bottom fade / curved transition
+                  const _HeroBottomFade(),
                 ],
               ),
               titlePadding: EdgeInsets.zero,
@@ -166,7 +171,9 @@ class HomePage extends ConsumerWidget {
                       Text(
                         'Quick Actions',
                         style: AppTextStyle.headlineSmall.copyWith(
-                          color: AppColors.text,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : AppColors.text,
                         ),
                       ),
                       const Spacer(),
@@ -260,15 +267,8 @@ class HomePage extends ConsumerWidget {
                         Icons.calculate,
                         Colors.teal,
                         () {
-                          final accountingCategory = serviceCategories
-                              .firstWhere((cat) => cat.id == 'accounting');
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ServiceTypePage(category: accountingCategory),
-                            ),
-                          );
+                          // Open AI Tax Calculator screen
+                          context.pushWithSlide(const AiTaxCalculatorScreen());
                         },
                       ),
                       _buildQuickActionCard(
@@ -308,7 +308,9 @@ class HomePage extends ConsumerWidget {
                       Text(
                         'Tips & Insights',
                         style: AppTextStyle.headlineSmall.copyWith(
-                          color: AppColors.text,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : AppColors.text,
                         ),
                       ),
                     ],
@@ -381,7 +383,9 @@ class HomePage extends ConsumerWidget {
                       Text(
                         'Recent Activity',
                         style: AppTextStyle.headlineSmall.copyWith(
-                          color: AppColors.text,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : AppColors.text,
                         ),
                       ),
                     ],
@@ -728,7 +732,7 @@ class HomePage extends ConsumerWidget {
                           subtitle,
                           style: AppTextStyle.bodySmall.copyWith(
                             color: isDark
-                                ? AppColors.darkTextSecondary
+                                ? Colors.white.withOpacity(.82)
                                 : AppColors.textSecondary,
                           ),
                         ),
@@ -756,7 +760,7 @@ class HomePage extends ConsumerWidget {
                     child: Text(
                       status,
                       style: AppTextStyle.labelSmall.copyWith(
-                        color: color,
+                        color: isDark ? Colors.white : color,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -1883,4 +1887,122 @@ class HomePage extends ConsumerWidget {
       ),
     );
   }
+}
+
+// Top overlay with subtle radial glow & sheen bar
+class _HeroTopOverlay extends StatelessWidget {
+  const _HeroTopOverlay();
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Stack(
+        children: [
+          // Large soft radial glow
+          Positioned(
+            top: -120,
+            left: -60,
+            child: Container(
+              width: 260,
+              height: 260,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.white.withOpacity(.35),
+                    Colors.white.withOpacity(.08),
+                    Colors.transparent,
+                  ],
+                  stops: const [0, .55, 1],
+                ),
+              ),
+            ),
+          ),
+          // Shimmer bar (static subtle sheen)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 72,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.white.withOpacity(.35),
+                    Colors.white.withOpacity(.12),
+                    Colors.transparent,
+                  ],
+                  stops: const [0, .55, 1],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Bottom fade giving a smooth transition & hint of curvature
+class _HeroBottomFade extends StatelessWidget {
+  const _HeroBottomFade();
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: IgnorePointer(
+        child: Container(
+          height: 90,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [
+                Colors.white.withOpacity(.65),
+                Colors.white.withOpacity(.35),
+                Colors.white.withOpacity(.08),
+                Colors.transparent,
+              ],
+              stops: const [0, .35, .7, 1],
+            ),
+          ),
+          child: CustomPaint(
+            painter: _ArcPainter(color: Colors.white.withOpacity(.4)),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ArcPainter extends CustomPainter {
+  final Color color;
+  _ArcPainter({required this.color});
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path();
+    // Draw a soft upward arc to imply depth
+    path.moveTo(0, size.height);
+    path.quadraticBezierTo(
+      size.width * .5,
+      size.height - 42,
+      size.width,
+      size.height,
+    );
+    path.lineTo(size.width, size.height);
+    path.close();
+    final paint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.bottomCenter,
+        end: Alignment.topCenter,
+        colors: [color.withOpacity(.55), color.withOpacity(.05)],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ArcPainter oldDelegate) => false;
 }
