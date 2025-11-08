@@ -1,231 +1,50 @@
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../../models/post.dart';
-import '../../models/event.dart';
-import '../../models/business_news.dart';
-import '../../providers/community_posts_provider.dart';
-import '../../providers/user_profile_provider.dart';
-import '../../providers/community_provider.dart';
+
 import '../../community/models.dart' as community;
+import '../../models/post.dart';
 import '../../models/user_profile.dart' as app_profile;
-import '../../services/event_service.dart';
-import '../../services/business_news_service.dart';
-import '../theme.dart';
+import '../../providers/community_feed_provider.dart';
+import '../../providers/community_provider.dart';
+import '../../providers/user_profile_provider.dart';
+import '../../services/community/community_feed_service.dart';
 import '../responsive.dart';
-import '../theme/responsive_text.dart';
-import '../widgets/back_to_top_button.dart';
+import '../theme.dart';
 import '../widgets/post_card.dart';
+import '../widgets/post_comments_sheet.dart';
+import 'community/events_tab.dart';
+import 'community/news_tab.dart';
+import 'community/trending_tab.dart';
 import 'industry_selection_page.dart';
 import 'user_profile_detail_page.dart';
-import 'community/trending_tab.dart';
-import 'community/news_tab.dart';
-import 'community/events_tab.dart';
 
 class CommunityPage extends ConsumerStatefulWidget {
   const CommunityPage({super.key});
-  @override
-  ConsumerState<CommunityPage> createState() => _CommunityPageState();
 
-  // Static method to show create options from anywhere
-  // Static method that can be called from main_nav or anywhere else
   static void showCreateOptionsMenu(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(
-                  Icons.article,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                title: const Text('Write an article'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showArticleEditor(context, ref);
-                },
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.poll,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                title: const Text('Create a poll'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showPollCreator(context, ref);
-                },
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.event,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                title: const Text('Create an event'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showEventCreator(context, ref);
-                },
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.image,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                title: const Text('Share a photo'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showPhotoShare(context, ref);
-                },
-              ),
-            ],
-          ),
-        ),
+      isScrollControlled: true,
+      builder: (ctx) => CommunityComposerSheet(
+        service: ref.read(communityFeedServiceProvider),
       ),
     );
   }
 
-  // Static helper methods to show dialogs
-  static void _showArticleEditor(BuildContext context, WidgetRef ref) {
-    final titleController = TextEditingController();
-    final contentController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.article,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Write an Article',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Article Title',
-                  hintText: 'Enter a catchy title...',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: TextField(
-                  controller: contentController,
-                  maxLines: null,
-                  expands: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Content',
-                    hintText: 'Write your article here...',
-                    border: OutlineInputBorder(),
-                    alignLabelWithHint: true,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    if (titleController.text.trim().isEmpty ||
-                        contentController.text.trim().isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please fill in all fields'),
-                        ),
-                      );
-                      return;
-                    }
-
-                    final newPost = Post(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      userId: 'demo_user',
-                      userName: 'David Chen',
-                      userTitle: 'Entrepreneur | WAZEET Founder',
-                      content:
-                          '📝 ${titleController.text}\n\n${contentController.text}',
-                      createdAt: DateTime.now(),
-                      likesCount: 0,
-                      commentsCount: 0,
-                      imageUrl: null,
-                    );
-
-                    ref.read(communityPostsProvider.notifier).addPost(newPost);
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Article published! 📝')),
-                    );
-                  },
-                  icon: const Icon(Icons.publish),
-                  label: const Text('Publish Article'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  static void _showPollCreator(BuildContext context, WidgetRef ref) {
-    // Poll creator implementation - I'll add a placeholder for now
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Poll creator coming soon!')));
-  }
-
-  static void _showEventCreator(BuildContext context, WidgetRef ref) {
-    // Event creator implementation - I'll add a placeholder for now
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Event creator coming soon!')));
-  }
-
-  static void _showPhotoShare(BuildContext context, WidgetRef ref) {
-    // Photo share implementation - I'll add a placeholder for now
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Photo share coming soon!')));
-  }
+  @override
+  ConsumerState<CommunityPage> createState() => _CommunityPageState();
 }
 
 class _CommunityPageState extends ConsumerState<CommunityPage>
     with SingleTickerProviderStateMixin {
   final _search = TextEditingController();
   final _composer = TextEditingController();
+  final List<_PendingImage> _pendingImages = [];
   bool _posting = false;
   late TabController _tabController;
-  String _newsIndustry = 'All Industries';
 
   @override
   void initState() {
@@ -241,769 +60,46 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
     super.dispose();
   }
 
-  void _submitPost() {
-    if (_composer.text.trim().isEmpty) return;
-
-    setState(() => _posting = true);
-
-    final newPost = Post(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      userId: 'demo_user',
-      userName: 'David Chen',
-      userTitle: 'Entrepreneur | WAZEET Founder',
-      content: _composer.text.trim(),
-      createdAt: DateTime.now(),
-      likesCount: 0,
-      commentsCount: 0,
-      sharesCount: 0,
-      likedBy: [],
-    );
-
-    ref.read(communityPostsProvider.notifier).addPost(newPost);
-    _composer.clear();
-
-    setState(() => _posting = false);
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Posted successfully! 🎉')));
-  }
-
-  // ignore: unused_element
-  void _showArticleEditor() {
-    final titleController = TextEditingController();
-    final contentController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.article,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Write an Article',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Article Title',
-                  hintText: 'Enter a catchy title...',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: TextField(
-                  controller: contentController,
-                  maxLines: null,
-                  expands: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Content',
-                    hintText: 'Write your article here...',
-                    border: OutlineInputBorder(),
-                    alignLabelWithHint: true,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    if (titleController.text.trim().isEmpty ||
-                        contentController.text.trim().isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please fill in all fields'),
-                        ),
-                      );
-                      return;
-                    }
-
-                    final newPost = Post(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      userId: 'demo_user',
-                      userName: 'David Chen',
-                      userTitle: 'Entrepreneur | WAZEET Founder',
-                      content:
-                          '📝 ${titleController.text}\n\n${contentController.text}',
-                      createdAt: DateTime.now(),
-                      likesCount: 0,
-                      commentsCount: 0,
-                      imageUrl: null,
-                    );
-
-                    ref.read(communityPostsProvider.notifier).addPost(newPost);
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Article published! 📝')),
-                    );
-                  },
-                  icon: const Icon(Icons.publish),
-                  label: const Text('Publish Article'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ignore: unused_element
-  void _showPollCreator() {
-    final questionController = TextEditingController();
-    final option1Controller = TextEditingController();
-    final option2Controller = TextEditingController();
-    final option3Controller = TextEditingController();
-    final option4Controller = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.poll,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Create a Poll',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: questionController,
-                decoration: const InputDecoration(
-                  labelText: 'Poll Question',
-                  hintText: 'Ask something...',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: option1Controller,
-                decoration: const InputDecoration(
-                  labelText: 'Option 1',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: option2Controller,
-                decoration: const InputDecoration(
-                  labelText: 'Option 2',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: option3Controller,
-                decoration: const InputDecoration(
-                  labelText: 'Option 3 (Optional)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: option4Controller,
-                decoration: const InputDecoration(
-                  labelText: 'Option 4 (Optional)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    if (questionController.text.trim().isEmpty ||
-                        option1Controller.text.trim().isEmpty ||
-                        option2Controller.text.trim().isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Please enter question and at least 2 options',
-                          ),
-                        ),
-                      );
-                      return;
-                    }
-
-                    final options = <String>[
-                      option1Controller.text.trim(),
-                      option2Controller.text.trim(),
-                      if (option3Controller.text.trim().isNotEmpty)
-                        option3Controller.text.trim(),
-                      if (option4Controller.text.trim().isNotEmpty)
-                        option4Controller.text.trim(),
-                    ];
-
-                    final pollContent =
-                        '📊 ${questionController.text}\n\n${options.asMap().entries.map((e) => '${e.key + 1}. ${e.value}').join('\n')}';
-
-                    final newPost = Post(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      userId: 'demo_user',
-                      userName: 'David Chen',
-                      userTitle: 'Entrepreneur | WAZEET Founder',
-                      content: pollContent,
-                      createdAt: DateTime.now(),
-                      likesCount: 0,
-                      commentsCount: 0,
-                      imageUrl: null,
-                    );
-
-                    ref.read(communityPostsProvider.notifier).addPost(newPost);
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Poll created! 📊')),
-                    );
-                  },
-                  icon: const Icon(Icons.check),
-                  label: const Text('Create Poll'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ignore: unused_element
-  void _showEventCreator() {
-    final titleController = TextEditingController();
-    final descriptionController = TextEditingController();
-    final locationController = TextEditingController();
-    DateTime selectedDate = DateTime.now();
-    TimeOfDay selectedTime = TimeOfDay.now();
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => Dialog(
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            constraints: const BoxConstraints(maxWidth: 500, maxHeight: 650),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.event,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Create an Event',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Event Title',
-                    hintText: 'Enter event name...',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: descriptionController,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Description',
-                    hintText: 'What is this event about?',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: locationController,
-                  decoration: const InputDecoration(
-                    labelText: 'Location',
-                    hintText: 'Where will it take place?',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.location_on),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime.now().add(
-                              const Duration(days: 365),
-                            ),
-                          );
-                          if (date != null) {
-                            setDialogState(() => selectedDate = date);
-                          }
-                        },
-                        icon: const Icon(Icons.calendar_today),
-                        label: Text(
-                          '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          final time = await showTimePicker(
-                            context: context,
-                            initialTime: selectedTime,
-                          );
-                          if (time != null) {
-                            setDialogState(() => selectedTime = time);
-                          }
-                        },
-                        icon: const Icon(Icons.access_time),
-                        label: Text(selectedTime.format(context)),
-                      ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      if (titleController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please enter event title'),
-                          ),
-                        );
-                        return;
-                      }
-
-                      final eventContent =
-                          '🎉 ${titleController.text}\n\n${descriptionController.text.trim().isNotEmpty ? '${descriptionController.text}\n\n' : ''}📍 ${locationController.text.trim().isNotEmpty ? locationController.text : "TBA"}\n📅 ${selectedDate.day}/${selectedDate.month}/${selectedDate.year} at ${selectedTime.format(context)}';
-
-                      final newPost = Post(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        userId: 'demo_user',
-                        userName: 'David Chen',
-                        userTitle: 'Entrepreneur | WAZEET Founder',
-                        content: eventContent,
-                        createdAt: DateTime.now(),
-                        likesCount: 0,
-                        commentsCount: 0,
-                        imageUrl: null,
-                      );
-
-                      ref
-                          .read(communityPostsProvider.notifier)
-                          .addPost(newPost);
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Event created! 🎉')),
-                      );
-                    },
-                    icon: const Icon(Icons.check),
-                    label: const Text('Create Event'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ignore: unused_element
-  void _showPhotoShare() {
-    final captionController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          constraints: const BoxConstraints(maxWidth: 500, maxHeight: 500),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.image,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Share a Photo',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.add_photo_alternate,
-                      size: 64,
-                      color: Colors.grey.shade400,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Click to select photo',
-                      style: TextStyle(color: Colors.grey.shade600),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '(Photo picker coming soon)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: captionController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Caption',
-                  hintText: 'Write something about this photo...',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    if (captionController.text.trim().isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please add a caption')),
-                      );
-                      return;
-                    }
-
-                    final newPost = Post(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      userId: 'demo_user',
-                      userName: 'David Chen',
-                      userTitle: 'Entrepreneur | WAZEET Founder',
-                      content: '📷 ${captionController.text}',
-                      createdAt: DateTime.now(),
-                      likesCount: 0,
-                      commentsCount: 0,
-                      imageUrl:
-                          'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800',
-                    );
-
-                    ref.read(communityPostsProvider.notifier).addPost(newPost);
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Photo shared! 📷')),
-                    );
-                  },
-                  icon: const Icon(Icons.share),
-                  label: const Text('Share Photo'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final currentUser = ref.watch(userProfileProvider);
+    ref.watch(communityFeedSeedProvider); // ensure dev data exists
+    final scheme = Theme.of(context).colorScheme;
 
-    final ScrollController scrollController = ScrollController();
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      floatingActionButton: BackToTopButton(controller: scrollController),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => CommunityPage.showCreateOptionsMenu(context, ref),
+        backgroundColor: AppColors.purple,
+        child: const Icon(Icons.add),
+      ),
       body: NestedScrollView(
-        controller: scrollController,
-        headerSliverBuilder: (context, innerBoxIsScrolled) {
-          return [
-            SliverAppBar(
-              expandedHeight: Responsive.heroHeight(context),
-              pinned: true,
-              floating: false,
-              backgroundColor: scheme.primary,
-              actions: [
-                // Industry Selection Button
-                IconButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const IndustrySelectionPage(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.filter_list),
-                  color: scheme.onPrimary,
-                  tooltip: 'Filter by Industry',
-                ),
-                // My Profile Button
-                if (currentUser != null)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                UserProfileDetailPage(profile: currentUser),
-                          ),
-                        );
-                      },
-                      child: CircleAvatar(
-                        backgroundColor: Colors.white,
-                        radius: 18,
-                        backgroundImage: currentUser.photoUrl != null
-                            ? NetworkImage(currentUser.photoUrl!)
-                            : null,
-                        child: currentUser.photoUrl == null
-                            ? Text(
-                                currentUser.initials,
-                                style: TextStyle(
-                                  color: scheme.primary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              )
-                            : null,
-                      ),
-                    ),
-                  ),
-              ],
-              flexibleSpace: FlexibleSpaceBar(
-                title: Text(
-                  'Community',
-                  style: TextStyle(
-                    color: scheme.onPrimary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: rFont(context, sm: 16, md: 18, lg: 20),
-                    shadows: const [
-                      Shadow(color: Colors.black38, blurRadius: 8),
-                    ],
-                  ),
-                ),
-                background: SafeArea(
-                  top: true,
-                  child: Stack(
-                    clipBehavior: Clip.hardEdge,
-                    fit: StackFit.expand,
-                    children: [
-                      Image.network(
-                        'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1200&auto=format&fit=crop',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: scheme.primary.withValues(alpha: 0.3),
-                          );
-                        },
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.black.withValues(alpha: 0.35),
-                              scheme.primary.withValues(alpha: 0.5),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        left: 16,
-                        right: 16,
-                        bottom: 56,
-                        child: Text(
-                          'Connect, share and grow together',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.95),
-                            fontSize: rFont(context, sm: 12, md: 13, lg: 14),
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 0.3,
-                          ),
-                          maxLines: 2,
-                          softWrap: true,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+        headerSliverBuilder: (context, _) => [
+          SliverAppBar(
+            expandedHeight: Responsive.heroHeight(context),
+            pinned: true,
+            backgroundColor: scheme.primary,
+            flexibleSpace: FlexibleSpaceBar(
+              background: _buildHeroHeader(context),
+            ),
+          ),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _StickyTabBarDelegate(
+              TabBar(
+                controller: _tabController,
+                labelColor: scheme.primary,
+                unselectedLabelColor: scheme.onSurfaceVariant,
+                indicatorColor: scheme.primary,
+                tabs: const [
+                  Tab(text: 'Feed'),
+                  Tab(text: 'Trending'),
+                  Tab(text: 'Events'),
+                  Tab(text: 'Business News'),
+                ],
               ),
             ),
-            // Stats Banner
-            SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatItem('2.5K', 'Members', Icons.people),
-                    ),
-                    Container(
-                      width: 1,
-                      height: 30,
-                      color: scheme.outlineVariant,
-                    ),
-                    Expanded(
-                      child: _buildStatItem('450', 'Posts', Icons.article),
-                    ),
-                    Container(
-                      width: 1,
-                      height: 30,
-                      color: scheme.outlineVariant,
-                    ),
-                    Expanded(
-                      child: _buildStatItem(
-                        '15',
-                        'Active Now',
-                        Icons.circle,
-                        activeColor: Colors.green,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Tabs
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _StickyTabBarDelegate(
-                TabBar(
-                  controller: _tabController,
-                  labelColor: scheme.primary,
-                  unselectedLabelColor: scheme.onSurfaceVariant,
-                  indicator: _UnderlineGradientIndicator(
-                    gradient: LinearGradient(
-                      colors: [
-                        scheme.primary,
-                        scheme.primary.withValues(alpha: 0.7),
-                      ],
-                    ),
-                    thickness: 3,
-                    radius: 2,
-                  ),
-                  tabs: const [
-                    Tab(text: 'Feed'),
-                    Tab(text: 'Trending'),
-                    Tab(text: 'Events'),
-                    Tab(text: 'Business News'),
-                  ],
-                ),
-              ),
-            ),
-          ];
-        },
+          ),
+        ],
         body: TabBarView(
           controller: _tabController,
           children: [
@@ -1017,45 +113,91 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
     );
   }
 
-  Widget _buildStatItem(
-    String value,
-    String label,
-    IconData icon, {
-    Color? activeColor,
-  }) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 16, color: activeColor ?? AppColors.purple),
-            const SizedBox(width: 6),
-            Text(
-              value,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: activeColor ?? Colors.black,
+  Widget _buildHeroHeader(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(gradient: AppColors.gradientPurple),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () => Navigator.of(context).maybePop(),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.filter_list, color: Colors.white),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const IndustrySelectionPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
-            ),
-          ],
+              const Spacer(),
+              Text(
+                'Connect, share and grow together',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(color: Colors.white70),
+              ),
+              Text(
+                'Community',
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildStatItem('2.5K', 'Members', Icons.people),
+                    Container(width: 1, height: 30, color: Colors.white30),
+                    _buildStatItem('450', 'Posts', Icons.article),
+                    Container(width: 1, height: 30, color: Colors.white30),
+                    _buildStatItem(
+                      '15',
+                      'Active Now',
+                      Icons.circle,
+                      activeColor: Colors.greenAccent,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-        ),
-      ],
+      ),
     );
   }
 
   Widget _buildFeedTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final currentUser = ref.watch(userProfileProvider);
+    final feedAsync = ref.watch(communityFeedProvider);
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(communityFeedProvider);
+        await ref.read(communityFeedProvider.future);
+      },
+      child: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          // Search
           TextField(
             controller: _search,
             decoration: InputDecoration(
@@ -1071,169 +213,205 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 16),
-
-          // Quick Composer
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: Colors.grey.shade200),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: AppColors.purple.withValues(
-                          alpha: 0.1,
-                        ),
-                        child: Text(
-                          'D',
-                          style: TextStyle(
-                            color: AppColors.purple,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: _composer,
-                          decoration: const InputDecoration(
-                            hintText: 'Share your thoughts...',
-                            border: InputBorder.none,
-                          ),
-                          minLines: 1,
-                          maxLines: 5,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextButton.icon(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Photo upload coming soon!'),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.image, size: 20),
-                          label: const Text('Photo'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.grey.shade700,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: TextButton.icon(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Video upload coming soon!'),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.videocam, size: 20),
-                          label: const Text('Video'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.grey.shade700,
-                          ),
-                        ),
-                      ),
-                      _posting
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : ElevatedButton(
-                              onPressed: _submitPost,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.purple,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: const Text('Post'),
-                            ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
+          _buildComposer(currentUser),
+          if (_pendingImages.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _buildSelectedImages(),
+          ],
           const SizedBox(height: 16),
-
-          // Suggested Connections
           _buildSuggestedConnections(),
           const SizedBox(height: 16),
-
-          // Feed
-          Consumer(
-            builder: (context, ref, child) {
-              final posts = ref.watch(communityPostsProvider);
-
-              final filteredPosts = _search.text.isEmpty
-                  ? posts
-                  : posts
-                        .where(
-                          (post) =>
-                              post.content.toLowerCase().contains(
-                                _search.text.toLowerCase(),
-                              ) ||
-                              post.userName.toLowerCase().contains(
-                                _search.text.toLowerCase(),
-                              ),
-                        )
-                        .toList();
-
-              if (filteredPosts.isEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(48.0),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.article_outlined,
-                          size: 64,
-                          color: Colors.grey.shade300,
+          feedAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => Padding(
+              padding: const EdgeInsets.all(32),
+              child: Text('Could not load feed: $error'),
+            ),
+            data: (posts) {
+              final filtered = _filterPosts(posts);
+              if (filtered.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.all(48),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.article_outlined,
+                        size: 64,
+                        color: Colors.grey.shade300,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'No posts yet',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade600,
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No posts yet',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Be the first to share something!',
-                          style: TextStyle(color: Colors.grey.shade500),
-                        ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Be the first to share something meaningful.',
+                        style: TextStyle(color: Colors.grey.shade500),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 );
               }
 
               return Column(
-                children: filteredPosts
-                    .map((post) => PostCard(post: post))
+                children: filtered
+                    .map(
+                      (post) => PostCard(
+                        post: post,
+                        onOpenComments: () => _openComments(post),
+                      ),
+                    )
                     .toList(),
               );
             },
           ),
         ],
       ),
+    );
+  }
+
+  List<Post> _filterPosts(List<Post> posts) {
+    if (_search.text.trim().isEmpty) return posts;
+    final query = _search.text.trim().toLowerCase();
+    return posts.where((post) {
+      final matchText = (post.text ?? '').toLowerCase().contains(query);
+      final matchAuthor = post.authorName.toLowerCase().contains(query);
+      return matchText || matchAuthor;
+    }).toList();
+  }
+
+  Widget _buildComposer(app_profile.UserProfile? currentUser) {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: AppColors.purple.withValues(alpha: 0.1),
+                  backgroundImage: currentUser?.photoUrl != null
+                      ? NetworkImage(currentUser!.photoUrl!)
+                      : null,
+                  child: currentUser?.photoUrl == null
+                      ? Text(
+                          currentUser?.name.isNotEmpty == true
+                              ? currentUser!.name[0].toUpperCase()
+                              : 'U',
+                          style: TextStyle(
+                            color: AppColors.purple,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _composer,
+                    decoration: const InputDecoration(
+                      hintText: 'Share your thoughts...',
+                      border: InputBorder.none,
+                    ),
+                    minLines: 1,
+                    maxLines: 5,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: _pendingImages.length >= 4 ? null : _pickImages,
+                    icon: const Icon(Icons.image, size: 20),
+                    label: const Text('Photo'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: null,
+                    icon: const Icon(Icons.videocam_off, size: 20),
+                    label: const Text('Video (soon)'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.grey.shade400,
+                    ),
+                  ),
+                ),
+                _posting
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : ElevatedButton(
+                        onPressed: _submitPost,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.purple,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('Post'),
+                      ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectedImages() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: _pendingImages.asMap().entries.map((entry) {
+        final index = entry.key;
+        final pending = entry.value;
+        return Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.memory(
+                pending.preview,
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+              ),
+            ),
+            Positioned(
+              top: 0,
+              right: 0,
+              child: GestureDetector(
+                onTap: () => setState(() => _pendingImages.removeAt(index)),
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(2),
+                  child: const Icon(Icons.close, size: 16, color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        );
+      }).toList(),
     );
   }
 
@@ -1257,23 +435,15 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                 ),
                 const Spacer(),
                 TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const SuggestedConnectionsPage(),
-                      ),
-                    );
-                  },
+                  onPressed: null,
                   child: Text(
                     'See all',
-                    style: TextStyle(color: AppColors.purple),
+                    style: TextStyle(color: Colors.grey.shade400),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-
-            // Stream real user suggestions from Firestore
             StreamBuilder<List<community.UserProfile>>(
               stream: ref.read(peopleRepositoryProvider).suggested(limit: 3),
               builder: (context, snapshot) {
@@ -1286,218 +456,43 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                   );
                 }
 
-                if (snapshot.hasError) {
-                  final errorMessage = snapshot.error.toString();
-                  final isIndexError =
-                      errorMessage.contains('index') ||
-                      errorMessage.contains('Index') ||
-                      errorMessage.contains('FAILED_PRECONDITION');
-
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            size: 48,
-                            color: Colors.orange.shade400,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            isIndexError
-                                ? 'Database Index Required'
-                                : 'Error Loading Suggestions',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          if (isIndexError) ...[
-                            Text(
-                              'This feature requires a Firestore index.',
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 13,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 12),
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                // Show instructions
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Create Firestore Index'),
-                                    content: const SingleChildScrollView(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            '1. Open Firebase Console',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          SizedBox(height: 8),
-                                          Text(
-                                            '2. Navigate to Firestore Database > Indexes',
-                                          ),
-                                          SizedBox(height: 8),
-                                          Text(
-                                            '3. Click "Create Index" with these fields:',
-                                          ),
-                                          SizedBox(height: 8),
-                                          Text(
-                                            '   Collection: users\n'
-                                            '   Field 1: isDiscoverable (Ascending)\n'
-                                            '   Field 2: lastActiveAt (Descending)',
-                                          ),
-                                          SizedBox(height: 12),
-                                          Text(
-                                            'Or run: firebase deploy --only firestore:indexes',
-                                            style: TextStyle(
-                                              fontFamily: 'monospace',
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context),
-                                        child: const Text('Close'),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.info_outline, size: 18),
-                              label: const Text('How to Fix'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.orange,
-                                foregroundColor: Colors.white,
-                              ),
-                            ),
-                          ] else ...[
-                            Text(
-                              errorMessage.length > 100
-                                  ? '${errorMessage.substring(0, 100)}...'
-                                  : errorMessage,
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 12,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 8),
-                            TextButton(
-                              onPressed: () {
-                                // Retry
-                                setState(() {});
-                              },
-                              child: const Text('Retry'),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                final users = snapshot.data ?? [];
-
-                if (users.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Text(
-                        'No suggestions right now\nCreate user profiles to see connections here',
-                        style: TextStyle(color: Colors.grey.shade500),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  );
+                final profiles = snapshot.data ?? [];
+                if (profiles.isEmpty) {
+                  return const Text('No suggestions right now.');
                 }
 
                 return Column(
-                  children: users.map((user) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 24,
-                            backgroundImage: user.photoURL.isNotEmpty
-                                ? NetworkImage(user.photoURL)
-                                : null,
-                            backgroundColor: AppColors.purple.withValues(
-                              alpha: 0.1,
-                            ),
-                            child: user.photoURL.isEmpty
-                                ? Text(
-                                    user.displayName.isNotEmpty
-                                        ? user.displayName[0].toUpperCase()
-                                        : '?',
-                                    style: TextStyle(
-                                      color: AppColors.purple,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  )
-                                : null,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  user.displayName,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                Text(
-                                  user.headline,
-                                  style: TextStyle(
-                                    color: Colors.grey.shade600,
-                                    fontSize: 12,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                if (user.mutualConnectionsCount > 0)
-                                  Text(
-                                    '${user.mutualConnectionsCount} mutual ${user.mutualConnectionsCount == 1 ? "connection" : "connections"}',
-                                    style: TextStyle(
-                                      color: Colors.grey.shade500,
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          _ConnectionButton(
-                            userId: user.uid,
-                            onConnectionSent: () {
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Connection request sent!'),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                        ],
+                  children: profiles.map((user) {
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        backgroundImage: user.photoURL.isNotEmpty
+                            ? NetworkImage(user.photoURL)
+                            : null,
+                        child: user.photoURL.isEmpty
+                            ? Text(
+                                user.displayName.isNotEmpty
+                                    ? user.displayName[0].toUpperCase()
+                                    : '?',
+                              )
+                            : null,
                       ),
+                      title: Text(user.displayName),
+                      subtitle: Text(
+                        user.headline.isNotEmpty
+                            ? user.headline
+                            : 'No headline provided',
+                      ),
+                      trailing: _ConnectionButton(userId: user.uid),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => UserProfileDetailPage(
+                              profile: _mapCommunityProfile(user),
+                            ),
+                          ),
+                        );
+                      },
                     );
                   }).toList(),
                 );
@@ -1509,613 +504,225 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
     );
   }
 
-  // ignore: unused_element
-  Widget _buildTrendingTab() {
-    final trendingTopics = [
-      {'tag': '#DubaiStartup', 'posts': '1.2K', 'trend': 'up'},
-      {'tag': '#UAEBusiness', 'posts': '850', 'trend': 'up'},
-      {'tag': '#GoldenVisa', 'posts': '620', 'trend': 'up'},
-      {'tag': '#FreelanceUAE', 'posts': '450', 'trend': 'stable'},
-      {'tag': '#DubaiInvestor', 'posts': '380', 'trend': 'up'},
-    ];
+  Future<void> _pickImages() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: true,
+      withData: true,
+    );
+    if (result == null) return;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Trending Topics',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          ...trendingTopics.map(
-            (topic) => Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.purple.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.tag, color: AppColors.purple, size: 20),
-                ),
-                title: Text(
-                  topic['tag']!,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text('${topic['posts']} posts'),
-                trailing: Icon(
-                  topic['trend'] == 'up'
-                      ? Icons.trending_up
-                      : Icons.trending_flat,
-                  color: topic['trend'] == 'up' ? Colors.green : Colors.grey,
-                ),
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Viewing ${topic['tag']}')),
-                  );
-                },
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Popular This Week',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          _buildPopularPost(
-            'Starting a Business in Dubai: Complete Guide',
-            'Ahmed Hassan',
-            '2.5K views',
-            '145 reactions',
-          ),
-          _buildPopularPost(
-            'Golden Visa Application Tips',
-            'Sarah Al Mansouri',
-            '1.8K views',
-            '98 reactions',
-          ),
-          _buildPopularPost(
-            'Free Zone vs Mainland: Which is Better?',
-            'Maria Garcia',
-            '1.5K views',
-            '87 reactions',
-          ),
-        ],
+    setState(() {
+      final availableSlots = 4 - _pendingImages.length;
+      for (final file in result.files.take(availableSlots)) {
+        final bytes = file.bytes;
+        if (bytes != null) {
+          _pendingImages.add(_PendingImage(file: file, preview: bytes));
+        }
+      }
+    });
+  }
+
+  Future<void> _submitPost() async {
+    final service = ref.read(communityFeedServiceProvider);
+    final text = _composer.text.trim();
+    if (text.isEmpty && _pendingImages.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Add text or at least one image.')),
+      );
+      return;
+    }
+    setState(() => _posting = true);
+    try {
+      await service.createPost(
+        text: text.isEmpty ? null : text,
+        images: _pendingImages.map((e) => e.file).toList(),
+      );
+      _composer.clear();
+      _pendingImages.clear();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Posted successfully! 🎉')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      if (mounted) setState(() => _posting = false);
+    }
+  }
+
+  void _openComments(Post post) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => FractionallySizedBox(
+        heightFactor: 0.85,
+        child: PostCommentsSheet(post: post),
       ),
     );
   }
 
-  Widget _buildPopularPost(
-    String title,
-    String author,
-    String views,
-    String reactions,
-  ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildStatItem(
+    String value,
+    String label,
+    IconData icon, {
+    Color? activeColor,
+  }) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Icon(icon, size: 16, color: activeColor ?? Colors.white),
+            const SizedBox(width: 6),
             Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 12,
-                  backgroundColor: AppColors.purple.withValues(alpha: 0.1),
-                  child: Text(
-                    author[0],
-                    style: TextStyle(
-                      color: AppColors.purple,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  author,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(Icons.visibility, size: 14, color: Colors.grey.shade500),
-                const SizedBox(width: 4),
-                Text(
-                  views,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                ),
-                const SizedBox(width: 16),
-                Icon(Icons.thumb_up, size: 14, color: Colors.grey.shade500),
-                const SizedBox(width: 4),
-                Text(
-                  reactions,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                ),
-              ],
+              value,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.white,
+              ),
             ),
           ],
         ),
-      ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: Colors.white70),
+        ),
+      ],
     );
   }
+}
 
-  // ignore: unused_element
-  Widget _buildEventsTab() {
-    final upcomingEventsAsync = ref.watch(upcomingEventsProvider);
+class CommunityComposerSheet extends StatefulWidget {
+  const CommunityComposerSheet({super.key, required this.service});
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Text(
-                'Upcoming Events',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const Spacer(),
-              IconButton(
-                onPressed: () {
-                  // Refresh events
-                  ref.invalidate(upcomingEventsProvider);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Refreshing events...')),
-                  );
-                },
-                icon: Icon(Icons.refresh, color: AppColors.purple),
-                tooltip: 'Refresh',
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Discover business networking events, workshops, and conferences in Dubai',
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-          ),
-          const SizedBox(height: 16),
+  final CommunityFeedService service;
 
-          // Events Stream
-          upcomingEventsAsync.when(
-            loading: () => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(48.0),
-                child: CircularProgressIndicator(color: AppColors.purple),
-              ),
-            ),
-            error: (error, stack) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(48.0),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: Colors.grey.shade300,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Unable to load events',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      error.toString(),
-                      style: TextStyle(color: Colors.grey.shade500),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            data: (events) {
-              if (events.isEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(48.0),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.event_outlined,
-                          size: 64,
-                          color: Colors.grey.shade300,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No upcoming events',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Check back soon for new events!',
-                          style: TextStyle(color: Colors.grey.shade500),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }
+  @override
+  State<CommunityComposerSheet> createState() => _CommunityComposerSheetState();
+}
 
-              return Column(
-                children: [
-                  ...events.map((event) => _buildDiscoveredEventCard(event)),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Showing ${events.length} upcoming ${events.length == 1 ? "event" : "events"}',
-                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Events are automatically discovered and updated daily',
-                    style: TextStyle(
-                      color: Colors.grey.shade400,
-                      fontSize: 11,
-                      fontStyle: FontStyle.italic,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
+class _CommunityComposerSheetState extends State<CommunityComposerSheet> {
+  final TextEditingController _controller = TextEditingController();
+  final List<_PendingImage> _images = [];
+  bool _posting = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
-  // ignore: unused_element
-  Widget _buildBusinessNewsTab() {
-    final industries = const [
-      'All Industries',
-      'Technology',
-      'Finance',
-      'Real Estate',
-      'Healthcare',
-      'Energy',
-      'Construction',
-      'Retail',
-      'Logistics',
-    ];
-
-    final newsAsync = ref.watch(
-      businessNewsByIndustryProvider(
-        _newsIndustry == 'All Industries' ? null : _newsIndustry,
-      ),
-    );
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Global Business News',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const Spacer(),
-              DropdownButtonHideUnderline(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: DropdownButton<String>(
-                    value: _newsIndustry,
-                    alignment: Alignment.centerRight,
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setState(() => _newsIndustry = value);
-                    },
-                    items: industries
-                        .map(
-                          (e) => DropdownMenuItem<String>(
-                            value: e,
-                            child: Text(
-                              e,
-                              style: const TextStyle(fontSize: 13),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
+              Container(
+                width: 48,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // Top Stories carousel (optional bonus)
-          newsAsync.when(
-            loading: () => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: CircularProgressIndicator(color: AppColors.purple),
-              ),
-            ),
-            error: (e, _) => _buildNewsError(e.toString()),
-            data: (items) {
-              final top = items.take(5).toList();
-              if (top.isEmpty) return const SizedBox.shrink();
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
                 children: [
                   const Text(
-                    'Top Stories Today',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                    'Share an update',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 140,
-                    child: PageView.builder(
-                      controller: PageController(viewportFraction: 0.9),
-                      itemCount: top.length,
-                      itemBuilder: (context, index) {
-                        final n = top[index];
-                        return _buildTopStoryCard(n);
-                      },
-                    ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ],
-              );
-            },
-          ),
-
-          const SizedBox(height: 16),
-
-          // News list
-          newsAsync.when(
-            loading: () => const SizedBox.shrink(),
-            error: (e, _) => const SizedBox.shrink(),
-            data: (items) {
-              if (items.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.all(48.0),
-                  child: Center(
-                    child: Column(
+              ),
+              TextField(
+                controller: _controller,
+                decoration: const InputDecoration(
+                  hintText: 'What’s on your mind?',
+                  border: OutlineInputBorder(),
+                ),
+                minLines: 3,
+                maxLines: 6,
+              ),
+              const SizedBox(height: 12),
+              if (_images.isNotEmpty)
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _images.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final pending = entry.value;
+                    return Stack(
                       children: [
-                        Icon(
-                          Icons.newspaper,
-                          size: 64,
-                          color: Colors.grey.shade300,
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.memory(
+                            pending.preview,
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          ),
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No news for this industry',
-                          style: TextStyle(color: Colors.grey.shade600),
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: () =>
+                                setState(() => _images.removeAt(index)),
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              padding: const EdgeInsets.all(2),
+                              child: const Icon(
+                                Icons.close,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
                         ),
                       ],
-                    ),
-                  ),
-                );
-              }
-
-              return Column(
+                    );
+                  }).toList(),
+                ),
+              const SizedBox(height: 12),
+              Row(
                 children: [
-                  ...items.map(_buildNewsCard),
-                  const SizedBox(height: 8),
-                  Center(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        // Placeholder: In real integration, paginate and fetch next page
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Loading more news...')),
-                        );
-                      },
-                      icon: const Icon(Icons.expand_more),
-                      label: const Text('See More News'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.purple,
-                        side: BorderSide(color: AppColors.purple),
-                      ),
-                    ),
+                  TextButton.icon(
+                    onPressed: _images.length >= 4 ? null : _pickImages,
+                    icon: const Icon(Icons.image),
+                    label: const Text('Photo'),
                   ),
+                  const Spacer(),
+                  _posting
+                      ? const CircularProgressIndicator()
+                      : ElevatedButton(
+                          onPressed: _submit,
+                          child: const Text('Post'),
+                        ),
                 ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNewsError(String message) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.grey.shade400),
-            const SizedBox(height: 8),
-            Text(
-              'Failed to load news',
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-            Text(
-              message,
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopStoryCard(BusinessNewsItem n) {
-    return Card(
-      margin: const EdgeInsets.only(right: 10),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () async {
-          final url = Uri.parse(n.url);
-          if (await canLaunchUrl(url)) {
-            await launchUrl(url, mode: LaunchMode.externalApplication);
-          }
-        },
-        child: Row(
-          children: [
-            if (n.thumbnailUrl != null)
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(14),
-                  bottomLeft: Radius.circular(14),
-                ),
-                child: Image.network(
-                  n.thumbnailUrl!,
-                  width: 120,
-                  height: double.infinity,
-                  fit: BoxFit.cover,
-                ),
               ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _industryTag(n.industry),
-                    const SizedBox(height: 8),
-                    Text(
-                      n.headline,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        if (n.logoUrl != null)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 6),
-                            child: CircleAvatar(
-                              radius: 8,
-                              backgroundImage: NetworkImage(n.logoUrl!),
-                              backgroundColor: Colors.transparent,
-                            ),
-                          ),
-                        Text(
-                          '${n.source} • ${n.timeAgo}',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNewsCard(BusinessNewsItem n) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () async {
-          final url = Uri.parse(n.url);
-          if (await canLaunchUrl(url)) {
-            await launchUrl(url, mode: LaunchMode.externalApplication);
-          }
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _industryTag(n.industry),
-                    const SizedBox(height: 8),
-                    Text(
-                      n.headline,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        if (n.logoUrl != null)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 6),
-                            child: CircleAvatar(
-                              radius: 8,
-                              backgroundImage: NetworkImage(n.logoUrl!),
-                              backgroundColor: Colors.transparent,
-                            ),
-                          ),
-                        Text(
-                          '${n.source} • ${n.timeAgo}',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              if (n.thumbnailUrl != null)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.network(
-                    n.thumbnailUrl!,
-                    width: 86,
-                    height: 64,
-                    fit: BoxFit.cover,
-                  ),
-                ),
             ],
           ),
         ),
@@ -2123,385 +730,97 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
     );
   }
 
-  Widget _industryTag(String label) {
-    final color = _industryColor(label);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+  Future<void> _pickImages() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: true,
+      withData: true,
     );
+    if (result == null) return;
+    setState(() {
+      final availableSlots = 4 - _images.length;
+      for (final file in result.files.take(availableSlots)) {
+        final bytes = file.bytes;
+        if (bytes != null) {
+          _images.add(_PendingImage(file: file, preview: bytes));
+        }
+      }
+    });
   }
 
-  Color _industryColor(String label) {
-    switch (label.toLowerCase()) {
-      case 'technology':
-        return Colors.indigo;
-      case 'finance':
-        return Colors.green.shade700;
-      case 'real estate':
-        return Colors.brown;
-      case 'healthcare':
-        return Colors.red.shade600;
-      case 'energy':
-        return Colors.orange.shade700;
-      case 'construction':
-        return Colors.blueGrey;
-      case 'retail':
-        return Colors.pink.shade600;
-      case 'logistics':
-        return Colors.teal.shade700;
-      default:
-        return AppColors.purple;
-    }
-  }
-
-  Widget _buildDiscoveredEventCard(Event event) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Category Badge
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getCategoryColor(
-                      event.category,
-                    ).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: _getCategoryColor(
-                        event.category,
-                      ).withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _getCategoryIcon(event.category),
-                        size: 14,
-                        color: _getCategoryColor(event.category),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        event.category,
-                        style: TextStyle(
-                          color: _getCategoryColor(event.category),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Spacer(),
-                if (event.isToday)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'TODAY',
-                      style: TextStyle(
-                        color: Colors.red.shade700,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Event Title
-            Text(
-              event.eventName,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 8),
-
-            // Description
-            if (event.description.isNotEmpty)
-              Text(
-                event.description,
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 13,
-                  height: 1.4,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            const SizedBox(height: 12),
-
-            // Date & Time
-            Row(
-              children: [
-                Icon(
-                  Icons.calendar_today,
-                  size: 14,
-                  color: Colors.grey.shade600,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  event.formattedDate,
-                  style: TextStyle(
-                    color: Colors.grey.shade700,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                if (event.time != null) ...[
-                  const SizedBox(width: 12),
-                  Icon(
-                    Icons.access_time,
-                    size: 14,
-                    color: Colors.grey.shade600,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    event.time!,
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // Location
-            Row(
-              children: [
-                Icon(Icons.location_on, size: 14, color: Colors.grey.shade600),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    event.location.displayText,
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-
-            // Action Row
-            Row(
-              children: [
-                if (event.attendees > 0) ...[
-                  Icon(Icons.people, size: 16, color: AppColors.purple),
-                  const SizedBox(width: 6),
-                  Text(
-                    '${event.attendees} attending',
-                    style: TextStyle(
-                      color: AppColors.purple,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-                const Spacer(),
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    final url = Uri.parse(event.sourceURL);
-                    if (await canLaunchUrl(url)) {
-                      await launchUrl(
-                        url,
-                        mode: LaunchMode.externalApplication,
-                      );
-                    } else {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Could not open event link'),
-                          ),
-                        );
-                      }
-                    }
-                  },
-                  icon: const Icon(Icons.open_in_new, size: 16),
-                  label: const Text('View Details'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.purple,
-                    side: BorderSide(color: AppColors.purple),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Color _getCategoryColor(String category) {
-    switch (category.toLowerCase()) {
-      case 'networking':
-        return Colors.blue;
-      case 'workshop':
-        return Colors.orange;
-      case 'conference':
-        return Colors.purple;
-      case 'competition':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  IconData _getCategoryIcon(String category) {
-    switch (category.toLowerCase()) {
-      case 'networking':
-        return Icons.people_alt;
-      case 'workshop':
-        return Icons.school;
-      case 'conference':
-        return Icons.groups;
-      case 'competition':
-        return Icons.emoji_events;
-      default:
-        return Icons.event;
+  Future<void> _submit() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty && _images.isEmpty) return;
+    setState(() => _posting = true);
+    try {
+      await widget.service.createPost(
+        text: text.isEmpty ? null : text,
+        images: _images.map((e) => e.file).toList(),
+      );
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      if (mounted) setState(() => _posting = false);
     }
   }
 }
 
-/// Stateful connection button with loading state
-class _ConnectionButton extends ConsumerStatefulWidget {
-  final String userId;
-  final VoidCallback? onConnectionSent;
+class _PendingImage {
+  _PendingImage({required this.file, required this.preview});
 
-  const _ConnectionButton({required this.userId, this.onConnectionSent});
+  final PlatformFile file;
+  final Uint8List preview;
+}
+
+class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
+  _StickyTabBarDelegate(this.tabBar);
+
+  final TabBar tabBar;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        boxShadow: [
+          if (shrinkOffset > 0)
+            const BoxShadow(
+              color: Colors.black12,
+              offset: Offset(0, 2),
+              blurRadius: 4,
+            ),
+        ],
+      ),
+      child: tabBar,
+    );
+  }
+
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+
+  @override
+  bool shouldRebuild(_StickyTabBarDelegate oldDelegate) => false;
+}
+
+class _ConnectionButton extends ConsumerStatefulWidget {
+  const _ConnectionButton({required this.userId});
+
+  final String userId;
 
   @override
   ConsumerState<_ConnectionButton> createState() => _ConnectionButtonState();
-}
-
-class SuggestedConnectionsPage extends ConsumerWidget {
-  const SuggestedConnectionsPage({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Suggested Connections')),
-      body: StreamBuilder<List<community.UserProfile>>(
-        stream: ref.read(peopleRepositoryProvider).suggested(limit: 20),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final profiles = snapshot.data ?? [];
-
-          if (profiles.isEmpty) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'No suggestions available right now.\nCheck back soon!',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            );
-          }
-
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemBuilder: (context, index) {
-              final profile = profiles[index];
-              final hasPhoto = profile.photoURL.isNotEmpty;
-              final headlineText = profile.headline.isNotEmpty
-                  ? profile.headline
-                  : 'No headline provided';
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundImage: hasPhoto
-                      ? NetworkImage(profile.photoURL)
-                      : null,
-                  child: hasPhoto
-                      ? null
-                      : Text(
-                          profile.displayName.isNotEmpty
-                              ? profile.displayName[0].toUpperCase()
-                              : '?',
-                        ),
-                ),
-                title: Text(profile.displayName),
-                subtitle: Text(headlineText),
-                trailing: _ConnectionButton(
-                  userId: profile.uid,
-                  onConnectionSent: () =>
-                      ref.invalidate(peopleRepositoryProvider),
-                ),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => UserProfileDetailPage(
-                      profile: _mapCommunityProfile(profile),
-                    ),
-                  ),
-                ),
-              );
-            },
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemCount: profiles.length,
-          );
-        },
-      ),
-    );
-  }
-}
-
-app_profile.UserProfile _mapCommunityProfile(community.UserProfile profile) {
-  String? _nullable(String value) => value.isNotEmpty ? value : null;
-
-  return app_profile.UserProfile(
-    id: profile.uid,
-    name: profile.displayName,
-    email: '${profile.uid}@community.wazeet',
-    title: _nullable(profile.headline),
-    location: _nullable(profile.location),
-    photoUrl: _nullable(profile.photoURL),
-    industries: profile.industries,
-    connectionsCount: profile.connectionsCount,
-    joinedDate: profile.createdAt,
-    isVerified: profile.isDiscoverable,
-  );
 }
 
 class _ConnectionButtonState extends ConsumerState<_ConnectionButton> {
@@ -2510,17 +829,8 @@ class _ConnectionButtonState extends ConsumerState<_ConnectionButton> {
 
   @override
   Widget build(BuildContext context) {
-    // If request already sent, show disabled state
     if (_requestSent) {
-      return OutlinedButton(
-        onPressed: null,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.grey,
-          side: BorderSide(color: Colors.grey.shade300),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-        child: const Text('Pending'),
-      );
+      return OutlinedButton(onPressed: null, child: const Text('Pending'));
     }
 
     return OutlinedButton(
@@ -2533,27 +843,18 @@ class _ConnectionButtonState extends ConsumerState<_ConnectionButton> {
                     .read(peopleRepositoryProvider)
                     .sendRequest(widget.userId);
                 setState(() {
-                  _loading = false;
                   _requestSent = true;
                 });
-                widget.onConnectionSent?.call();
               } catch (e) {
-                setState(() => _loading = false);
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(e.toString().replaceAll('Exception: ', '')),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(e.toString())));
                 }
+              } finally {
+                if (mounted) setState(() => _loading = false);
               }
             },
-      style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.purple,
-        side: BorderSide(color: AppColors.purple),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
       child: _loading
           ? const SizedBox(
               width: 16,
@@ -2565,74 +866,15 @@ class _ConnectionButtonState extends ConsumerState<_ConnectionButton> {
   }
 }
 
-// Delegate for sticky tab bar in NestedScrollView
-class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
-  const _StickyTabBarDelegate(this.tabBar);
-
-  final TabBar tabBar;
-
-  @override
-  double get minExtent => tabBar.preferredSize.height;
-
-  @override
-  double get maxExtent => tabBar.preferredSize.height;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return Container(color: Colors.white, child: tabBar);
-  }
-
-  @override
-  bool shouldRebuild(_StickyTabBarDelegate oldDelegate) {
-    return tabBar != oldDelegate.tabBar;
-  }
-}
-
-/// Gradient underline indicator for TabBar
-class _UnderlineGradientIndicator extends Decoration {
-  final Gradient gradient;
-  final double thickness;
-  final double radius;
-
-  const _UnderlineGradientIndicator({
-    required this.gradient,
-    this.thickness = 2,
-    this.radius = 0,
-  });
-
-  @override
-  BoxPainter createBoxPainter([VoidCallback? onChanged]) {
-    return _UnderlineGradientPainter(this, onChanged);
-  }
-}
-
-class _UnderlineGradientPainter extends BoxPainter {
-  final _UnderlineGradientIndicator decoration;
-
-  _UnderlineGradientPainter(this.decoration, VoidCallback? onChanged)
-    : super(onChanged);
-
-  @override
-  void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
-    final rect = offset & configuration.size!;
-    final lineRect = Rect.fromLTWH(
-      rect.left + 16,
-      rect.bottom - decoration.thickness - 6,
-      rect.width - 32,
-      decoration.thickness,
-    );
-
-    final rrect = RRect.fromRectAndRadius(
-      lineRect,
-      Radius.circular(decoration.radius),
-    );
-    final paint = Paint()
-      ..shader = decoration.gradient.createShader(lineRect)
-      ..style = PaintingStyle.fill;
-    canvas.drawRRect(rrect, paint);
-  }
+app_profile.UserProfile _mapCommunityProfile(community.UserProfile profile) {
+  return app_profile.UserProfile(
+    id: profile.uid,
+    name: profile.displayName,
+    email: '${profile.uid}@community.wazeet',
+    title: profile.headline,
+    photoUrl: profile.photoURL,
+    industries: profile.industries,
+    bio: profile.location,
+    isVerified: profile.isDiscoverable,
+  );
 }

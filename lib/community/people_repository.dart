@@ -15,14 +15,18 @@ class PeopleRepository {
   String? get _currentUid => _auth.currentUser?.uid;
 
   /// Stream suggested users (real profiles from Firestore)
+  /// NOTE: Previous implementation used an async* generator which yields a
+  /// single-subscription stream causing "Bad state: Stream has already been
+  /// listened to" when multiple StreamBuilders subscribed simultaneously.
+  /// We now return a broadcast stream built from the Firestore snapshots
+  /// stream, using asyncMap for the mutual connections enrichment.
   Stream<List<UserProfile>> suggested({
     String? industry,
     int limit = 20,
     DocumentSnapshot? startAfter,
-  }) async* {
+  }) {
     if (_currentUid == null) {
-      yield [];
-      return;
+      return Stream<List<UserProfile>>.value(const []);
     }
 
     Query query = _firestore
@@ -39,17 +43,14 @@ class PeopleRepository {
       query = query.startAfterDocument(startAfter);
     }
 
-    await for (final snapshot in query.snapshots()) {
+    return query.snapshots().asyncMap((snapshot) async {
       final users = snapshot.docs
           .map((doc) => UserProfile.fromFirestore(doc))
           .where((user) => user.uid != _currentUid)
           .toList();
-
-      // Compute mutual connections
       await _computeMutualConnections(users);
-
-      yield users;
-    }
+      return users;
+    }).asBroadcastStream();
   }
 
   /// Compute mutual connections count for a list of users

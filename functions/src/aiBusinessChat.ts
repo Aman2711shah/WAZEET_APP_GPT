@@ -165,6 +165,16 @@ Freezone naming conventions:
 - Dubai Multi Commodities Centre → DMCC
 - International Free Zone Authority → IFZA
 - Meydan Free Zone → meydan_freezone
+- Jebel Ali Free Zone → JAFZA (jafza)
+- Dubai Airport Free Zone → DAFZ (dafza)
+- Dubai Silicon Oasis → DSO (dubai_silicon_oasis)
+- Dubai International Financial Centre → DIFC (difc)
+- Abu Dhabi Global Market → ADGM (adgm)
+- KEZAD → kezad
+- Masdar City Free Zone → masdar_city
+- Sharjah Media City → SHAMS (shams)
+- Fujairah Free Zone Authority → FFZA (fujairah_free_zone)
+- Umm Al Quwain Free Trade Zone → UAQ (uaq_free_trade_zone)
 
 When providing recommendations, always use the canonical IDs in parentheses.`;
 

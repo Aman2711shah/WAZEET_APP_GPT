@@ -1,108 +1,191 @@
-/// Model for a community post
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Post {
   final String id;
-  final String userId;
-  final String userName;
-  final String? userTitle;
-  final String? userPhotoUrl;
-  final String content;
-  final String? imageUrl;
+  final String authorId;
+  final String authorName;
+  final String? authorTitle;
+  final String? authorAvatarUrl;
+  final bool isVerified;
+  final String? text;
+  final List<PostMedia> media;
   final DateTime createdAt;
+  final DateTime updatedAt;
   final int likesCount;
   final int commentsCount;
   final int sharesCount;
-  final List<String> likedBy;
-  final List<String> industries; // Industry tags for the post
-  final bool isVerified; // If user is verified
+  final List<String> industries;
 
   const Post({
     required this.id,
-    required this.userId,
-    required this.userName,
-    this.userTitle,
-    this.userPhotoUrl,
-    required this.content,
-    this.imageUrl,
+    required this.authorId,
+    required this.authorName,
+    this.authorTitle,
+    this.authorAvatarUrl,
+    this.isVerified = false,
+    this.text,
+    this.media = const [],
     required this.createdAt,
+    required this.updatedAt,
     this.likesCount = 0,
     this.commentsCount = 0,
     this.sharesCount = 0,
-    this.likedBy = const [],
     this.industries = const [],
-    this.isVerified = false,
   });
 
   Post copyWith({
     String? id,
-    String? userId,
-    String? userName,
-    String? userTitle,
-    String? userPhotoUrl,
-    String? content,
-    String? imageUrl,
+    String? authorId,
+    String? authorName,
+    String? authorTitle,
+    String? authorAvatarUrl,
+    bool? isVerified,
+    String? text,
+    List<PostMedia>? media,
     DateTime? createdAt,
+    DateTime? updatedAt,
     int? likesCount,
     int? commentsCount,
     int? sharesCount,
-    List<String>? likedBy,
     List<String>? industries,
-    bool? isVerified,
   }) {
     return Post(
       id: id ?? this.id,
-      userId: userId ?? this.userId,
-      userName: userName ?? this.userName,
-      userTitle: userTitle ?? this.userTitle,
-      userPhotoUrl: userPhotoUrl ?? this.userPhotoUrl,
-      content: content ?? this.content,
-      imageUrl: imageUrl ?? this.imageUrl,
+      authorId: authorId ?? this.authorId,
+      authorName: authorName ?? this.authorName,
+      authorTitle: authorTitle ?? this.authorTitle,
+      authorAvatarUrl: authorAvatarUrl ?? this.authorAvatarUrl,
+      isVerified: isVerified ?? this.isVerified,
+      text: text ?? this.text,
+      media: media ?? this.media,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
       likesCount: likesCount ?? this.likesCount,
       commentsCount: commentsCount ?? this.commentsCount,
       sharesCount: sharesCount ?? this.sharesCount,
-      likedBy: likedBy ?? this.likedBy,
       industries: industries ?? this.industries,
-      isVerified: isVerified ?? this.isVerified,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'userId': userId,
-      'userName': userName,
-      'userTitle': userTitle,
-      'userPhotoUrl': userPhotoUrl,
-      'content': content,
-      'imageUrl': imageUrl,
-      'createdAt': createdAt.toIso8601String(),
-      'likesCount': likesCount,
-      'commentsCount': commentsCount,
-      'sharesCount': sharesCount,
-      'likedBy': likedBy,
+      'authorId': authorId,
+      'author': {
+        'fullName': authorName,
+        'headline': authorTitle,
+        'avatarUrl': authorAvatarUrl,
+        'isVerified': isVerified,
+      },
+      'text': text,
+      'media': media.map((m) => m.toJson()).toList(),
       'industries': industries,
-      'isVerified': isVerified,
+      'likeCount': likesCount,
+      'commentCount': commentsCount,
+      'sharesCount': sharesCount,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
     };
   }
 
-  factory Post.fromJson(Map<String, dynamic> json) {
+  factory Post.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+    return Post.fromMap(data, id: doc.id);
+  }
+
+  factory Post.fromMap(Map<String, dynamic> data, {String id = ''}) {
+    final author = data['author'] as Map<String, dynamic>? ?? {};
     return Post(
-      id: json['id'] as String? ?? '',
-      userId: json['userId'] as String? ?? '',
-      userName: json['userName'] as String? ?? 'User',
-      userTitle: json['userTitle'] as String?,
-      userPhotoUrl: json['userPhotoUrl'] as String?,
-      content: json['content'] as String? ?? '',
-      imageUrl: json['imageUrl'] as String?,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
-      likesCount: json['likesCount'] as int? ?? 0,
-      commentsCount: json['commentsCount'] as int? ?? 0,
-      sharesCount: json['sharesCount'] as int? ?? 0,
-      likedBy: (json['likedBy'] as List<dynamic>?)?.cast<String>() ?? [],
-      industries: (json['industries'] as List<dynamic>?)?.cast<String>() ?? [],
-      isVerified: json['isVerified'] as bool? ?? false,
+      id: id,
+      authorId: data['authorId'] as String? ?? data['userId'] as String? ?? '',
+      authorName:
+          author['fullName'] as String? ??
+          data['userName'] as String? ??
+          'Member',
+      authorTitle:
+          author['headline'] as String? ?? data['userTitle'] as String?,
+      authorAvatarUrl:
+          author['avatarUrl'] as String? ?? data['userPhotoUrl'] as String?,
+      isVerified:
+          author['isVerified'] as bool? ?? data['isVerified'] as bool? ?? false,
+      text: data['text'] as String? ?? data['content'] as String?,
+      media:
+          (data['media'] as List<dynamic>?)
+              ?.map((item) => PostMedia.fromJson(item as Map<String, dynamic>))
+              .toList() ??
+          _legacyMediaFallback(data),
+      createdAt: _parseDate(data['createdAt']),
+      updatedAt: data['updatedAt'] != null
+          ? _parseDate(data['updatedAt'])
+          : _parseDate(data['createdAt']),
+      likesCount: data['likeCount'] as int? ?? data['likesCount'] as int? ?? 0,
+      commentsCount:
+          data['commentCount'] as int? ?? data['commentsCount'] as int? ?? 0,
+      sharesCount: data['sharesCount'] as int? ?? 0,
+      industries:
+          (data['industries'] as List<dynamic>?)?.cast<String>() ?? const [],
+    );
+  }
+
+  static List<PostMedia> _legacyMediaFallback(Map<String, dynamic> data) {
+    final imageUrl = data['imageUrl'] as String?;
+    if (imageUrl == null || imageUrl.isEmpty) return const [];
+    return [
+      PostMedia(
+        type: 'image',
+        url: imageUrl,
+        path: data['imagePath'] as String? ?? '',
+        mime: 'image/jpeg',
+      ),
+    ];
+  }
+
+  static DateTime _parseDate(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is String) return DateTime.tryParse(value) ?? DateTime.now();
+    return DateTime.now();
+  }
+}
+
+class PostMedia {
+  final String type;
+  final String url;
+  final String path;
+  final String mime;
+  final int? width;
+  final int? height;
+  final int? durationMs;
+
+  const PostMedia({
+    required this.type,
+    required this.url,
+    required this.path,
+    required this.mime,
+    this.width,
+    this.height,
+    this.durationMs,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'type': type,
+      'url': url,
+      'path': path,
+      'mime': mime,
+      if (width != null) 'width': width,
+      if (height != null) 'height': height,
+      if (durationMs != null) 'durationMs': durationMs,
+    };
+  }
+
+  factory PostMedia.fromJson(Map<String, dynamic> json) {
+    return PostMedia(
+      type: json['type'] as String? ?? 'image',
+      url: json['url'] as String? ?? '',
+      path: json['path'] as String? ?? '',
+      mime: json['mime'] as String? ?? 'image/jpeg',
+      width: json['width'] as int?,
+      height: json['height'] as int?,
+      durationMs: json['durationMs'] as int?,
     );
   }
 }
