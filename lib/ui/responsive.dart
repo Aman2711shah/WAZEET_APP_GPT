@@ -15,17 +15,17 @@ class Responsive {
 
     double targetFraction;
     double minHeight;
-    double maxHeight = 140; // Reduced from 280
+    double maxHeight = 240; // Increased to prevent overflow
 
     if (w >= 1024) {
-      targetFraction = 0.18; // Reduced from 0.35 for compact header
-      minHeight = 120; // Reduced from 220
+      targetFraction = 0.30;
+      minHeight = 200;
     } else if (w >= 768) {
-      targetFraction = 0.16; // Reduced from 0.32
-      minHeight = 110; // Reduced from 200
+      targetFraction = 0.26;
+      minHeight = 180;
     } else {
-      targetFraction = 0.15; // Reduced from 0.30
-      minHeight = 100; // Reduced from 180
+      targetFraction = 0.24;
+      minHeight = 170;
     }
 
     final computed = h * targetFraction;
