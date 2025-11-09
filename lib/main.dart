@@ -45,29 +45,21 @@ class WazeetApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeMode = context.watch<ThemeController>().themeMode;
+    // Force light mode only - dark mode disabled
     return MaterialApp(
       title: 'WAZEET',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      themeMode: themeMode,
+      themeMode: ThemeMode.light,
       home: AppRouter(authService: AuthService()),
       builder: (context, child) {
-        // Apply system UI overlay based on actual theme brightness
-        final brightness = Theme.of(context).brightness;
+        // Apply system UI overlay for light theme only
         SystemChrome.setSystemUIOverlayStyle(
-          brightness == Brightness.dark
-              ? SystemUiOverlayStyle.light.copyWith(
-                  statusBarColor: Colors.transparent,
-                  statusBarBrightness: Brightness.dark,
-                  statusBarIconBrightness: Brightness.light,
-                )
-              : SystemUiOverlayStyle.dark.copyWith(
-                  statusBarColor: Colors.transparent,
-                  statusBarBrightness: Brightness.light,
-                  statusBarIconBrightness: Brightness.dark,
-                ),
+          SystemUiOverlayStyle.dark.copyWith(
+            statusBarColor: Colors.transparent,
+            statusBarBrightness: Brightness.light,
+            statusBarIconBrightness: Brightness.dark,
+          ),
         );
         return MediaQuery(
           data: MediaQuery.of(

@@ -49,13 +49,20 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
     });
 
     try {
+      debugPrint('Tracking request ID: $id');
       final doc = await FirebaseFirestore.instance
           .collection('service_requests')
           .doc(id)
           .get();
+
+      debugPrint('Document exists: ${doc.exists}');
+      if (doc.exists) {
+        debugPrint('Document data: ${doc.data()}');
+      }
+
       if (!doc.exists) {
         setState(() {
-          _error = 'No application found for this ID';
+          _error = 'Request not found. Please check your ID and try again.';
           _loading = false;
         });
         return;
@@ -65,8 +72,9 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
         _loading = false;
       });
     } catch (e) {
+      debugPrint('Error tracking request: $e');
       setState(() {
-        _error = 'Something went wrong. Please try again.';
+        _error = 'Error: ${e.toString()}';
         _loading = false;
       });
     }

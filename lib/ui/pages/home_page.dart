@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wazeet/company_setup_flow.dart';
 import '../../providers/services_provider.dart';
 import '../../providers/user_profile_provider.dart';
+import '../../providers/user_activity_provider.dart';
 import 'service_type_page.dart';
 import 'freezone_browser_page.dart';
 import 'freezone_investment_map_page.dart';
@@ -23,6 +24,7 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final serviceCategories = ref.watch(servicesProvider);
     final profile = ref.watch(userProfileProvider);
+    final userActivities = ref.watch(userActivityProvider);
     final userName = profile?.name ?? 'User';
 
     final theme = Theme.of(context);
@@ -391,32 +393,34 @@ class HomePage extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _buildActivityCard(
-                    context,
-                    'Employment Visa Renewal',
-                    'In Progress',
-                    'Expected completion: 3 days',
-                    Icons.card_travel,
-                    Colors.blue,
-                    0.7,
-                  ),
-                  _buildActivityCard(
-                    context,
-                    'VAT Registration',
-                    'Documents Required',
-                    '2 documents pending',
-                    Icons.receipt_long,
-                    Colors.orange,
-                    0.3,
-                  ),
-                  _buildActivityCard(
-                    context,
-                    'Trade License Renewal',
-                    'Completed',
-                    'Completed on Oct 25, 2025',
-                    Icons.check_circle,
-                    Colors.green,
-                    1.0,
+                  userActivities.when(
+                    data: (activities) {
+                      if (activities.isEmpty) {
+                        return _buildEmptyActivityState(context);
+                      }
+                      return Column(
+                        children: activities
+                            .map(
+                              (activity) => _buildActivityCard(
+                                context,
+                                activity.title,
+                                activity.status,
+                                activity.subtitle,
+                                activity.icon,
+                                activity.color,
+                                activity.progress,
+                              ),
+                            )
+                            .toList(),
+                      );
+                    },
+                    loading: () => const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                    error: (error, stack) => _buildEmptyActivityState(context),
                   ),
                   const SizedBox(height: 24),
 
@@ -649,6 +653,66 @@ class HomePage extends ConsumerWidget {
     );
   }
 
+  Widget _buildEmptyActivityState(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            isDark ? AppColors.darkCard : Colors.white,
+            isDark
+                ? AppColors.darkCard.withValues(alpha: 0.5)
+                : Colors.grey.withValues(alpha: 0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: isDark
+              ? AppColors.darkBorder
+              : AppColors.borderLight.withValues(alpha: 0.5),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.blue.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.inbox_outlined,
+              size: 48,
+              color: AppColors.blue.withValues(alpha: 0.6),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No Recent Activity',
+            style: AppTextStyle.titleMedium.copyWith(
+              color: isDark ? AppColors.darkText : AppColors.text,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Your recent activities will appear here',
+            style: AppTextStyle.bodySmall.copyWith(
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildActivityCard(
     BuildContext context,
     String title,
@@ -732,7 +796,7 @@ class HomePage extends ConsumerWidget {
                           subtitle,
                           style: AppTextStyle.bodySmall.copyWith(
                             color: isDark
-                                ? Colors.white.withOpacity(.82)
+                                ? Colors.white.withValues(alpha: .82)
                                 : AppColors.textSecondary,
                           ),
                         ),
@@ -1908,8 +1972,8 @@ class _HeroTopOverlay extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.white.withOpacity(.35),
-                    Colors.white.withOpacity(.08),
+                    Colors.white.withValues(alpha: .35),
+                    Colors.white.withValues(alpha: .08),
                     Colors.transparent,
                   ],
                   stops: const [0, .55, 1],
@@ -1929,8 +1993,8 @@ class _HeroTopOverlay extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.white.withOpacity(.35),
-                    Colors.white.withOpacity(.12),
+                    Colors.white.withValues(alpha: .35),
+                    Colors.white.withValues(alpha: .12),
                     Colors.transparent,
                   ],
                   stops: const [0, .55, 1],
@@ -1961,16 +2025,16 @@ class _HeroBottomFade extends StatelessWidget {
               begin: Alignment.bottomCenter,
               end: Alignment.topCenter,
               colors: [
-                Colors.white.withOpacity(.65),
-                Colors.white.withOpacity(.35),
-                Colors.white.withOpacity(.08),
+                Colors.white.withValues(alpha: .65),
+                Colors.white.withValues(alpha: .35),
+                Colors.white.withValues(alpha: .08),
                 Colors.transparent,
               ],
               stops: const [0, .35, .7, 1],
             ),
           ),
           child: CustomPaint(
-            painter: _ArcPainter(color: Colors.white.withOpacity(.4)),
+            painter: _ArcPainter(color: Colors.white.withValues(alpha: .4)),
           ),
         ),
       ),
@@ -1998,7 +2062,7 @@ class _ArcPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.bottomCenter,
         end: Alignment.topCenter,
-        colors: [color.withOpacity(.55), color.withOpacity(.05)],
+        colors: [color.withValues(alpha: .55), color.withValues(alpha: .05)],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
     canvas.drawPath(path, paint);
   }

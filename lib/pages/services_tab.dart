@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../ui/theme.dart';
 import '../ui/widgets/gradient_header.dart';
+import '../ui/widgets/custom_solution_panel.dart';
 import '../ui/widgets/search_bar.dart';
 import '../ui/widgets/service_square_button.dart';
 import 'company_setup_page.dart';
@@ -66,7 +67,7 @@ class ServicesTab extends StatelessWidget {
               _other('Legal & Compliance', Icons.gavel),
               _other('Marketing & PR', Icons.campaign_outlined),
               const SizedBox(height: 24),
-              _ctaCard(context),
+              const CustomSolutionPanel(),
             ],
           ),
         ),
@@ -85,27 +86,5 @@ class ServicesTab extends StatelessWidget {
     );
   }
 
-  Widget _ctaCard(BuildContext context) {
-    return Card(
-      color: AppColors.purple.withValues(alpha: 0.1),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Need a custom solution?',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Get in touch with our experts for personalized advice.',
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(onPressed: () {}, child: const Text('Contact Us')),
-          ],
-        ),
-      ),
-    );
-  }
+  // Legacy CTA removed in favor of CustomSolutionPanel
 }

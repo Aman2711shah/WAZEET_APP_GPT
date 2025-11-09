@@ -130,22 +130,51 @@ class _CorpFormState extends State<CorpForm> {
 
     final isFreeZone = form.control('isFreeZone').value == true;
 
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    InputDecoration dec(String label, {String? helper, String? suffix}) {
+      return InputDecoration(
+        labelText: label,
+        helperText: helper,
+        suffixText: suffix,
+        filled: true,
+        fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 16,
+        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: scheme.outlineVariant),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: scheme.primary, width: 1.6),
+        ),
+      );
+    }
+
     return ReactiveForm(
       formGroup: form,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
         children: [
           Text(
             'Corporate Tax (UAE)',
-            style: Theme.of(context).textTheme.headlineSmall,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 16),
 
           // Profit Before Tax
           ReactiveTextField<double>(
             formControlName: 'profitBeforeTax',
-            decoration: const InputDecoration(
-              labelText: 'Accounting Profit Before Tax (AED)',
+            decoration: dec(
+              'Accounting Profit Before Tax (AED)',
+              suffix: 'AED',
             ),
             keyboardType: TextInputType.number,
             validationMessages: {
@@ -158,9 +187,10 @@ class _CorpFormState extends State<CorpForm> {
           const SizedBox(height: 8),
           ReactiveTextField<double>(
             formControlName: 'adjustments',
-            decoration: const InputDecoration(
-              labelText: 'Adjustments (net, AED)',
-              helperText: 'Use positive for add-backs; negative for deductions',
+            decoration: dec(
+              'Adjustments (net, AED)',
+              helper: 'Use positive for add-backs; negative for deductions',
+              suffix: 'AED',
             ),
             keyboardType: TextInputType.number,
           ),
@@ -169,9 +199,7 @@ class _CorpFormState extends State<CorpForm> {
           const SizedBox(height: 8),
           ReactiveTextField<double>(
             formControlName: 'lossesBf',
-            decoration: const InputDecoration(
-              labelText: 'Brought-forward Tax Losses (AED)',
-            ),
+            decoration: dec('Brought-forward Tax Losses (AED)', suffix: 'AED'),
             keyboardType: TextInputType.number,
             validationMessages: {ValidationMessage.min: (_) => 'Must be ≥ 0'},
           ),
@@ -203,13 +231,13 @@ class _CorpFormState extends State<CorpForm> {
           const SizedBox(height: 8),
           ReactiveTextField<double>(
             formControlName: 'threshold',
-            decoration: const InputDecoration(labelText: 'Threshold (AED)'),
+            decoration: dec('Threshold (AED)', suffix: 'AED'),
             keyboardType: TextInputType.number,
           ),
           const SizedBox(height: 8),
           ReactiveTextField<double>(
             formControlName: 'mainRatePct',
-            decoration: const InputDecoration(labelText: 'Main Rate (%)'),
+            decoration: dec('Main Rate (%)', suffix: '%'),
             keyboardType: TextInputType.number,
             validationMessages: {
               ValidationMessage.min: (_) => 'Min 0',
@@ -218,9 +246,46 @@ class _CorpFormState extends State<CorpForm> {
           ),
 
           const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: form.valid ? _recompute : null,
-            child: const Text('Calculate'),
+          ReactiveFormConsumer(
+            builder: (context, fg, __) {
+              final enabled = fg.valid;
+              return Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: enabled ? _recompute : null,
+                      child: const Text('Calculate'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  OutlinedButton(
+                    onPressed: () {
+                      form.reset(
+                        value: {
+                          'profitBeforeTax': null,
+                          'adjustments': 0.0,
+                          'lossesBf': 0.0,
+                          'isFreeZone': false,
+                          'qualifyingIncomePct': 0.0,
+                          'threshold': 375000.0,
+                          'mainRatePct': 9.0,
+                        },
+                      );
+                      setState(() {
+                        taxableIncome = null;
+                        qualifyingAmount = null;
+                        nonQualifyingAmount = null;
+                        slabAboveThreshold = null;
+                        taxDue = null;
+                        effectiveRate = null;
+                        aiExplanation = null;
+                      });
+                    },
+                    child: const Text('Reset'),
+                  ),
+                ],
+              );
+            },
           ),
 
           if (taxableIncome != null) ...[
@@ -310,6 +375,8 @@ class _CorpFormState extends State<CorpForm> {
                 ),
               ),
             ],
+            const SizedBox(height: 8),
+            const SafeArea(top: false, child: SizedBox.shrink()),
           ],
         ],
       ),

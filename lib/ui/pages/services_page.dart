@@ -5,6 +5,7 @@ import 'service_type_page.dart';
 import '../responsive.dart';
 import '../theme/responsive_text.dart';
 import '../widgets/back_to_top_button.dart';
+import '../widgets/custom_solution_panel.dart';
 
 class ServicesPage extends ConsumerStatefulWidget {
   const ServicesPage({super.key});
@@ -158,40 +159,7 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                   // CTA at the end
                   return Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: scheme.primary.withValues(alpha: .08),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          const Expanded(
-                            child: Text(
-                              'Need a custom solution?',
-                              style: TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Contact us at support@wazeet.com',
-                                  ),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: scheme.primary,
-                              foregroundColor: scheme.onPrimary,
-                            ),
-                            child: const Text('Contact Us'),
-                          ),
-                        ],
-                      ),
-                    ),
+                    child: const CustomSolutionPanel(),
                   );
                 }
 

@@ -68,35 +68,110 @@ class _VatFormState extends State<VatForm> {
   @override
   Widget build(BuildContext context) {
     final nf = NumberFormat.currency(name: 'AED', symbol: 'AED ');
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    InputDecoration dec(String label, {String? helper, String? suffix}) {
+      return InputDecoration(
+        labelText: label,
+        helperText: helper,
+        suffixText: suffix,
+        filled: true,
+        fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 16,
+        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: scheme.outlineVariant),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: scheme.primary, width: 1.6),
+        ),
+      );
+    }
+
     return ReactiveForm(
       formGroup: form,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
         children: [
           Text(
             'VAT Calculator',
-            style: Theme.of(context).textTheme.headlineSmall,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 16),
+
+          // Taxable sales
           ReactiveTextField<double>(
             formControlName: 'taxableSales',
-            decoration: const InputDecoration(labelText: 'Taxable Sales (AED)'),
+            decoration: dec('Taxable Sales (AED)', suffix: 'AED'),
             keyboardType: TextInputType.number,
+            validationMessages: {
+              ValidationMessage.required: (_) => 'Required',
+              ValidationMessage.min: (_) => 'Must be ≥ 0',
+            },
           ),
+          const SizedBox(height: 12),
+
+          // Input VAT credit
           ReactiveTextField<double>(
             formControlName: 'inputVat',
-            decoration: const InputDecoration(labelText: 'Input VAT (AED)'),
+            decoration: dec('Input VAT (AED)', suffix: 'AED'),
             keyboardType: TextInputType.number,
           ),
+          const SizedBox(height: 12),
+
+          // VAT rate
           ReactiveTextField<double>(
             formControlName: 'ratePct',
-            decoration: const InputDecoration(labelText: 'VAT Rate (%)'),
+            decoration: dec('VAT Rate (%)', suffix: '%'),
             keyboardType: TextInputType.number,
+            validationMessages: {
+              ValidationMessage.min: (_) => 'Min 0',
+              ValidationMessage.max: (_) => 'Max 100',
+            },
           ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: form.valid ? _calculate : null,
-            child: const Text('Calculate'),
+          const SizedBox(height: 20),
+
+          ReactiveFormConsumer(
+            builder: (context, fg, __) {
+              final enabled = fg.valid;
+              return Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: enabled ? _calculate : null,
+                      child: const Text('Calculate'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  OutlinedButton(
+                    onPressed: () {
+                      form.reset(
+                        value: {
+                          'taxableSales': null,
+                          'inputVat': 0.0,
+                          'ratePct': 5.0,
+                        },
+                      );
+                      setState(() {
+                        outputVat = null;
+                        netVat = null;
+                        effRate = null;
+                        aiExplanation = null;
+                      });
+                    },
+                    child: const Text('Reset'),
+                  ),
+                ],
+              );
+            },
           ),
           if (outputVat != null) ...[
             const SizedBox(height: 24),
@@ -109,15 +184,52 @@ class _VatFormState extends State<VatForm> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Output VAT: \\${nf.format(outputVat)}'),
                     Text(
-                      'Net VAT: \\${nf.format(netVat)}',
-                      style: TextStyle(
-                        color: (netVat ?? 0) < 0 ? Colors.green : Colors.red,
+                      'Results',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Output VAT'),
+                              const SizedBox(height: 4),
+                              Text(
+                                nf.format(outputVat),
+                                style: theme.textTheme.titleMedium,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Net VAT'),
+                              const SizedBox(height: 4),
+                              Text(
+                                nf.format(netVat),
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: (netVat ?? 0) < 0
+                                      ? Colors.green
+                                      : Colors.red,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
                     Text(
-                      'Effective Rate: \\${((effRate ?? 0) * 100).toStringAsFixed(2)}%',
+                      'Effective Rate: ${((effRate ?? 0) * 100).toStringAsFixed(2)}%',
+                      style: theme.textTheme.bodyMedium,
                     ),
                   ],
                 ),
@@ -131,8 +243,21 @@ class _VatFormState extends State<VatForm> {
             ),
             if (aiExplanation != null) ...[
               const SizedBox(height: 12),
-              Text(aiExplanation!, style: const TextStyle(fontSize: 14)),
+              Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    aiExplanation!,
+                    style: const TextStyle(fontSize: 14, height: 1.4),
+                  ),
+                ),
+              ),
             ],
+            const SizedBox(height: 8),
+            const SafeArea(top: false, child: SizedBox.shrink()),
           ],
         ],
       ),

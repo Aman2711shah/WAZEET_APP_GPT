@@ -4,11 +4,12 @@ import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/service_item.dart';
 import '../../models/service_tier.dart';
 import '../../services/tier_rules.dart';
 import '../theme.dart';
-import '../widgets/gradient_header.dart';
+import '../responsive.dart';
 import '../widgets/tier_selector.dart';
 import 'applications_page.dart';
 
@@ -35,6 +36,16 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
   final Map<String, PlatformFile?> _uploadedFiles = {};
   final Map<String, bool> _uploadingStatus = {};
   final Map<String, String> _uploadedUrls = {};
+  // Pre-upload details (Step 1) state
+  final GlobalKey<FormState> _detailsFormKey = GlobalKey<FormState>();
+  final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _nationalityController = TextEditingController();
+  Map<String, dynamic> _preUploadDetails = {};
+  bool _detailsCompleted = false;
+  int _currentUploadStep = 0; // 0: details, 1: uploads
+  bool _bottomSheetActive = false;
 
   @override
   void initState() {
@@ -83,11 +94,132 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          GradientHeader(title: widget.subService.name, showBackButton: true),
-          Expanded(
-            child: SingleChildScrollView(
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            pinned: true,
+            expandedHeight: Responsive.heroHeight(context),
+            backgroundColor: AppColors.purple,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            elevation: 4,
+            flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.parallax,
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF6200EE),
+                      Color(0xFF7E3FF2),
+                      Color(0xFF9D4EDD),
+                    ],
+                    stops: [0.0, 0.5, 1.0],
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.12),
+                              Colors.transparent,
+                            ],
+                            stops: const [0.0, 0.4],
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Centered larger icon when expanded
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 72, bottom: 32),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.35),
+                                    blurRadius: 18,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.description,
+                                color: Colors.white,
+                                size: 30,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Text(
+                                widget.subService.name,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 24,
+                                  height: 1.2,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              title: Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.description,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      widget.subService.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              centerTitle: false,
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -332,181 +464,327 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
   }
 
   void _showDocumentUpload(BuildContext context) {
+    _currentUploadStep = _detailsCompleted ? 1 : 0;
+    _bottomSheetActive = true;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          height: MediaQuery.of(context).size.height * 0.7,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
+        builder: (context, setModalState) {
+          // Use persistent field instead of local var so step isn't reset on setState
+          if (_detailsCompleted && _currentUploadStep == 0) {
+            _currentUploadStep =
+                1; // ensure progression keeps after parent rebuilds
+          }
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.7,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    const Text(
-                      'Upload Documents',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: widget.subService.documentRequirements.length,
-                  itemBuilder: (context, index) {
-                    final doc = widget.subService.documentRequirements[index];
-                    final isUploading = _uploadingStatus[doc] ?? false;
-                    final isUploaded = _uploadedFiles[doc] != null;
-
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      elevation: isUploading ? 4 : 1,
-                      child: InkWell(
-                        onTap: isUploading
-                            ? null
-                            : () => _pickAndUploadFile(doc, setModalState),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                backgroundColor: isUploaded
-                                    ? Colors.green.withValues(alpha: 0.1)
-                                    : AppColors.purple.withValues(alpha: 0.1),
-                                child: isUploading
-                                    ? SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                AppColors.purple,
-                                              ),
-                                        ),
-                                      )
-                                    : Icon(
-                                        isUploaded
-                                            ? Icons.check_circle
-                                            : Icons.upload_file,
-                                        color: isUploaded
-                                            ? Colors.green
-                                            : AppColors.purple,
-                                        size: 24,
-                                      ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      doc,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      isUploaded
-                                          ? _uploadedFiles[doc]!.name
-                                          : 'Tap to upload (PDF, JPG, PNG, DOC)',
-                                      style: TextStyle(
-                                        color: isUploaded
-                                            ? Colors.green
-                                            : Colors.grey,
-                                        fontSize: 12,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (isUploaded)
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.delete_outline,
-                                    color: Colors.red,
-                                  ),
-                                  onPressed: () {
-                                    setModalState(() {
-                                      _uploadedFiles.remove(doc);
-                                      _uploadedUrls.remove(doc);
-                                    });
-                                    setState(() {});
-                                  },
-                                )
-                              else if (!isUploading)
-                                Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 16,
-                                  color: Colors.grey.shade400,
-                                ),
-                            ],
-                          ),
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Text(
+                        _currentUploadStep == 0
+                            ? 'Provide Details'
+                            : 'Upload Documents',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    );
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: ElevatedButton(
-                  onPressed: _uploadedFiles.isEmpty
-                      ? null
-                      : () => _submitRequest(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.purple,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    disabledBackgroundColor: Colors.grey.shade300,
-                  ),
-                  child: Text(
-                    _uploadedFiles.isEmpty
-                        ? 'Upload at least one document'
-                        : 'Submit Request (${_uploadedFiles.length}/${widget.subService.documentRequirements.length} uploaded)',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                      const Spacer(),
+                      if (_currentUploadStep == 1)
+                        TextButton.icon(
+                          onPressed: () {
+                            setModalState(() {
+                              _currentUploadStep = 0;
+                            });
+                          },
+                          icon: const Icon(Icons.arrow_back_ios_new, size: 16),
+                          label: const Text('Back'),
+                        ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
+                if (_currentUploadStep == 0)
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Form(
+                        key: _detailsFormKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Please provide a few details to proceed',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _fullNameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Full Name',
+                                prefixIcon: Icon(Icons.person_outline),
+                                border: OutlineInputBorder(),
+                              ),
+                              validator: (v) => (v == null || v.trim().isEmpty)
+                                  ? 'Full name is required'
+                                  : null,
+                            ),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: const InputDecoration(
+                                labelText: 'Email',
+                                prefixIcon: Icon(Icons.email_outlined),
+                                border: OutlineInputBorder(),
+                              ),
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  return 'Email is required';
+                                }
+                                final emailRegex = RegExp(
+                                  r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                                );
+                                if (!emailRegex.hasMatch(v.trim())) {
+                                  return 'Enter a valid email';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              controller: _phoneController,
+                              keyboardType: TextInputType.phone,
+                              decoration: const InputDecoration(
+                                labelText: 'Phone Number',
+                                prefixIcon: Icon(Icons.phone_outlined),
+                                border: OutlineInputBorder(),
+                              ),
+                              validator: (v) => (v == null || v.trim().isEmpty)
+                                  ? 'Phone is required'
+                                  : null,
+                            ),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              controller: _nationalityController,
+                              decoration: const InputDecoration(
+                                labelText: 'Nationality',
+                                prefixIcon: Icon(Icons.flag_outlined),
+                                border: OutlineInputBorder(),
+                              ),
+                              validator: (v) => (v == null || v.trim().isEmpty)
+                                  ? 'Nationality is required'
+                                  : null,
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                if (_currentUploadStep == 0)
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (_detailsFormKey.currentState?.validate() ?? false) {
+                          setState(() {
+                            _preUploadDetails = {
+                              'fullName': _fullNameController.text.trim(),
+                              'email': _emailController.text.trim(),
+                              'phone': _phoneController.text.trim(),
+                              'nationality': _nationalityController.text.trim(),
+                            };
+                            _detailsCompleted = true;
+                          });
+                          setModalState(() {
+                            _currentUploadStep = 1;
+                          });
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.purple,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Continue to Uploads',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (_currentUploadStep == 1)
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: widget.subService.documentRequirements.length,
+                      itemBuilder: (context, index) {
+                        final doc =
+                            widget.subService.documentRequirements[index];
+                        final isUploading = _uploadingStatus[doc] ?? false;
+                        final isUploaded = _uploadedFiles[doc] != null;
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          elevation: isUploading ? 4 : 1,
+                          child: InkWell(
+                            onTap: isUploading
+                                ? null
+                                : () => _pickAndUploadFile(doc, setModalState),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    backgroundColor: isUploaded
+                                        ? Colors.green.withValues(alpha: 0.1)
+                                        : AppColors.purple.withValues(
+                                            alpha: 0.1,
+                                          ),
+                                    child: isUploading
+                                        ? SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                    AppColors.purple,
+                                                  ),
+                                            ),
+                                          )
+                                        : Icon(
+                                            isUploaded
+                                                ? Icons.check_circle
+                                                : Icons.upload_file,
+                                            color: isUploaded
+                                                ? Colors.green
+                                                : AppColors.purple,
+                                            size: 24,
+                                          ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          doc,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          isUploaded
+                                              ? _uploadedFiles[doc]!.name
+                                              : 'Tap to upload (PDF, JPG, PNG, DOC)',
+                                          style: TextStyle(
+                                            color: isUploaded
+                                                ? Colors.green
+                                                : Colors.grey,
+                                            fontSize: 12,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (isUploaded)
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.red,
+                                      ),
+                                      onPressed: () {
+                                        setModalState(() {
+                                          _uploadedFiles.remove(doc);
+                                          _uploadedUrls.remove(doc);
+                                        });
+                                        setState(() {});
+                                      },
+                                    )
+                                  else if (!isUploading)
+                                    Icon(
+                                      Icons.arrow_forward_ios,
+                                      size: 16,
+                                      color: Colors.grey.shade400,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                if (_currentUploadStep == 1)
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: ElevatedButton(
+                      onPressed: _uploadedFiles.isEmpty
+                          ? null
+                          : () => _submitRequest(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.purple,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        disabledBackgroundColor: Colors.grey.shade300,
+                      ),
+                      child: Text(
+                        _uploadedFiles.isEmpty
+                            ? 'Upload at least one document'
+                            : 'Submit Request (${_uploadedFiles.length}/${widget.subService.documentRequirements.length} uploaded)',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -517,6 +795,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
   ) async {
     try {
       // Pick file with web-compatible settings
+      if (!_bottomSheetActive) return;
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'],
@@ -554,6 +833,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
           return;
         }
 
+        if (!_bottomSheetActive) return;
         setModalState(() {
           _uploadingStatus[documentName] = true;
         });
@@ -591,11 +871,13 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
         // Get download URL
         final downloadUrl = await storageRef.getDownloadURL();
 
-        setModalState(() {
-          _uploadedFiles[documentName] = file;
-          _uploadedUrls[documentName] = downloadUrl;
-          _uploadingStatus[documentName] = false;
-        });
+        if (_bottomSheetActive) {
+          setModalState(() {
+            _uploadedFiles[documentName] = file;
+            _uploadedUrls[documentName] = downloadUrl;
+            _uploadingStatus[documentName] = false;
+          });
+        }
         setState(() {});
 
         if (mounted) {
@@ -609,9 +891,11 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
         }
       }
     } catch (e) {
-      setModalState(() {
-        _uploadingStatus[documentName] = false;
-      });
+      if (_bottomSheetActive) {
+        setModalState(() {
+          _uploadingStatus[documentName] = false;
+        });
+      }
       setState(() {});
 
       if (mounted) {
@@ -646,6 +930,20 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
 
   Future<void> _submitRequest(BuildContext context) async {
     try {
+      // Get current user ID
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(this.context).showSnackBar(
+            const SnackBar(
+              content: Text('Please sign in to submit a request'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
       // Save request to Firestore with tier information
       final ref = await FirebaseFirestore.instance
           .collection('service_requests')
@@ -653,8 +951,10 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
             'serviceName': widget.subService.name,
             'serviceType': widget.serviceTypeName,
             'tier': _selectedTier.id, // 'standard' or 'premium'
-            'userId': 'demo_user', // Replace with actual user ID
+            'userId': user.uid,
+            'userEmail': user.email ?? '',
             'documents': _uploadedUrls,
+            'details': _preUploadDetails,
             'status': 'pending',
             'createdAt': FieldValue.serverTimestamp(),
             'processing_min_days': _selectedTier.minDays,

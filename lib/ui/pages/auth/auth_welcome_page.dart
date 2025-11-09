@@ -166,12 +166,12 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
                   padding: const EdgeInsets.symmetric(horizontal: 32.0),
                   child: Column(
                     children: [
-                      const SizedBox(height: 80),
+                      const SizedBox(height: 60),
 
-                      // App icon with premium gradient and glow effect
+                      // App icon with premium gradient and enhanced glow
                       Container(
-                        width: 140,
-                        height: 140,
+                        width: 160,
+                        height: 160,
                         decoration: BoxDecoration(
                           gradient:
                               (Theme.of(
@@ -187,109 +187,126 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
                                   Color(0xFF6366F1),
                                 ],
                               ),
-                          borderRadius: BorderRadius.circular(36),
+                          borderRadius: BorderRadius.circular(40),
                           boxShadow: [
                             BoxShadow(
                               color: const Color(
                                 0xFF8B5CF6,
-                              ).withValues(alpha: 0.5),
-                              blurRadius: 40,
-                              spreadRadius: 0,
+                              ).withValues(alpha: 0.6),
+                              blurRadius: 60,
+                              spreadRadius: 8,
                               offset: const Offset(0, 20),
                             ),
                             BoxShadow(
                               color: const Color(
                                 0xFF7C3AED,
-                              ).withValues(alpha: 0.3),
-                              blurRadius: 60,
-                              spreadRadius: 10,
+                              ).withValues(alpha: 0.4),
+                              blurRadius: 90,
+                              spreadRadius: 15,
                               offset: const Offset(0, 30),
                             ),
                           ],
                         ),
                         child: Container(
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(36),
+                            borderRadius: BorderRadius.circular(40),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              width: 2,
+                              color: Colors.white.withValues(alpha: 0.25),
+                              width: 2.5,
                             ),
                           ),
                           child: const Icon(
                             Icons.business_center_rounded,
-                            size: 70,
+                            size: 80,
                             color: Colors.white,
                           ),
                         ),
                       ),
 
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 36),
 
-                      // Title — make it clearly visible on the dark hero background
-                      const Text(
-                        'WELCOME TO Wazeet',
-                        style: TextStyle(
-                          fontSize: 38,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: -0.5,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black54,
-                              blurRadius: 12,
-                              offset: Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Subtitle
-                      Text(
-                        'Simplify Your Business',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 0.2,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black45,
-                              blurRadius: 8,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-
-                      const SizedBox(height: 60),
-
-                      // Auth card container with glass morphism effect
+                      // Enhanced title with better contrast
                       Container(
-                        padding: const EdgeInsets.all(32),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'WELCOME TO Wazeet',
+                          style: TextStyle(
+                            fontSize: 44,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.black,
+                            letterSpacing: -1.0,
+                            height: 1.1,
+                            shadows: [
+                              Shadow(
+                                color: Colors.white.withValues(alpha: 0.7),
+                                blurRadius: 12,
+                                offset: const Offset(0, 2),
+                              ),
+                              Shadow(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                blurRadius: 24,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Enhanced subtitle with stronger contrast
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(
+                          'Simplify Your Business',
+                          style: TextStyle(
+                            fontSize: 22,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.8,
+                            shadows: [
+                              Shadow(
+                                color: Colors.white.withValues(alpha: 0.7),
+                                blurRadius: 10,
+                                offset: const Offset(0, 2),
+                              ),
+                              Shadow(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                blurRadius: 22,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+
+                      const SizedBox(height: 50),
+
+                      // Enhanced auth card with glass morphism
+                      Container(
+                        padding: const EdgeInsets.all(36),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.95),
+                          color: Colors.white.withValues(alpha: 0.98),
                           borderRadius: BorderRadius.circular(32),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.6),
-                            width: 1.5,
+                            color: Colors.white.withValues(alpha: 0.8),
+                            width: 2,
                           ),
                           boxShadow: [
                             BoxShadow(
                               color: const Color(
                                 0xFF8B5CF6,
-                              ).withValues(alpha: 0.1),
-                              blurRadius: 40,
-                              spreadRadius: 0,
+                              ).withValues(alpha: 0.15),
+                              blurRadius: 50,
+                              spreadRadius: 5,
                               offset: const Offset(0, 10),
                             ),
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 80,
-                              spreadRadius: 0,
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 100,
+                              spreadRadius: 10,
                               offset: const Offset(0, 30),
                             ),
                           ],

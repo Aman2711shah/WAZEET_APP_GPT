@@ -1,0 +1,96 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../models/user_activity.dart';
+
+class UserActivityNotifier
+    extends StateNotifier<AsyncValue<List<UserActivity>>> {
+  UserActivityNotifier() : super(const AsyncValue.loading()) {
+    _init();
+  }
+
+  final _firestore = FirebaseFirestore.instance;
+  final _auth = FirebaseAuth.instance;
+
+  void _init() {
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
+
+    // Listen to user's activity collection
+    _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('activities')
+        .orderBy('createdAt', descending: true)
+        .limit(10)
+        .snapshots()
+        .listen(
+          (snapshot) {
+            try {
+              final activities = snapshot.docs.map((doc) {
+                final data = doc.data();
+                data['id'] = doc.id;
+                return UserActivity.fromJson(data);
+              }).toList();
+              state = AsyncValue.data(activities);
+            } catch (e, stackTrace) {
+              state = AsyncValue.error(e, stackTrace);
+            }
+          },
+          onError: (error, stackTrace) {
+            state = AsyncValue.error(error, stackTrace);
+          },
+        );
+  }
+
+  Future<void> addActivity(UserActivity activity) async {
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) return;
+
+    await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('activities')
+        .doc(activity.id)
+        .set(activity.toJson());
+  }
+
+  Future<void> updateActivity(
+    String activityId,
+    Map<String, dynamic> updates,
+  ) async {
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) return;
+
+    await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('activities')
+        .doc(activityId)
+        .update(updates);
+  }
+
+  Future<void> deleteActivity(String activityId) async {
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) return;
+
+    await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('activities')
+        .doc(activityId)
+        .delete();
+  }
+
+  void refresh() {
+    _init();
+  }
+}
+
+final userActivityProvider =
+    StateNotifierProvider<UserActivityNotifier, AsyncValue<List<UserActivity>>>(
+      (ref) => UserActivityNotifier(),
+    );

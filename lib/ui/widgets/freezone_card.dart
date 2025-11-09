@@ -20,6 +20,7 @@ class FreeZoneCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Light mode only - dark mode removed
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: isSelected ? 8 : 3,
