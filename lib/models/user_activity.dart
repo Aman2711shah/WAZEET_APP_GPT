@@ -30,7 +30,8 @@ class UserActivity {
       'status': status,
       'subtitle': subtitle,
       'iconCodePoint': icon.codePoint,
-      'colorValue': color.value,
+      // Use toARGB32() to avoid deprecated Color.value access
+      'colorValue': color.toARGB32(),
       'progress': progress,
       'createdAt': createdAt.toIso8601String(),
       'completedAt': completedAt?.toIso8601String(),

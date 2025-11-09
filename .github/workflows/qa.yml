@@ -78,16 +78,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Run security analysis
-        # Use maintained Snyk CLI action instead of invalid flutter action path
-        uses: snyk/actions/setup@v4
-        continue-on-error: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Snyk test (Flutter & Functions)
+        if: ${{ secrets.SNYK_TOKEN != '' }}
+        shell: bash
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      - name: Snyk test (Flutter & Functions)
         run: |
           npm install -g snyk@latest
+          snyk auth "$SNYK_TOKEN"
           # Test Flutter (treat as generic project)
           snyk test --file=pubspec.yaml || true
           # Test functions (Node project)
