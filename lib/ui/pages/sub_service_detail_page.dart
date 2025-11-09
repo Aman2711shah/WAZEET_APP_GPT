@@ -9,9 +9,10 @@ import '../../models/service_item.dart';
 import '../../models/service_tier.dart';
 import '../../services/tier_rules.dart';
 import '../theme.dart';
-import '../responsive.dart';
 import '../widgets/tier_selector.dart';
 import 'applications_page.dart';
+import '../../providers/user_activity_provider.dart';
+import '../../models/user_activity.dart';
 
 class SubServiceDetailPage extends ConsumerStatefulWidget {
   final SubService subService;
@@ -98,7 +99,13 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
         slivers: [
           SliverAppBar(
             pinned: true,
-            expandedHeight: Responsive.heroHeight(context),
+            // Reduced header height for a more compact sub-service detail view
+            // Previously used Responsive.heroHeight which was quite tall.
+            // Choose a smaller adaptive value capped at 180.
+            expandedHeight: () {
+              final h = MediaQuery.of(context).size.height;
+              return h < 600 ? 150.0 : 170.0; // simple adaptive heuristic
+            }(),
             backgroundColor: AppColors.purple,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -141,7 +148,12 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Padding(
-                        padding: const EdgeInsets.only(left: 72, bottom: 32),
+                        // Reduced left and bottom padding to fit the smaller header height
+                        padding: const EdgeInsets.only(
+                          left: 32,
+                          bottom: 20,
+                          right: 16,
+                        ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
@@ -173,8 +185,8 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 24,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 22,
                                   height: 1.2,
                                 ),
                               ),
@@ -945,7 +957,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
       }
 
       // Save request to Firestore with tier information
-      final ref = await FirebaseFirestore.instance
+      final reqRef = await FirebaseFirestore.instance
           .collection('service_requests')
           .add({
             'serviceName': widget.subService.name,
@@ -961,6 +973,23 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
             'processing_max_days': _selectedTier.maxDays,
             'price_aed': _selectedTier.price,
           });
+
+      // Log Recent Activity for this submission
+      try {
+        final activity = UserActivity(
+          id: reqRef.id, // correlate activity with request id
+          title: widget.subService.name,
+          status: 'Submitted',
+          subtitle: 'Application submitted • ${_selectedTier.name} tier',
+          icon: Icons.assignment_turned_in,
+          color: AppColors.purple,
+          progress: 0.2,
+          createdAt: DateTime.now(),
+        );
+        await ref.read(userActivityProvider.notifier).addActivity(activity);
+      } catch (_) {
+        // Non-fatal: if activity write fails, continue
+      }
 
       if (mounted) {
         // Close the bottom sheet first using the page context to avoid using a
@@ -985,7 +1014,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                   const Text('Track with ID:'),
                   const SizedBox(height: 6),
                   SelectableText(
-                    ref.id,
+                    reqRef.id,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -996,7 +1025,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
               actions: [
                 TextButton(
                   onPressed: () {
-                    Clipboard.setData(ClipboardData(text: ref.id));
+                    Clipboard.setData(ClipboardData(text: reqRef.id));
                     Navigator.of(dialogCtx).pop();
                     ScaffoldMessenger.of(this.context).showSnackBar(
                       const SnackBar(
@@ -1011,7 +1040,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                     Navigator.of(dialogCtx).pop();
                     Navigator.of(this.context).push(
                       MaterialPageRoute(
-                        builder: (_) => ApplicationsPage(initialId: ref.id),
+                        builder: (_) => ApplicationsPage(initialId: reqRef.id),
                       ),
                     );
                   },

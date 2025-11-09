@@ -20,10 +20,12 @@ class UserActivityNotifier
     }
 
     // Listen to user's activity collection
+    // NOTE: Firestore rules use singular 'activity' subcollection
+    // match /users/{uid}/activity/{activityId}
     _firestore
         .collection('users')
         .doc(userId)
-        .collection('activities')
+        .collection('activity')
         .orderBy('createdAt', descending: true)
         .limit(10)
         .snapshots()
@@ -53,7 +55,7 @@ class UserActivityNotifier
     await _firestore
         .collection('users')
         .doc(userId)
-        .collection('activities')
+        .collection('activity')
         .doc(activity.id)
         .set(activity.toJson());
   }
@@ -68,7 +70,7 @@ class UserActivityNotifier
     await _firestore
         .collection('users')
         .doc(userId)
-        .collection('activities')
+        .collection('activity')
         .doc(activityId)
         .update(updates);
   }
@@ -80,7 +82,7 @@ class UserActivityNotifier
     await _firestore
         .collection('users')
         .doc(userId)
-        .collection('activities')
+        .collection('activity')
         .doc(activityId)
         .delete();
   }
