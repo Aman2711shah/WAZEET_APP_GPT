@@ -1,3 +1,29 @@
+# Flutter/Dart defaults
+.dart_tool/
+.packages
+.pub-cache/
+**/Generated.xcconfig
+**/Pods/
+**/.symlinks/
+**/Flutter/ephemeral/
+
+# Build outputs
+build/
+
+# IntelliJ/VS Code
+*.iml
+.idea/
+.vscode/
+
+# Env files (do not commit secrets)
+.env
+.env.*
+**/assets/.env
+**/flutter_assets/.env
+**/unit_test_assets/.env
+
+# macOS
+.DS_Store
 # Miscellaneous
 *.class
 *.log
