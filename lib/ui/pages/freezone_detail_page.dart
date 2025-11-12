@@ -25,10 +25,10 @@ class FreeZoneDetailPage extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.share),
-            onPressed: () {
+            onPressed: () async {
               final shareText =
                   'Free Zone: ${zone.name} (${_getEmirateDisplayName(zone.emirate)})\nStarting from: ${zone.startingPriceFormatted}';
-              Share.share(shareText, subject: 'Check this Free Zone');
+              await SharePlus.instance.share(ShareParams(text: shareText));
             },
           ),
           IconButton(

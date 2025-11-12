@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "350415177061-p2d22eb2sh7bpffa0ctm31sn24g9j7m8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.wazeet.app",
+            "certificate_hash": "83b93434c3b311dc9bd652ce1f9d7e07d68fd7f9"
+          }
+        },
+        {
           "client_id": "350415177061-7jmtmutotpfi6r58coc2n585nvhv0eit.apps.googleusercontent.com",
           "client_type": 3
         }

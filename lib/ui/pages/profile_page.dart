@@ -11,6 +11,7 @@ import 'account_settings_page.dart';
 import 'appearance_settings_page.dart';
 import 'privacy_policy_page.dart';
 import 'admin_requests_page.dart';
+import 'freezone_quote_page.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -176,6 +177,19 @@ class ProfilePage extends ConsumerWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => const LinkedAccountsPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  _menuItem(
+                    context,
+                    icon: Icons.calculate_outlined,
+                    title: 'Get a Quote',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const FreezoneQuotePage(),
                         ),
                       );
                     },

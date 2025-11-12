@@ -1,13 +1,15 @@
 class ServiceCategory {
   final String id;
   final String name;
-  final String icon;
+  final String? description;
+  final String icon; // Now stores IconData name like 'flight' instead of emoji
   final String color;
   final List<ServiceType> serviceTypes;
 
   ServiceCategory({
     required this.id,
     required this.name,
+    this.description,
     required this.icon,
     required this.color,
     required this.serviceTypes,
@@ -17,12 +19,16 @@ class ServiceCategory {
 class ServiceType {
   final String id;
   final String name;
+  final String? description;
+  final String? icon;
   final String categoryId;
   final List<SubService> subServices;
 
   ServiceType({
     required this.id,
     required this.name,
+    this.description,
+    this.icon,
     required this.categoryId,
     required this.subServices,
   });
@@ -31,6 +37,8 @@ class ServiceType {
 class SubService {
   final String id;
   final String name;
+  final String? description;
+  final String? icon;
   final String serviceTypeId;
   final PricingTier premium;
   final PricingTier standard;
@@ -39,6 +47,8 @@ class SubService {
   SubService({
     required this.id,
     required this.name,
+    this.description,
+    this.icon,
     required this.serviceTypeId,
     required this.premium,
     required this.standard,
@@ -46,21 +56,43 @@ class SubService {
   });
 
   String get premiumCostDisplay {
-    if (premium.cost is int) {
-      return 'AED ${premium.cost}';
-    } else if (premium.cost is String) {
-      return 'AED ${premium.cost}';
-    }
-    return 'Contact Us';
+    return _formatCost(premium.cost);
   }
 
   String get standardCostDisplay {
-    if (standard.cost is int) {
-      return 'AED ${standard.cost}';
-    } else if (standard.cost is String) {
-      return 'AED ${standard.cost}';
+    return _formatCost(standard.cost);
+  }
+
+  String _formatCost(dynamic cost) {
+    if (cost == null) return 'Contact us';
+
+    if (cost is int) {
+      return 'AED $cost';
     }
-    return 'Contact Us';
+
+    if (cost is double) {
+      return 'AED ${cost.toStringAsFixed(2)}';
+    }
+
+    final costStr = cost.toString().trim();
+    if (costStr.isEmpty) return 'Contact us';
+
+    final normalized = costStr.toUpperCase();
+    const currencyPrefixes = ['AED', 'USD', 'EUR', 'GBP'];
+    final hasCurrencyPrefix = currencyPrefixes.any(
+      (prefix) => normalized.startsWith(prefix),
+    );
+    final containsSpecialMarker =
+        normalized.contains('REQUEST') ||
+        normalized.contains('CONTACT') ||
+        normalized.contains('INCLUDED') ||
+        normalized.contains('QUOTE');
+
+    if (hasCurrencyPrefix || containsSpecialMarker) {
+      return costStr;
+    }
+
+    return 'AED $costStr';
   }
 }
 

@@ -11,11 +11,12 @@ admin.initializeApp();
  * @param {Object} data - Request data
  * @param {number} data.amount - Amount in AED (will be converted to fils)
  * @param {string} data.applicationId - Application ID for tracking
+ * @param {('standard'|'premium')} [data.tier] - Optional service tier for metadata/pricing
  * @param {Object} context - Firebase Functions context
  * @returns {Object} - Contains clientSecret for Stripe PaymentSheet
  */
 exports.createPaymentIntent = functions
-    .region('me-central1')
+    .region('us-central1')
     .https.onCall(async (data, context) => {
         // Verify user is authenticated
         if (!context.auth) {
@@ -26,12 +27,22 @@ exports.createPaymentIntent = functions
         }
 
         try {
-            // Initialize Stripe with secret key from environment
-            const stripe = new Stripe(process.env.STRIPE_SECRET);
+            // Resolve Stripe secret from environment or Firebase functions config
+            const stripeSecret = process.env.STRIPE_SECRET || (functions.config().stripe && functions.config().stripe.secret);
+            // Guard missing Stripe env vars early for clearer error to client
+            if (!stripeSecret) {
+                console.error('STRIPE_SECRET env var missing');
+                throw new functions.https.HttpsError(
+                    'failed-precondition',
+                    'Payment configuration incomplete'
+                );
+            }
+            const stripe = new Stripe(stripeSecret);
 
             // Convert AED to fils (100 fils = 1 AED)
             const amountAED = Math.round(Number(data.amount) * 100);
             const applicationId = data.applicationId || '';
+            const tier = (data.tier || '').toString().toLowerCase();
 
             // Validate amount
             if (amountAED < 100) {
@@ -41,17 +52,30 @@ exports.createPaymentIntent = functions
                 );
             }
 
-            // Create PaymentIntent
-            const intent = await stripe.paymentIntents.create({
-                amount: amountAED,
-                currency: 'aed',
-                automatic_payment_methods: { enabled: true },
-                metadata: {
-                    uid: context.auth.uid,
-                    applicationId: applicationId,
-                    userEmail: context.auth.token.email || '',
-                },
-            });
+            let intent;
+            try {
+                intent = await stripe.paymentIntents.create({
+                    amount: amountAED,
+                    currency: 'aed',
+                    automatic_payment_methods: { enabled: true },
+                    metadata: {
+                        uid: context.auth.uid,
+                        applicationId: applicationId,
+                        userEmail: context.auth.token.email || '',
+                        serviceTier: tier || 'standard',
+                    },
+                });
+            } catch (piError) {
+                console.error('Stripe PaymentIntent API error:', {
+                    message: piError.message,
+                    type: piError.type,
+                    code: piError.code,
+                });
+                throw new functions.https.HttpsError(
+                    'internal',
+                    'Stripe payment initialization failed'
+                );
+            }
 
             // Log payment intent creation
             console.log(`PaymentIntent created: ${intent.id} for user ${context.auth.uid}`);
@@ -61,10 +85,13 @@ exports.createPaymentIntent = functions
                 paymentIntentId: intent.id,
             };
         } catch (error) {
-            console.error('Stripe payment intent creation error:', error);
+            if (error instanceof functions.https.HttpsError) {
+                throw error; // already wrapped with user-friendly message
+            }
+            console.error('Unhandled payment creation error:', error);
             throw new functions.https.HttpsError(
                 'internal',
-                'Failed to create payment intent: ' + error.message
+                'Failed to create payment intent'
             );
         }
     });
@@ -74,10 +101,11 @@ exports.createPaymentIntent = functions
  * Handles payment confirmations and updates
  */
 exports.handleStripeWebhook = functions
-    .region('me-central1')
+    .region('us-central1')
     .https.onRequest(async (req, res) => {
-        const stripe = new Stripe(process.env.STRIPE_SECRET);
-        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+        const stripeSecret = process.env.STRIPE_SECRET || (functions.config().stripe && functions.config().stripe.secret);
+        const stripe = new Stripe(stripeSecret);
+        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || (functions.config().stripe && functions.config().stripe.webhook_secret);
 
         let event;
 
@@ -130,7 +158,7 @@ exports.handleStripeWebhook = functions
  * @returns {Object} - Contains response text from AI
  */
 exports.aiChat = functions
-    .region('me-central1')
+    .region('us-central1')
     .https.onCall(async (data, context) => {
         try {
             // Validate request

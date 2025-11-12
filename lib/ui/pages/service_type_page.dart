@@ -4,6 +4,7 @@ import '../../models/service_item.dart';
 import 'sub_service_detail_page.dart';
 import '../theme.dart';
 import '../widgets/hero/service_header.dart';
+import '../../utils/icon_mapper.dart';
 
 class ServiceTypePage extends ConsumerWidget {
   final ServiceCategory category;
@@ -55,11 +56,9 @@ class ServiceTypePage extends ConsumerWidget {
                         ).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Center(
-                        child: Text(
-                          category.icon,
-                          style: const TextStyle(fontSize: 24),
-                        ),
+                      child: Icon(
+                        getIconData(serviceType.icon ?? category.icon),
+                        color: Color(int.parse(category.color)),
                       ),
                     ),
                     title: Text(
@@ -69,12 +68,30 @@ class ServiceTypePage extends ConsumerWidget {
                         fontSize: 16,
                       ),
                     ),
-                    subtitle: Text(
-                      '${serviceType.subServices.length} services available',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 14,
-                      ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (serviceType.description != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            serviceType.description!,
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 13,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                        const SizedBox(height: 4),
+                        Text(
+                          '${serviceType.subServices.length} services available',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                     onTap: () {
@@ -176,11 +193,10 @@ class SubServiceListPage extends ConsumerWidget {
                                   ).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: Center(
-                                  child: Text(
-                                    categoryIcon,
-                                    style: const TextStyle(fontSize: 20),
-                                  ),
+                                child: Icon(
+                                  getIconData(subService.icon ?? categoryIcon),
+                                  color: Color(int.parse(categoryColor)),
+                                  size: 22,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -195,6 +211,18 @@ class SubServiceListPage extends ConsumerWidget {
                                         fontSize: 16,
                                       ),
                                     ),
+                                    if (subService.description != null) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        subService.description!,
+                                        style: TextStyle(
+                                          color: Colors.grey.shade600,
+                                          fontSize: 12,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
                                     const SizedBox(height: 4),
                                     Text(
                                       'From ${subService.standardCostDisplay}',

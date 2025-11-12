@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wazeet/company_setup_flow.dart';
 import '../../providers/services_provider.dart';
 import '../../providers/user_profile_provider.dart';
-import '../../providers/user_activity_provider.dart';
+// import '../../providers/user_activity_provider.dart';
 import 'service_type_page.dart';
 import 'freezone_browser_page.dart';
 import 'freezone_investment_map_page.dart';
@@ -24,7 +24,8 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final serviceCategories = ref.watch(servicesProvider);
     final profile = ref.watch(userProfileProvider);
-    final userActivities = ref.watch(userActivityProvider);
+    // Recent Activity removed per request; provider watch disabled
+    // final userActivities = ref.watch(userActivityProvider);
     final userName = profile?.name ?? 'User';
 
     final theme = Theme.of(context);
@@ -354,75 +355,23 @@ class HomePage extends ConsumerWidget {
                           'Golden Visa',
                           'Eligible for Golden Visa? Check requirements now',
                           Colors.amber,
-                          onTap: () => _openGoldenVisaInfo(context),
+                          // Removed detailed modal; will add back later if needed
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Golden Visa info temporarily unavailable.',
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 28),
 
-                  // Recent Activity
-                  Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(AppSpacing.sm),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.blue.withValues(alpha: 0.2),
-                              AppColors.blue.withValues(alpha: 0.1),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                        ),
-                        child: Icon(
-                          Icons.history_rounded,
-                          color: AppColors.blue,
-                          size: 24,
-                        ),
-                      ),
-                      SizedBox(width: AppSpacing.md),
-                      Text(
-                        'Recent Activity',
-                        style: AppTextStyle.headlineSmall.copyWith(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white
-                              : AppColors.text,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  userActivities.when(
-                    data: (activities) {
-                      if (activities.isEmpty) {
-                        return _buildEmptyActivityState(context);
-                      }
-                      return Column(
-                        children: activities
-                            .map(
-                              (activity) => _buildActivityCard(
-                                context,
-                                activity.title,
-                                activity.status,
-                                activity.subtitle,
-                                activity.icon,
-                                activity.color,
-                                activity.progress,
-                              ),
-                            )
-                            .toList(),
-                      );
-                    },
-                    loading: () => const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24.0),
-                        child: CircularProgressIndicator(),
-                      ),
-                    ),
-                    error: (error, stack) => _buildEmptyActivityState(context),
-                  ),
-                  const SizedBox(height: 24),
+                  // Recent Activity section removed
 
                   // Help & Support
                   Container(
@@ -653,211 +602,6 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyActivityState(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            isDark ? AppColors.darkCard : Colors.white,
-            isDark
-                ? AppColors.darkCard.withValues(alpha: 0.5)
-                : Colors.grey.withValues(alpha: 0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(
-          color: isDark
-              ? AppColors.darkBorder
-              : AppColors.borderLight.withValues(alpha: 0.5),
-          width: 1.5,
-        ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.blue.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.inbox_outlined,
-              size: 48,
-              color: AppColors.blue.withValues(alpha: 0.6),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No Recent Activity',
-            style: AppTextStyle.titleMedium.copyWith(
-              color: isDark ? AppColors.darkText : AppColors.text,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Your recent activities will appear here',
-            style: AppTextStyle.bodySmall.copyWith(
-              color: isDark
-                  ? AppColors.darkTextSecondary
-                  : AppColors.textSecondary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActivityCard(
-    BuildContext context,
-    String title,
-    String status,
-    String subtitle,
-    IconData icon,
-    Color color,
-    double progress,
-  ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      margin: EdgeInsets.only(bottom: AppSpacing.md),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            isDark ? AppColors.darkCard : Colors.white,
-            color.withValues(alpha: isDark ? 0.08 : 0.03),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(
-          color: color.withValues(alpha: isDark ? 0.25 : 0.2),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.12),
-            blurRadius: 12,
-            offset: Offset(0, AppSpacing.xs),
-            spreadRadius: 0,
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: EdgeInsets.all(AppSpacing.md),
-              child: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          color.withValues(alpha: 0.2),
-                          color.withValues(alpha: 0.12),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                      boxShadow: [
-                        BoxShadow(
-                          color: color.withValues(alpha: 0.25),
-                          blurRadius: 8,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Icon(icon, color: color, size: 26),
-                  ),
-                  SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: AppTextStyle.titleMedium.copyWith(
-                            color: isDark ? AppColors.darkText : AppColors.text,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        SizedBox(height: AppSpacing.xs),
-                        Text(
-                          subtitle,
-                          style: AppTextStyle.bodySmall.copyWith(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: .82)
-                                : AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.sm,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          color.withValues(alpha: 0.18),
-                          color.withValues(alpha: 0.12),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                      border: Border.all(
-                        color: color.withValues(alpha: 0.35),
-                        width: 1,
-                      ),
-                    ),
-                    child: Text(
-                      status,
-                      style: AppTextStyle.labelSmall.copyWith(
-                        color: isDark ? Colors.white : color,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (progress < 1.0)
-              Container(
-                height: 5,
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.darkBorder.withValues(alpha: 0.5)
-                      : AppColors.borderLight,
-                ),
-                child: FractionallySizedBox(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: progress,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [color, color.withValues(alpha: 0.75)],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildTipCard(
     String emoji,
     String title,
@@ -1048,24 +792,8 @@ class HomePage extends ConsumerWidget {
 
                     const SizedBox(height: 14),
                     _sectionTitle('Tax Rates & Thresholds'),
-                    _buildRateCard(
-                      '0%',
-                      'Taxable income up to AED 375,000',
-                      Colors.green,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildRateCard(
-                      '9%',
-                      'Taxable income exceeding AED 375,000',
-                      Colors.orange,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildRateCard(
-                      '15%',
-                      'Minimum top-up tax (from 2025) for multinational groups with global revenues ≥ €750M (OECD Pillar Two)',
-                      Colors.red,
-                    ),
 
+                    // Simplified rate cards removed for now
                     const SizedBox(height: 14),
                     _sectionTitle('Free Zones & QFZP'),
                     _bodyText(
@@ -1150,190 +878,9 @@ class HomePage extends ConsumerWidget {
 
                     const SizedBox(height: 14),
                     _sectionTitle('Practical Implications'),
-                    _bullets([
-                      'Exports: Qualify for 0% rate if QFZP conditions met',
-                      'Mainland Trading: Subject to 9% tax on profits',
-                      'Requirements: Ensure adequate economic substance (office, staff, operations)',
-                      'Maintain audited accounts and transfer-pricing documentation for FTA inspection',
-                    ]),
-
-                    const SizedBox(height: 14),
-                    _sectionTitle('Key Takeaways'),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.green.shade200),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.check_circle,
-                                color: Colors.green.shade700,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Competitive & Aligned',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.green.shade700,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          _bullets([
-                            'UAE\'s Corporate Tax regime is competitive and aligned with global standards',
-                            'Most SMEs in Free Zones can achieve 0% effective tax with proper planning and substance',
-                            'Businesses should review financial structures and consult qualified advisors under Federal Decree-Law No. 47 of 2022',
-                          ]),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-                    _sectionTitle('Resources'),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        _primaryButton(
-                          'Visit FTA Portal',
-                          () => _openUrl(context, 'https://tax.gov.ae'),
-                        ),
-                        _secondaryButton(
-                          'EmaraTax Login',
-                          () =>
-                              _openUrl(context, 'https://eservices.tax.gov.ae'),
-                        ),
-                        _secondaryButton(
-                          'Download PDF Guide',
-                          () => _openUrl(
-                            context,
-                            '${Uri.base.origin}/assets/docs/UAE_Corporate_Tax_Overview_2025.pdf',
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 28),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRateCard(String rate, String description, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              rate,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-                fontSize: 16,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              description,
-              style: const TextStyle(
-                fontSize: 13,
-                height: 1.4,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _openGoldenVisaInfo(BuildContext context) async {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => FractionallySizedBox(
-        heightFactor: 0.95,
-        child: ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          child: Material(
-            color: Theme.of(context).colorScheme.surface,
-            child: SafeArea(
-              top: false,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.amber.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.stars_rounded,
-                            color: Colors.amber,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Text(
-                            'UAE Golden Visa 2025',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded),
-                          onPressed: () => Navigator.of(context).maybePop(),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-
-                    // Tags
-                    Row(
-                      children: [
-                        _chip('5 or 10 Years', Colors.amber),
-                        const SizedBox(width: 8),
-                        _chip('Renewable', Colors.green),
-                      ],
+                    _bodyText(
+                      'Exports: Qualify for 0% rate if QFZP conditions met. '
+                      'Mainland Trading: Subject to 9% tax on profits.',
                     ),
 
                     const SizedBox(height: 16),

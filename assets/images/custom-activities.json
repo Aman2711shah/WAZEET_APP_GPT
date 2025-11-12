@@ -1,0 +1,58 @@
+[
+    {
+        "industry": "Technology",
+        "business_activities": [
+            {
+                "Activity Name": "Software Development",
+                "Description": "Development of custom software applications, mobile apps, and web platforms"
+            },
+            {
+                "Activity Name": "IT Consulting",
+                "Description": "Providing technology advisory and implementation services to businesses"
+            },
+            {
+                "Activity Name": "Cloud Services",
+                "Description": "Cloud infrastructure setup, migration, and management services"
+            }
+        ]
+    },
+    {
+        "industry": "E-commerce",
+        "business_activities": [
+            {
+                "Activity Name": "Online Retail",
+                "Description": "Selling products through online platforms and marketplaces"
+            },
+            {
+                "Activity Name": "Dropshipping",
+                "Description": "Retail fulfillment where store doesn't keep products in stock"
+            }
+        ]
+    },
+    {
+        "industry": "Consulting",
+        "business_activities": [
+            {
+                "Activity Name": "Business Consulting",
+                "Description": "Strategic planning, operations improvement, and business advisory services"
+            },
+            {
+                "Activity Name": "Management Consulting",
+                "Description": "Organizational development and management advisory services"
+            }
+        ]
+    },
+    {
+        "industry": "Marketing",
+        "business_activities": [
+            {
+                "Activity Name": "Digital Marketing",
+                "Description": "Online marketing services including SEO, SEM, social media marketing"
+            },
+            {
+                "Activity Name": "Content Creation",
+                "Description": "Creating marketing content, videos, graphics, and written materials"
+            }
+        ]
+    }
+]

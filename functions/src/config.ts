@@ -16,6 +16,23 @@ if (!CSE_KEY || !CSE_CX) {
 }
 
 /**
+ * Configuration helper for HubSpot CRM Integration
+ * Set this value using:
+ * firebase functions:config:set hubspot.api_key="YOUR_KEY"
+ * For local development, use .env file with HUBSPOT_API_KEY
+ */
+
+export const HUBSPOT_API_KEY =
+    process.env.HUBSPOT_API_KEY ||
+    functions.config().hubspot?.api_key;
+
+if (!HUBSPOT_API_KEY) {
+    console.warn(
+        "⚠️  HubSpot API key not configured. Set with: firebase functions:config:set hubspot.api_key=YOUR_KEY"
+    );
+}
+
+/**
  * Validates that CSE configuration is available
  * @throws Error if configuration is missing
  */

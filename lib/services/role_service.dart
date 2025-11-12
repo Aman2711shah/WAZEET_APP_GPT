@@ -1,6 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import 'package:wazeet/constants/admin_whitelist.dart';
 
 /// User role information
 class UserRole {
@@ -33,6 +36,7 @@ class RoleService {
         _firestoreSubscription?.cancel();
         return;
       }
+      final bool emailOverrideAdmin = isHardcodedAdminEmail(user.email);
 
       // Listen to Firestore role changes
       _firestoreSubscription?.cancel();
@@ -50,6 +54,7 @@ class RoleService {
 
             // Check if user is admin from either source
             final isAdmin =
+                emailOverrideAdmin ||
                 (customRole != null &&
                     (customRole == 'admin' || customRole == 'super_admin')) ||
                 (firestoreRole != null &&
@@ -57,7 +62,13 @@ class RoleService {
                         firestoreRole == 'super_admin'));
 
             _roleController?.add(
-              UserRole(isAdmin: isAdmin, role: customRole ?? firestoreRole),
+              UserRole(
+                isAdmin: isAdmin,
+                role:
+                    customRole ??
+                    firestoreRole ??
+                    (emailOverrideAdmin ? 'admin' : null),
+              ),
             );
           });
     });
@@ -77,6 +88,10 @@ class RoleService {
   Future<bool> canAccessAdmin() async {
     final user = _auth.currentUser;
     if (user == null) return false;
+
+    if (isHardcodedAdminEmail(user.email)) {
+      return true;
+    }
 
     // Check custom claims
     final idTokenResult = await user.getIdTokenResult(true);

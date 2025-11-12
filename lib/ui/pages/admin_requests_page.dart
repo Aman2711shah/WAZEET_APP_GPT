@@ -1,17 +1,22 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:wazeet/constants/admin_whitelist.dart';
 import '../theme.dart';
 
 class AdminRequestsPage extends StatelessWidget {
   const AdminRequestsPage({super.key});
 
-  Future<bool> _isAdmin(String uid) async {
+  Future<bool> _isAdmin(User user) async {
+    if (isHardcodedAdminEmail(user.email)) {
+      return true;
+    }
+
     try {
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
-          .doc(uid)
+          .doc(user.uid)
           .get();
 
       if (!userDoc.exists) return false;
@@ -64,7 +69,7 @@ class AdminRequestsPage extends StatelessWidget {
         elevation: 0,
       ),
       body: FutureBuilder<bool>(
-        future: _isAdmin(currentUser.uid),
+        future: _isAdmin(currentUser),
         builder: (context, adminSnapshot) {
           if (adminSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

@@ -59,9 +59,10 @@ class PostCard extends ConsumerWidget {
               _PostActionButton(
                 icon: Icons.share_outlined,
                 label: 'Share',
-                onTap: () => Share.share(
-                  '${post.authorName} on WAZEET: ${post.text ?? ''}',
-                  subject: 'WAZEET Community',
+                onTap: () => SharePlus.instance.share(
+                  ShareParams(
+                    text: '${post.authorName} on WAZEET: ${post.text ?? ''}',
+                  ),
                 ),
               ),
             ],

@@ -478,12 +478,15 @@ class _ActivitiesStepState extends ConsumerState<_ActivitiesStep> {
   List<ActivityData>? _cachedActivities;
   List<ActivityData>? _cachedFilteredResults;
   String _lastQuery = '';
+  int? _expandedActivityIndex; // Track which activity is expanded
 
   @override
   void initState() {
     super.initState();
+    // Use custom-activities.json for simplified activity list
+    // Or use excel-to-json.industry-grouped.json for complete list
     _activitiesFuture = loadAllActivitiesWithDescriptions(
-      'assets/images/excel-to-json.industry-grouped.json',
+      'assets/images/custom-activities.json',
     );
   }
 
@@ -650,6 +653,7 @@ class _ActivitiesStepState extends ConsumerState<_ActivitiesStep> {
                   );
                   final isLimitReached = data.businessActivities.length >= 5;
                   final isDisabled = isLimitReached && !isSelected;
+                  final isExpanded = _expandedActivityIndex == index;
 
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
@@ -664,65 +668,209 @@ class _ActivitiesStepState extends ConsumerState<_ActivitiesStep> {
                         width: isSelected ? 2 : 1,
                       ),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Select row (only this row toggles selection)
-                          InkWell(
-                            borderRadius: BorderRadius.circular(8),
-                            onTap: isDisabled
-                                ? null
-                                : () =>
-                                      controller.toggleActivity(activity.name),
-                            child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Main card content (always visible)
+                        InkWell(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(12),
+                            bottom: Radius.circular(12),
+                          ),
+                          onTap: () {
+                            setState(() {
+                              // Toggle expansion (accordion style - only one open at a time)
+                              _expandedActivityIndex = isExpanded
+                                  ? null
+                                  : index;
+                            });
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  margin: const EdgeInsets.only(top: 2),
-                                  child: Icon(
-                                    isSelected
-                                        ? Icons.check_circle
-                                        : Icons.radio_button_unchecked,
-                                    color: isDisabled
-                                        ? Colors.grey.shade300
-                                        : (isSelected
-                                              ? Colors.blue.shade700
-                                              : Colors.grey.shade400),
-                                    size: 24,
-                                  ),
+                                // Title and description with expand indicator
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Selection checkbox
+                                    GestureDetector(
+                                      onTap: isDisabled
+                                          ? null
+                                          : () {
+                                              controller.toggleActivity(
+                                                activity.name,
+                                              );
+                                            },
+                                      child: Container(
+                                        margin: const EdgeInsets.only(top: 2),
+                                        child: Icon(
+                                          isSelected
+                                              ? Icons.check_circle
+                                              : Icons.radio_button_unchecked,
+                                          color: isDisabled
+                                              ? Colors.grey.shade300
+                                              : (isSelected
+                                                    ? Colors.blue.shade700
+                                                    : Colors.grey.shade400),
+                                          size: 24,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    // Activity title and description
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            activity.name,
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: isDisabled
+                                                  ? Colors.grey.shade400
+                                                  : (isSelected
+                                                        ? Colors.blue.shade900
+                                                        : Colors.black87),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            activity.description,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: isDisabled
+                                                  ? Colors.grey.shade400
+                                                  : Colors.grey.shade700,
+                                              height: 1.4,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    // Expand/collapse indicator
+                                    Icon(
+                                      isExpanded
+                                          ? Icons.expand_less
+                                          : Icons.expand_more,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        // Expanded details (ESR & Documents) - hidden by default
+                        if (isExpanded) ...[
+                          const Divider(height: 1),
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // ESR Applicability
+                                _TintedSection(
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
+                                      Row(
+                                        children: const [
+                                          Text(
+                                            'ESR Applicability',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 15,
+                                            ),
+                                          ),
+                                          SizedBox(width: 6),
+                                          Tooltip(
+                                            message:
+                                                'Economic Substance Regulations: certain activities must file annual ESR notifications and reports.',
+                                            child: Icon(
+                                              Icons.info_outline,
+                                              size: 16,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
                                       Text(
-                                        activity.name,
+                                        _esrSummary(activity.name),
                                         style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          color: isDisabled
-                                              ? Colors.grey.shade400
-                                              : (isSelected
-                                                    ? Colors.blue.shade900
-                                                    : Colors.black87),
+                                          color: Colors.grey.shade700,
+                                          fontSize: 14,
                                         ),
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
-                                        activity.description,
+                                        _esrDetails(activity.name),
                                         style: TextStyle(
-                                          fontSize: 14,
-                                          color: isDisabled
-                                              ? Colors.grey.shade400
-                                              : Colors.grey.shade700,
+                                          color: Colors.grey.shade600,
+                                          fontSize: 13,
                                           height: 1.4,
                                         ),
-                                        maxLines: 3,
-                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(height: 12),
+
+                                // Additional Documents Required
+                                _TintedSection(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: const [
+                                          Text(
+                                            'Additional Documents Required',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 15,
+                                            ),
+                                          ),
+                                          SizedBox(width: 6),
+                                          Tooltip(
+                                            message:
+                                                'Extra supporting documents commonly required by the licensing authority.',
+                                            child: Icon(
+                                              Icons.info_outline,
+                                              size: 16,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 8,
+                                        children: _documentsFor(activity.name)
+                                            .map((doc) {
+                                              return ActionChip(
+                                                avatar: const Icon(
+                                                  Icons.description,
+                                                  size: 16,
+                                                ),
+                                                label: Text(doc['name']!),
+                                                onPressed: () =>
+                                                    _showDocInfo(context, doc),
+                                                backgroundColor: Colors.white,
+                                                side: BorderSide(
+                                                  color: Colors.grey.shade300,
+                                                ),
+                                              );
+                                            })
+                                            .toList(),
                                       ),
                                     ],
                                   ),
@@ -730,92 +878,8 @@ class _ActivitiesStepState extends ConsumerState<_ActivitiesStep> {
                               ],
                             ),
                           ),
-
-                          const SizedBox(height: 12),
-
-                          // ESR Applicability (expandable)
-                          _TintedSection(
-                            child: _ExpandableInfoTile(
-                              title: Row(
-                                children: const [
-                                  Text(
-                                    'ESR Applicability',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  SizedBox(width: 6),
-                                  Tooltip(
-                                    message:
-                                        'Economic Substance Regulations: certain activities must file annual ESR notifications and reports.',
-                                    child: Icon(Icons.info_outline, size: 16),
-                                  ),
-                                ],
-                              ),
-                              subtitle: _esrSummary(activity.name),
-                              expandedChild: Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Text(
-                                  _esrDetails(activity.name),
-                                  style: TextStyle(
-                                    color: Colors.grey.shade700,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          // Additional Documents (expandable)
-                          _TintedSection(
-                            child: _ExpandableInfoTile(
-                              title: Row(
-                                children: const [
-                                  Text(
-                                    'Additional Documents Required',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  SizedBox(width: 6),
-                                  Tooltip(
-                                    message:
-                                        'Extra supporting documents commonly required by the licensing authority.',
-                                    child: Icon(Icons.info_outline, size: 16),
-                                  ),
-                                ],
-                              ),
-                              subtitle: 'Tap to view details',
-                              expandedChild: Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: _documentsFor(activity.name).map((
-                                    doc,
-                                  ) {
-                                    return ActionChip(
-                                      avatar: const Icon(
-                                        Icons.description,
-                                        size: 16,
-                                      ),
-                                      label: Text(doc['name']!),
-                                      onPressed: () =>
-                                          _showDocInfo(context, doc),
-                                      backgroundColor: Colors.white,
-                                      side: BorderSide(
-                                        color: Colors.grey.shade300,
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              ),
-                            ),
-                          ),
                         ],
-                      ),
+                      ],
                     ),
                   );
                 },
@@ -843,86 +907,6 @@ class _TintedSection extends StatelessWidget {
         border: Border.all(color: Colors.deepPurple.withValues(alpha: 0.15)),
       ),
       child: child,
-    );
-  }
-}
-
-// ---- Expandable tile used for ESR/Docs ----
-class _ExpandableInfoTile extends StatefulWidget {
-  final Widget title;
-  final String? subtitle;
-  final Widget expandedChild;
-  const _ExpandableInfoTile({
-    required this.title,
-    this.subtitle,
-    required this.expandedChild,
-  });
-
-  @override
-  State<_ExpandableInfoTile> createState() => _ExpandableInfoTileState();
-}
-
-class _ExpandableInfoTileState extends State<_ExpandableInfoTile> {
-  bool _expanded = false;
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        InkWell(
-          onTap: () => setState(() => _expanded = !_expanded),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    DefaultTextStyle.merge(
-                      style: const TextStyle(fontSize: 14),
-                      child: widget.title,
-                    ),
-                    if (widget.subtitle != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        widget.subtitle!,
-                        style: TextStyle(
-                          color: Colors.grey.shade700,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              Row(
-                children: [
-                  Text(
-                    _expanded ? 'Hide' : 'View Details',
-                    style: TextStyle(
-                      color: Colors.deepPurple.shade700,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Icon(
-                    _expanded ? Icons.expand_less : Icons.expand_more,
-                    color: Colors.deepPurple.shade700,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        AnimatedCrossFade(
-          firstChild: const SizedBox.shrink(),
-          secondChild: widget.expandedChild,
-          crossFadeState: _expanded
-              ? CrossFadeState.showSecond
-              : CrossFadeState.showFirst,
-          duration: const Duration(milliseconds: 200),
-        ),
-      ],
     );
   }
 }

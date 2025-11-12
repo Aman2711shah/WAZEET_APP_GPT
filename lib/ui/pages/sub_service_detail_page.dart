@@ -13,6 +13,8 @@ import '../widgets/tier_selector.dart';
 import 'applications_page.dart';
 import '../../providers/user_activity_provider.dart';
 import '../../models/user_activity.dart';
+import '../../utils/icon_mapper.dart';
+import '../../utils/payment_utils.dart';
 
 class SubServiceDetailPage extends ConsumerStatefulWidget {
   final SubService subService;
@@ -47,6 +49,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
   bool _detailsCompleted = false;
   int _currentUploadStep = 0; // 0: details, 1: uploads
   bool _bottomSheetActive = false;
+  bool _submitting = false; // prevent double submit & show progress
 
   @override
   void initState() {
@@ -112,146 +115,142 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
               onPressed: () => Navigator.of(context).pop(),
             ),
             elevation: 4,
-            flexibleSpace: FlexibleSpaceBar(
-              collapseMode: CollapseMode.parallax,
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF6200EE),
-                      Color(0xFF7E3FF2),
-                      Color(0xFF9D4EDD),
-                    ],
-                    stops: [0.0, 0.5, 1.0],
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.white.withValues(alpha: 0.12),
-                              Colors.transparent,
-                            ],
-                            stops: const [0.0, 0.4],
+            flexibleSpace: LayoutBuilder(
+              builder: (context, constraints) {
+                final settings = context
+                    .dependOnInheritedWidgetOfExactType<
+                      FlexibleSpaceBarSettings
+                    >();
+                final collapsed =
+                    settings != null &&
+                    settings.currentExtent <= settings.minExtent + 2;
+                return FlexibleSpaceBar(
+                  collapseMode: CollapseMode.parallax,
+                  background: !collapsed
+                      ? Container(
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFF6200EE),
+                                Color(0xFF7E3FF2),
+                                Color(0xFF9D4EDD),
+                              ],
+                              stops: [0.0, 0.5, 1.0],
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
-                    // Larger icon + title only when expanded (hide on collapse to prevent duplicate header)
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final settings = context
-                            .dependOnInheritedWidgetOfExactType<
-                              FlexibleSpaceBarSettings
-                            >();
-                        final collapsed =
-                            settings != null &&
-                            settings.currentExtent <= settings.minExtent + 20;
-                        return IgnorePointer(
-                          ignoring: collapsed,
-                          child: AnimatedOpacity(
-                            opacity: collapsed ? 0.0 : 1.0,
-                            duration: const Duration(milliseconds: 200),
-                            curve: Curves.easeOut,
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                  left: 32,
-                                  bottom: 20,
-                                  right: 16,
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.white.withValues(alpha: 0.12),
+                                        Colors.transparent,
+                                      ],
+                                      stops: const [0.0, 0.4],
+                                    ),
+                                  ),
                                 ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Container(
-                                      width: 56,
-                                      height: 56,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.25,
-                                        ),
-                                        borderRadius: BorderRadius.circular(14),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withValues(
-                                              alpha: 0.35,
-                                            ),
-                                            blurRadius: 18,
-                                            offset: const Offset(0, 8),
+                              ),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 32,
+                                    bottom: 20,
+                                    right: 16,
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Container(
+                                        width: 56,
+                                        height: 56,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.25,
                                           ),
-                                        ],
-                                      ),
-                                      child: const Icon(
-                                        Icons.description,
-                                        color: Colors.white,
-                                        size: 30,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 14),
-                                    Expanded(
-                                      child: Text(
-                                        widget.subService.name,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(
+                                                alpha: 0.35,
+                                              ),
+                                              blurRadius: 18,
+                                              offset: const Offset(0, 8),
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Icon(
+                                          Icons.description,
                                           color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 22,
-                                          height: 1.2,
+                                          size: 30,
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: Text(
+                                          widget.subService.name,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 22,
+                                            height: 1.2,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : null,
+                  title: collapsed
+                      ? Row(
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.description,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                widget.subService.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              title: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.25),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.description,
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      widget.subService.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors
-                            .white, // ensure consistent color when collapsed
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              centerTitle: false,
+                          ],
+                        )
+                      : null,
+                  centerTitle: false,
+                );
+              },
             ),
           ),
           SliverToBoxAdapter(
@@ -273,11 +272,10 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                               color: AppColors.purple.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Center(
-                              child: Text(
-                                widget.categoryIcon,
-                                style: const TextStyle(fontSize: 28),
-                              ),
+                            child: Icon(
+                              getIconData(widget.categoryIcon),
+                              color: AppColors.purple,
+                              size: 30,
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -308,6 +306,37 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
+
+                  // Description (if available)
+                  if (widget.subService.description != null) ...[
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              color: AppColors.purple,
+                              size: 22,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                widget.subService.description!,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade700,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
 
                   // Pricing Tier Selection with shared component
                   TierSelector(
@@ -772,7 +801,9 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                                           _uploadedFiles.remove(doc);
                                           _uploadedUrls.remove(doc);
                                         });
-                                        setState(() {});
+                                        if (mounted) {
+                                          setState(() {});
+                                        }
                                       },
                                     )
                                   else if (!isUploading)
@@ -793,7 +824,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                   Padding(
                     padding: const EdgeInsets.all(20),
                     child: ElevatedButton(
-                      onPressed: _uploadedFiles.isEmpty
+                      onPressed: _uploadedFiles.isEmpty || _submitting
                           ? null
                           : () => _submitRequest(context),
                       style: ElevatedButton.styleFrom(
@@ -806,15 +837,26 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                         ),
                         disabledBackgroundColor: Colors.grey.shade300,
                       ),
-                      child: Text(
-                        _uploadedFiles.isEmpty
-                            ? 'Upload at least one document'
-                            : 'Submit Request (${_uploadedFiles.length}/${widget.subService.documentRequirements.length} uploaded)',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: _submitting
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : Text(
+                              _uploadedFiles.isEmpty
+                                  ? 'Upload at least one document'
+                                  : 'Submit Request (${_uploadedFiles.length}/${widget.subService.documentRequirements.length} uploaded)',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
               ],
@@ -822,7 +864,14 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
           );
         },
       ),
-    );
+    ).whenComplete(() {
+      if (mounted) {
+        setState(() {
+          _bottomSheetActive = false;
+          _submitting = false;
+        });
+      }
+    });
   }
 
   Future<void> _pickAndUploadFile(
@@ -873,7 +922,9 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
         setModalState(() {
           _uploadingStatus[documentName] = true;
         });
-        setState(() {});
+        if (mounted) {
+          setState(() {});
+        }
 
         // Upload to Firebase Storage
         final fileName =
@@ -914,7 +965,9 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
             _uploadingStatus[documentName] = false;
           });
         }
-        setState(() {});
+        if (mounted) {
+          setState(() {});
+        }
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -932,7 +985,9 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
           _uploadingStatus[documentName] = false;
         });
       }
-      setState(() {});
+      if (mounted) {
+        setState(() {});
+      }
 
       if (mounted) {
         // Provide more helpful error messages
@@ -964,19 +1019,22 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
     }
   }
 
-  Future<void> _submitRequest(BuildContext context) async {
+  Future<void> _submitRequest(BuildContext sheetContext) async {
     try {
+      if (_submitting) return; // guard
+      setState(() => _submitting = true);
       // Get current user ID
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         if (mounted) {
-          ScaffoldMessenger.of(this.context).showSnackBar(
+          ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Please sign in to submit a request'),
               backgroundColor: Colors.red,
             ),
           );
         }
+        setState(() => _submitting = false);
         return;
       }
 
@@ -1005,6 +1063,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
           title: widget.subService.name,
           status: 'Submitted',
           subtitle: 'Application submitted • ${_selectedTier.name} tier',
+          iconName: 'assignment',
           icon: Icons.assignment_turned_in,
           color: AppColors.purple,
           progress: 0.2,
@@ -1015,81 +1074,103 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
         // Non-fatal: if activity write fails, continue
       }
 
-      if (mounted) {
-        // Close the bottom sheet first using the page context to avoid using a
-        // potentially stale BuildContext from the sheet after an async gap.
-        Navigator.of(this.context).pop();
+      if (mounted && _bottomSheetActive) {
+        Navigator.of(sheetContext).pop(); // close sheet
+        _bottomSheetActive = false;
+      }
 
-        // Then show a confirmation dialog using the page context
-        // Use this.context to reference the page-level BuildContext
-        // so we avoid using a disposed bottom-sheet context.
-        await showDialog(
-          context: this.context,
-          barrierDismissible: false,
-          builder: (dialogCtx) {
-            return AlertDialog(
-              title: const Text('Request submitted'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Your request has been submitted successfully.'),
-                  const SizedBox(height: 8),
-                  const Text('Track with ID:'),
-                  const SizedBox(height: 6),
-                  SelectableText(
-                    reqRef.id,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: reqRef.id));
-                    Navigator.of(dialogCtx).pop();
-                    ScaffoldMessenger.of(this.context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Request ID copied to clipboard'),
-                      ),
-                    );
-                  },
-                  child: const Text('Copy ID'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(dialogCtx).pop();
-                    Navigator.of(this.context).push(
-                      MaterialPageRoute(
-                        builder: (_) => ApplicationsPage(initialId: reqRef.id),
-                      ),
-                    );
-                  },
-                  child: const Text('Track this request'),
-                ),
-              ],
-            );
-          },
+      // Launch payment with the selected tier and price.
+      try {
+        await payForApplication(
+          reqRef.id, // use request id for tracking
+          _selectedTier.price.toDouble(),
+          tier: _selectedTier.id,
         );
 
-        // Clear uploaded files
+        if (mounted) {
+          // After successful payment, show confirmation + tracking dialog.
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (dialogCtx) {
+              return AlertDialog(
+                title: const Text('Payment successful'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Your request was submitted and paid.'),
+                    const SizedBox(height: 8),
+                    const Text('Track with ID:'),
+                    const SizedBox(height: 6),
+                    SelectableText(
+                      reqRef.id,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: reqRef.id));
+                      Navigator.of(dialogCtx).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Request ID copied to clipboard'),
+                        ),
+                      );
+                    },
+                    child: const Text('Copy ID'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(dialogCtx).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              ApplicationsPage(initialId: reqRef.id),
+                        ),
+                      );
+                    },
+                    child: const Text('Track this request'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Payment failed or cancelled: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+
+      if (mounted) {
+        // Clear uploaded files after the flow completes.
         setState(() {
           _uploadedFiles.clear();
           _uploadedUrls.clear();
           _uploadingStatus.clear();
+          _submitting = false;
         });
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(this.context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Submission failed: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
+        setState(() => _submitting = false);
       }
     }
   }

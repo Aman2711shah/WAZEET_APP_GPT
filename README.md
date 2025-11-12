@@ -19,6 +19,9 @@ Smart UAE free zone discovery and company setup assistant — powered by GPT.
 - Firebase-backed auth, data, storage, and optional Cloud Functions
 - Polished UI with modern cards, tabs, filters, and compare mode
 - Dark mode ready, responsive layouts (Web/Mobile/Desktop)
+- **HubSpot CRM integration** - Automatic lead creation on payment completion
+- Secure Stripe payment processing
+- Community features with posts, events, and news
 
 ## 🤖 GPT Assistance (What it does)
 

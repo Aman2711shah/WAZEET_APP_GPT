@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../../services/user_prefs_service.dart';
+import '../widgets/hubspot_test_widget.dart';
 import 'account/change_password_page.dart';
 import 'account/two_factor_page.dart';
 import 'account/data_export_page.dart';
@@ -29,6 +30,10 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              // HubSpot Integration Test (Developer Tool)
+              const HubSpotTestWidget(),
+              const SizedBox(height: 24),
+
               const Text(
                 'Security & Privacy',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),

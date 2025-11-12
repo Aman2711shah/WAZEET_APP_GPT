@@ -166,16 +166,20 @@ class CustomSolutionPanel extends StatelessWidget {
   }
 
   static void _shareFreezones() {
-    Share.share(
-      'Check these Free Zones on Wazeet: https://wazeet.com/freezones — @wazeet',
-      subject: 'Wazeet Free Zones',
+    SharePlus.instance.share(
+      ShareParams(
+        text:
+            'Check these Free Zones on Wazeet: https://wazeet.com/freezones — @wazeet',
+      ),
     );
   }
 
   static void _shareWithTeam() {
-    Share.share(
-      'Team, please review Wazeet services for our business setup: https://wazeet.com/services',
-      subject: 'Wazeet Services — Team Review',
+    SharePlus.instance.share(
+      ShareParams(
+        text:
+            'Team, please review Wazeet services for our business setup: https://wazeet.com/services',
+      ),
     );
   }
 

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/services_provider.dart';
+import '../../models/service_item.dart';
+import '../../utils/icon_mapper.dart';
 import 'service_type_page.dart';
+import 'sub_service_detail_page.dart';
 import '../responsive.dart';
 import '../theme/responsive_text.dart';
 import '../widgets/back_to_top_button.dart';
@@ -20,13 +23,80 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
   @override
   Widget build(BuildContext context) {
     final allCategories = ref.watch(servicesProvider);
-    final filteredCategories = _search.text.isEmpty
+    final query = _search.text.trim().toLowerCase();
+
+    // Search alias support to capture common phrases (e.g., "dependent visa")
+    const Map<String, List<String>> aliasMap = {
+      'dependent visa': ['family sponsorship', 'family visa', 'sponsor family'],
+      'dependent': ['family sponsorship', 'family visa'],
+      'corporate tax': ['corporate tax', 'tax registration', 'tax filing'],
+      'tax': ['corporate tax', 'vat', 'tax registration', 'tax filing'],
+      'visa renewal': ['residence visa renewal', 'visit visa extension'],
+    };
+
+    bool matchesText(String haystack, String q) {
+      if (haystack.isEmpty || q.isEmpty) return false;
+      final text = haystack.toLowerCase();
+      if (text.contains(q)) return true;
+      final aliases = aliasMap[q];
+      if (aliases == null) return false;
+      return aliases.any((a) => text.contains(a));
+    }
+
+    // When searching, collect sub-service results instead of only filtering categories
+    final List<_SearchResult> searchResults = <_SearchResult>[];
+    if (query.isNotEmpty) {
+      for (final category in allCategories) {
+        for (final type in category.serviceTypes) {
+          final typeMatches =
+              matchesText(type.name, query) ||
+              (type.description != null &&
+                  matchesText(type.description!, query));
+
+          for (final sub in type.subServices) {
+            final subMatches =
+                matchesText(sub.name, query) ||
+                (sub.description != null &&
+                    matchesText(sub.description!, query));
+
+            if (subMatches ||
+                typeMatches ||
+                matchesText(category.name, query)) {
+              // Score: direct sub name match > type match > description/category match
+              var score = 0;
+              if (matchesText(sub.name, query)) score += 3;
+              if (typeMatches) score += 2;
+              if (sub.description != null &&
+                  matchesText(sub.description!, query)) {
+                score += 1;
+              }
+              if (matchesText(category.name, query)) score += 1;
+
+              searchResults.add(
+                _SearchResult(
+                  category: category,
+                  type: type,
+                  sub: sub,
+                  score: score,
+                ),
+              );
+            }
+          }
+        }
+      }
+
+      // Deduplicate exact same sub-service and sort by score desc
+      final seen = <String>{};
+      searchResults.retainWhere((r) => seen.add(r.sub.id));
+      searchResults.sort((a, b) => b.score.compareTo(a.score));
+    }
+
+    // If not searching, show all categories
+    final filteredCategories = query.isEmpty
         ? allCategories
-        : allCategories.where((category) {
-            return category.name.toLowerCase().contains(
-              _search.text.toLowerCase(),
-            );
-          }).toList();
+        : allCategories
+              .where((c) => c.name.toLowerCase().contains(query))
+              .toList();
 
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
@@ -152,87 +222,194 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
               ),
             ),
           ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                if (index == filteredCategories.length) {
-                  // CTA at the end
-                  return Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                    child: const CustomSolutionPanel(),
+          if (query.isEmpty) ...[
+            // Default category list view
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  if (index == filteredCategories.length) {
+                    // CTA at the end
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                      child: const CustomSolutionPanel(),
+                    );
+                  }
+
+                  final category = filteredCategories[index];
+                  final totalServices = category.serviceTypes.fold(
+                    0,
+                    (sum, type) => sum + type.subServices.length,
                   );
-                }
 
-                final category = filteredCategories[index];
-                final totalServices = category.serviceTypes.fold(
-                  0,
-                  (sum, type) => sum + type.subServices.length,
-                );
-
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: Card(
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: scheme.outlineVariant),
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: scheme.outlineVariant),
                       ),
-                      leading: Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: Color(
-                            int.tryParse(category.color) ?? 0xFF6200EE,
-                          ).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
                         ),
-                        child: Center(
-                          child: Text(
-                            category.icon,
-                            style: const TextStyle(fontSize: 24),
+                        leading: Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: Color(
+                              int.tryParse(category.color) ?? 0xFF6200EE,
+                            ).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            getIconData(category.icon),
+                            color: Color(
+                              int.tryParse(category.color) ?? 0xFF6200EE,
+                            ),
+                            size: 26,
                           ),
                         ),
-                      ),
-                      title: Text(
-                        category.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      subtitle: Text(
-                        '$totalServices services available',
-                        style: TextStyle(
-                          color: scheme.onSurfaceVariant,
-                          fontSize: 13,
-                        ),
-                      ),
-                      trailing: Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                ServiceTypePage(category: category),
+                        title: Text(
+                          category.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
                           ),
-                        );
-                      },
+                        ),
+                        subtitle: Text(
+                          '$totalServices services available',
+                          style: TextStyle(
+                            color: scheme.onSurfaceVariant,
+                            fontSize: 13,
+                          ),
+                        ),
+                        trailing: Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  ServiceTypePage(category: category),
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                );
-              },
-              childCount: filteredCategories.length + 1, // +1 for CTA
+                  );
+                },
+                childCount: filteredCategories.length + 1, // +1 for CTA
+              ),
             ),
-          ),
+          ] else ...[
+            // Search results view (sub-services)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Text(
+                  '${searchResults.length} result${searchResults.length == 1 ? '' : 's'} for "$query"',
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            if (searchResults.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  child: Text(
+                    'No matching services found. Try a different term (e.g., "corporate tax", "dependent visa").',
+                    style: TextStyle(color: scheme.onSurfaceVariant),
+                  ),
+                ),
+              )
+            else
+              SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final r = searchResults[index];
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: scheme.outlineVariant),
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        leading: Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: Color(
+                              int.tryParse(r.category.color) ?? 0xFF6200EE,
+                            ).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            getIconData(r.sub.icon ?? r.category.icon),
+                            color: Color(
+                              int.tryParse(r.category.color) ?? 0xFF6200EE,
+                            ),
+                            size: 26,
+                          ),
+                        ),
+                        title: Text(
+                          r.sub.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${r.type.name} • ${r.category.name}',
+                              style: TextStyle(
+                                color: scheme.onSurfaceVariant,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'From ${r.sub.standardCostDisplay} • ${r.sub.standard.timeline}',
+                              style: TextStyle(
+                                color: scheme.onSurfaceVariant,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SubServiceDetailPage(
+                                subService: r.sub,
+                                serviceTypeName: r.type.name,
+                                categoryIcon: r.category.icon,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  );
+                }, childCount: searchResults.length),
+              ),
+          ],
         ],
       ),
     );
@@ -240,6 +417,21 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
 }
 
 // ---------------------- Helper Widgets ----------------------
+
+// Local result model for search view
+class _SearchResult {
+  final ServiceCategory category;
+  final ServiceType type;
+  final SubService sub;
+  final int score;
+
+  _SearchResult({
+    required this.category,
+    required this.type,
+    required this.sub,
+    required this.score,
+  });
+}
 
 // Compliance Seal Widget
 class _ComplianceSeal extends StatelessWidget {

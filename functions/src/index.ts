@@ -1,5 +1,9 @@
 
 /* eslint-disable */
+// Load environment variables from .env file (for local development)
+import * as dotenv from "dotenv";
+dotenv.config();
+
 import * as functions from "firebase-functions";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
@@ -26,6 +30,13 @@ export {
     communityFetchNews,
     communityFetchEvents,
 } from "./community/googleCommunity";
+
+// Export HubSpot CRM integration functions
+export {
+    onPaymentCreated,
+    syncPaymentToHubSpotManual,
+    testHubSpotConnection,
+} from "./hubspot/index";
 
 /**
  * HTTPS Callable endpoint

@@ -44,7 +44,6 @@ jobs:
     defaults: 
       run: 
         working-directory: functions
-    # NOTE: Avoid defining OPENAI_API_KEY at the job level to prevent accidental exposure.
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -63,13 +62,10 @@ jobs:
         run: npm run build
       
       - name: Run unit tests
-        # Only inject OPENAI_API_KEY if the secret is actually configured; tests should mock by default.
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          if [ -z "$OPENAI_API_KEY" ]; then
-            echo "OPENAI_API_KEY not set in env; running tests with mocked OpenAI client.";
-          fi
+          # Uses mocked OpenAI client unless OPENAI_API_KEY secret is configured
           npm run test:unit
         continue-on-error: true  # Don't fail if tests are not fully set up
       
@@ -84,21 +80,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Setup Snyk CLI
+        uses: snyk/actions/setup@master
 
-      - name: Snyk test (Flutter & Functions)
-        shell: bash
+      - name: Snyk security scan
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        shell: bash
         run: |
+          # Skip if SNYK_TOKEN is not configured
           if [ -z "$SNYK_TOKEN" ]; then
-            echo "SNYK_TOKEN not set; skipping security scan.";
-            exit 0;
+            echo "SNYK_TOKEN not configured; skipping security scan.";
+            exit 0
           fi
-          npm install -g snyk@latest
           snyk auth "$SNYK_TOKEN"
           snyk test --file=pubspec.yaml || true
           (cd functions && snyk test) || true
