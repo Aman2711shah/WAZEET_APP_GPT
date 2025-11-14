@@ -1,0 +1,6 @@
+{
+  "ifza": [
+    {"freezone": "IFZA", "product": "0 Visa License", "license_cost_including_quota_fee": 12900, "office_facility_requirements": "Co-Working/Flexi-Desk", "no_of_activities_allowed_under_license": "7 Mix & Match", "visa_eligibility": 0, "visa_cost_investor": 0, "visa_cost_manager": 0, "visa_cost_employment": 0, "immigration_establishment_card": 0, "e_channel_registration": 0, "medical_cost": 0, "eid_cost": 0, "jurisdiction": "Freezone"}
+  ],
+  "instruction": "Add each object as a separate document in the 'freezonePackages' collection"
+}
