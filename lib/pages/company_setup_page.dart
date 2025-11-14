@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../services/freezone_service.dart';
+import '../models/freezone_package_recommendation.dart';
 
 class CompanySetupPage extends StatefulWidget {
   const CompanySetupPage({super.key});
@@ -25,13 +26,13 @@ class _CompanySetupPageState extends State<CompanySetupPage> {
   double _estimated = 0;
 
   // Package recommendation state
-  List<FreezonePackage> _packages = [];
+  List<FreezonePackageRecommendation> _packages = [];
   bool _loadingPackages = false;
   String? _packageError;
   String _officeType = 'Co-Working/Flexi-desk';
   String _jurisdiction = 'Freezone';
-  int _investorVisas = 0;
-  int _managerVisas = 0;
+  final int _investorVisas = 0;
+  final int _managerVisas = 0;
   int _employmentVisas = 0;
 
   @override

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../../models/freezone.dart';
 import '../../models/freezone_package.dart';
-import '../../services/freezone_service.dart' hide FreezonePackage;
+import '../../services/freezone_service.dart';
 import '../../services/freezone_package_service.dart';
 import '../../services/freezone_normalizer.dart';
 import '../widgets/freezone_card.dart';

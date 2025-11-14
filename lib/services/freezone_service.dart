@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/freezone.dart';
 import '../models/freezone_package_recommendation.dart';
 
@@ -275,15 +276,15 @@ class FreeZoneService {
     final normalizedOfficeType = officeType.toLowerCase().trim();
 
     // 🔍 DEBUG: Print filter parameters
-    print('🔍 DEBUG getRecommendedPackages called with:');
-    print(
+    debugPrint('🔍 DEBUG getRecommendedPackages called with:');
+    debugPrint(
       '   - officeType: "$officeType" (normalized: "$normalizedOfficeType")',
     );
-    print(
+    debugPrint(
       '   - jurisdiction: "$jurisdiction" (normalized: "$normalizedJurisdiction")',
     );
-    print('   - noOfActivities: $noOfActivities');
-    print(
+    debugPrint('   - noOfActivities: $noOfActivities');
+    debugPrint(
       '   - totalVisas: $totalVisas (investor: $investorVisas, manager: $managerVisas, employment: $employmentVisas)',
     );
 
@@ -296,7 +297,9 @@ class FreeZoneService {
         .get();
 
     // 🔍 DEBUG: Print how many documents Firestore returned
-    print('📦 DEBUG: Firestore returned ${snapshot.docs.length} documents');
+    debugPrint(
+      '📦 DEBUG: Firestore returned ${snapshot.docs.length} documents',
+    );
 
     // Helper: Convert Firestore values to numbers (handles "FREE", "TBD", etc. as 0)
     double numValue(dynamic v) {
@@ -422,23 +425,23 @@ class FreeZoneService {
     }
 
     // 🔍 DEBUG: Print filtering statistics
-    print('📊 DEBUG: Filtering statistics:');
-    print('   - Skipped due to office type mismatch: $skippedOfficeType');
-    print('   - Skipped due to insufficient visa quota: $skippedVisa');
-    print('   - Skipped due to activity restrictions: $skippedActivities');
+    debugPrint('📊 DEBUG: Filtering statistics:');
+    debugPrint('   - Skipped due to office type mismatch: $skippedOfficeType');
+    debugPrint('   - Skipped due to insufficient visa quota: $skippedVisa');
+    debugPrint('   - Skipped due to activity restrictions: $skippedActivities');
+
+    // Sort by total cost (cheapest first) before reporting price range
+    result.sort((a, b) => a.totalCost.compareTo(b.totalCost));
 
     // 🔍 DEBUG: Print how many packages passed filters
-    print(
+    debugPrint(
       '✅ DEBUG: After filtering, ${result.length} packages matched requirements',
     );
     if (result.isNotEmpty) {
-      print(
+      debugPrint(
         '💰 DEBUG: Price range: ${result.first.totalCost.toStringAsFixed(2)} AED (cheapest) to ${result.last.totalCost.toStringAsFixed(2)} AED (most expensive)',
       );
     }
-
-    // Sort by total cost (cheapest first)
-    result.sort((a, b) => a.totalCost.compareTo(b.totalCost));
 
     return result;
   }
