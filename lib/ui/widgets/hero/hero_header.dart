@@ -93,7 +93,7 @@ class HeroHeader extends StatelessWidget {
                             style: theme.textTheme.headlineMedium?.copyWith(
                               fontSize: rFont(context, sm: 20, md: 22, lg: 24),
                               fontWeight: FontWeight.w700,
-                              color: Colors.white.withValues(alpha: .92),
+                              color: Colors.white.withOpacity(.92),
                               shadows: [
                                 const Shadow(
                                   color: Color(0x55FFFFFF),
@@ -112,17 +112,17 @@ class HeroHeader extends StatelessWidget {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: .12),
+                              color: Colors.white.withOpacity(.12),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: .25),
+                                color: Colors.white.withOpacity(.25),
                                 width: 0.7,
                               ),
                               boxShadow: [
                                 BoxShadow(
                                   color: const Color(
                                     0xFF7C3AED,
-                                  ).withValues(alpha: .35),
+                                  ).withOpacity(.35),
                                   blurRadius: 16,
                                   spreadRadius: 2,
                                   offset: const Offset(0, 6),
@@ -135,7 +135,7 @@ class HeroHeader extends StatelessWidget {
                                 Icon(
                                   Icons.rocket_launch_rounded,
                                   size: rFont(context, sm: 14, md: 16, lg: 18),
-                                  color: Colors.white.withValues(alpha: .9),
+                                  color: Colors.white.withOpacity(.9),
                                 ),
                                 const SizedBox(width: 8),
                                 Flexible(
@@ -152,7 +152,7 @@ class HeroHeader extends StatelessWidget {
                                       ),
                                       fontWeight: FontWeight.w600,
                                       height: 1.25,
-                                      color: Colors.white.withValues(alpha: .9),
+                                      color: Colors.white.withOpacity(.9),
                                     ),
                                   ),
                                 ),
@@ -195,8 +195,8 @@ class _GlowCircle extends StatelessWidget {
         shape: BoxShape.circle,
         gradient: RadialGradient(
           colors: [
-            color.withValues(alpha: .55),
-            color.withValues(alpha: .05),
+            color.withOpacity(.55),
+            color.withOpacity(.05),
             Colors.transparent,
           ],
           stops: const [0.0, 0.55, 1.0],
@@ -222,12 +222,12 @@ class _GlassOrb extends StatelessWidget {
           colors: [Color(0x66FFFFFF), Color(0x22FFFFFF), Color(0x11FFFFFF)],
         ),
         border: Border.all(
-          color: Colors.white.withValues(alpha: .35),
+          color: Colors.white.withOpacity(.35),
           width: 0.8,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF7C3AED).withValues(alpha: .35),
+            color: const Color(0xFF7C3AED).withOpacity(.35),
             blurRadius: 40,
             spreadRadius: 6,
             offset: const Offset(0, 18),
@@ -248,12 +248,12 @@ class _ElevatedAvatar extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: .25),
+            color: Colors.black.withOpacity(.25),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: const Color(0xFFA78BFA).withValues(alpha: .5),
+            color: const Color(0xFFA78BFA).withOpacity(.5),
             blurRadius: 32,
             spreadRadius: -4,
           ),

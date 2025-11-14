@@ -94,9 +94,9 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF8B5CF6).withValues(alpha: 0.15), // Purple tint
-              const Color(0xFF6366F1).withValues(alpha: 0.1), // Indigo tint
-              const Color(0xFFEC4899).withValues(alpha: 0.05), // Pink tint
+              const Color(0xFF8B5CF6).withOpacity(0.15), // Purple tint
+              const Color(0xFF6366F1).withOpacity(0.1), // Indigo tint
+              const Color(0xFFEC4899).withOpacity(0.05), // Pink tint
               Colors.white,
             ],
             stops: const [0.0, 0.3, 0.6, 1.0],
@@ -115,8 +115,8 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFF8B5CF6).withValues(alpha: 0.2),
-                      const Color(0xFF8B5CF6).withValues(alpha: 0.0),
+                      const Color(0xFF8B5CF6).withOpacity(0.2),
+                      const Color(0xFF8B5CF6).withOpacity(0.0),
                     ],
                   ),
                 ),
@@ -132,8 +132,8 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFFEC4899).withValues(alpha: 0.15),
-                      const Color(0xFFEC4899).withValues(alpha: 0.0),
+                      const Color(0xFFEC4899).withOpacity(0.15),
+                      const Color(0xFFEC4899).withOpacity(0.0),
                     ],
                   ),
                 ),
@@ -152,7 +152,7 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.black.withValues(alpha: 0.35),
+                        Colors.black.withOpacity(0.35),
                         Colors.transparent,
                       ],
                     ),
@@ -192,7 +192,7 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
                             BoxShadow(
                               color: const Color(
                                 0xFF8B5CF6,
-                              ).withValues(alpha: 0.6),
+                              ).withOpacity(0.6),
                               blurRadius: 60,
                               spreadRadius: 8,
                               offset: const Offset(0, 20),
@@ -200,7 +200,7 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
                             BoxShadow(
                               color: const Color(
                                 0xFF7C3AED,
-                              ).withValues(alpha: 0.4),
+                              ).withOpacity(0.4),
                               blurRadius: 90,
                               spreadRadius: 15,
                               offset: const Offset(0, 30),
@@ -211,7 +211,7 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(40),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.25),
+                              color: Colors.white.withOpacity(0.25),
                               width: 2.5,
                             ),
                           ),
@@ -238,12 +238,12 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
                             height: 1.1,
                             shadows: [
                               Shadow(
-                                color: Colors.white.withValues(alpha: 0.7),
+                                color: Colors.white.withOpacity(0.7),
                                 blurRadius: 12,
                                 offset: const Offset(0, 2),
                               ),
                               Shadow(
-                                color: Colors.white.withValues(alpha: 0.5),
+                                color: Colors.white.withOpacity(0.5),
                                 blurRadius: 24,
                                 offset: const Offset(0, 6),
                               ),
@@ -267,12 +267,12 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
                             letterSpacing: 0.8,
                             shadows: [
                               Shadow(
-                                color: Colors.white.withValues(alpha: 0.7),
+                                color: Colors.white.withOpacity(0.7),
                                 blurRadius: 10,
                                 offset: const Offset(0, 2),
                               ),
                               Shadow(
-                                color: Colors.white.withValues(alpha: 0.5),
+                                color: Colors.white.withOpacity(0.5),
                                 blurRadius: 22,
                                 offset: const Offset(0, 5),
                               ),
@@ -288,23 +288,23 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
                       Container(
                         padding: const EdgeInsets.all(36),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.98),
+                          color: Colors.white.withOpacity(0.98),
                           borderRadius: BorderRadius.circular(32),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.8),
+                            color: Colors.white.withOpacity(0.8),
                             width: 2,
                           ),
                           boxShadow: [
                             BoxShadow(
                               color: const Color(
                                 0xFF8B5CF6,
-                              ).withValues(alpha: 0.15),
+                              ).withOpacity(0.15),
                               blurRadius: 50,
                               spreadRadius: 5,
                               offset: const Offset(0, 10),
                             ),
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
+                              color: Colors.black.withOpacity(0.08),
                               blurRadius: 100,
                               spreadRadius: 10,
                               offset: const Offset(0, 30),
@@ -580,7 +580,7 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
                                       decorationColor: Theme.of(context)
                                           .colorScheme
                                           .primary
-                                          .withValues(alpha: 0.5),
+                                          .withOpacity(0.5),
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -602,7 +602,7 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
                                       decorationColor: Theme.of(context)
                                           .colorScheme
                                           .primary
-                                          .withValues(alpha: 0.5),
+                                          .withOpacity(0.5),
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -672,7 +672,7 @@ class _AuthButton extends StatelessWidget {
                 ? BorderSide(color: borderColor!, width: 1.5)
                 : BorderSide.none,
           ),
-          disabledBackgroundColor: backgroundColor.withValues(alpha: 0.5),
+          disabledBackgroundColor: backgroundColor.withOpacity(0.5),
           padding: const EdgeInsets.symmetric(vertical: 16),
         ),
         child: child,

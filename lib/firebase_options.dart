@@ -54,6 +54,7 @@ class DefaultFirebaseOptions {
     appId: '1:350415177061:android:1c45ff3565a672d4408d8c',
     messagingSenderId: '350415177061',
     projectId: 'business-setup-application',
+    authDomain: 'business-setup-application.firebaseapp.com',
     storageBucket: 'business-setup-application.firebasestorage.app',
   );
 

@@ -1,8 +1,9 @@
-import 'dart:io' show Platform;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import '../utils/platform_helper.dart'
+    if (dart.library.io) '../utils/platform_helper_io.dart';
 
 /// Service handling all Firebase authentication operations
 class AuthService {
@@ -185,7 +186,7 @@ class AuthService {
 
   /// Sign in with Apple (iOS only)
   Future<UserCredential> signInWithApple() async {
-    if (!Platform.isIOS && !kIsWeb) {
+    if (!isIOS && !kIsWeb) {
       throw 'Apple sign-in is only available on iOS.';
     }
 
@@ -316,7 +317,7 @@ class AuthService {
 
   /// Reauthenticate with Apple
   Future<void> reauthenticateWithApple() async {
-    if (!Platform.isIOS && !kIsWeb) {
+    if (!isIOS && !kIsWeb) {
       throw 'Apple sign-in is only available on iOS.';
     }
 

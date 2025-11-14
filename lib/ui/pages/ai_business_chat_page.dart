@@ -161,7 +161,7 @@ class _AIBusinessChatPageState extends ConsumerState<AIBusinessChatPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.smart_toy, color: Colors.white, size: 24),
@@ -262,7 +262,7 @@ class _AIBusinessChatPageState extends ConsumerState<AIBusinessChatPage> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
+                  color: Colors.black.withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),
@@ -302,7 +302,7 @@ class _AIBusinessChatPageState extends ConsumerState<AIBusinessChatPage> {
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.purple.withValues(alpha: 0.3),
+                          color: AppColors.purple.withOpacity(0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -340,9 +340,9 @@ class _AIBusinessChatPageState extends ConsumerState<AIBusinessChatPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: AppColors.purple.withValues(alpha: 0.1),
+          color: AppColors.purple.withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.purple.withValues(alpha: 0.3)),
+          border: Border.all(color: AppColors.purple.withOpacity(0.3)),
         ),
         child: Text(
           question,
@@ -382,8 +382,8 @@ class _AIBusinessChatPageState extends ConsumerState<AIBusinessChatPage> {
                 boxShadow: [
                   BoxShadow(
                     color: message.isUser
-                        ? AppColors.purple.withValues(alpha: 0.2)
-                        : Colors.black.withValues(alpha: 0.05),
+                        ? AppColors.purple.withOpacity(0.2)
+                        : Colors.black.withOpacity(0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),

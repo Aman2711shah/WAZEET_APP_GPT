@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CLIENT_ID</key>
+	<string>350415177061-ljeahclvb9in3rtb7vscjuhr2lmitbf0.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.350415177061-ljeahclvb9in3rtb7vscjuhr2lmitbf0</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>350415177061-h9fn1tfo9ut3mcrg48khhl9q3i2m19v3.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
 	<string>AIzaSyC-1VRdwcT8Mwq5VoeB6YN1qNdzcRaTns8</string>
 	<key>GCM_SENDER_ID</key>
@@ -9,7 +15,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.wazeet.app</string>
+	<string>com.wazeet.wazeet</string>
 	<key>PROJECT_ID</key>
 	<string>business-setup-application</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +31,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:350415177061:ios:409d8c9ce1d7a993408d8c</string>
+	<string>1:350415177061:ios:c8ce4e88de89cb7d408d8c</string>
 </dict>
 </plist>

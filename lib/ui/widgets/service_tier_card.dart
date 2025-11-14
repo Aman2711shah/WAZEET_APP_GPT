@@ -43,7 +43,7 @@ class ServiceTierCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: selected
-                ? AppColors.purple.withValues(alpha: 0.1)
+                ? AppColors.purple.withOpacity(0.1)
                 : Colors.white,
             border: Border.all(
               color: selected ? AppColors.purple : Colors.grey.shade300,
@@ -53,14 +53,14 @@ class ServiceTierCard extends StatelessWidget {
             boxShadow: selected
                 ? [
                     BoxShadow(
-                      color: AppColors.purple.withValues(alpha: 0.2),
+                      color: AppColors.purple.withOpacity(0.2),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color: Colors.black.withOpacity(0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -70,7 +70,7 @@ class ServiceTierCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Title row with badge and checkmark
+              // Title row with badge (always for premium) and checkmark
               Row(
                 children: [
                   Expanded(
@@ -83,7 +83,7 @@ class ServiceTierCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (isPremium && !selected) ...[
+                  if (isPremium)
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -114,8 +114,8 @@ class ServiceTierCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                  ],
                   if (selected) ...[
+                    const SizedBox(width: 8),
                     Icon(Icons.check_circle, color: AppColors.purple, size: 24),
                   ],
                 ],
@@ -159,36 +159,8 @@ class ServiceTierCard extends StatelessWidget {
                 ],
               ),
 
-              // Premium badge when selected
-              if (isPremium && selected) ...[
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.shade100,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.bolt, size: 12, color: Colors.amber.shade800),
-                      const SizedBox(width: 4),
-                      Text(
-                        'FAST',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.amber.shade800,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              // Note: FAST badge is now always shown in header for premium,
+              // so no extra widget here to keep heights consistent.
             ],
           ),
         ),

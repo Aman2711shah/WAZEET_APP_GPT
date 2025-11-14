@@ -15,6 +15,7 @@ import '../../providers/user_activity_provider.dart';
 import '../../models/user_activity.dart';
 import '../../utils/icon_mapper.dart';
 import '../../utils/payment_utils.dart';
+import '../../utils/country_data.dart';
 
 class SubServiceDetailPage extends ConsumerStatefulWidget {
   final SubService subService;
@@ -45,6 +46,9 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _nationalityController = TextEditingController();
+  String _selectedCountryCode = 'AE';
+  String _selectedDialCode = '+971';
+  String _selectedNationalityCode = 'AE';
   Map<String, dynamic> _preUploadDetails = {};
   bool _detailsCompleted = false;
   int _currentUploadStep = 0; // 0: details, 1: uploads
@@ -149,7 +153,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
                                       colors: [
-                                        Colors.white.withValues(alpha: 0.12),
+                                        Colors.white.withOpacity(0.12),
                                         Colors.transparent,
                                       ],
                                       stops: const [0.0, 0.4],
@@ -223,7 +227,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                               width: 32,
                               height: 32,
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.25),
+                                color: Colors.white.withOpacity(0.25),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(
@@ -269,7 +273,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                             width: 60,
                             height: 60,
                             decoration: BoxDecoration(
-                              color: AppColors.purple.withValues(alpha: 0.1),
+                              color: AppColors.purple.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
@@ -430,7 +434,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.purple.withValues(alpha: 0.1),
+                      color: AppColors.purple.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -463,7 +467,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, -5),
               ),
@@ -537,11 +541,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) {
-          // Use persistent field instead of local var so step isn't reset on setState
-          if (_detailsCompleted && _currentUploadStep == 0) {
-            _currentUploadStep =
-                1; // ensure progression keeps after parent rebuilds
-          }
+          // Note: do not auto-advance here to allow Back navigation
           return Container(
             height: MediaQuery.of(context).size.height * 0.7,
             decoration: const BoxDecoration(
@@ -593,7 +593,11 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                 if (_currentUploadStep == 0)
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                      ),
                       child: Form(
                         key: _detailsFormKey,
                         child: Column(
@@ -613,6 +617,10 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                                 labelText: 'Full Name',
                                 prefixIcon: Icon(Icons.person_outline),
                                 border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
                               ),
                               validator: (v) => (v == null || v.trim().isEmpty)
                                   ? 'Full name is required'
@@ -626,6 +634,10 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                                 labelText: 'Email',
                                 prefixIcon: Icon(Icons.email_outlined),
                                 border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
                               ),
                               validator: (v) {
                                 if (v == null || v.trim().isEmpty) {
@@ -644,22 +656,98 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                             TextFormField(
                               controller: _phoneController,
                               keyboardType: TextInputType.phone,
-                              decoration: const InputDecoration(
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              decoration: InputDecoration(
                                 labelText: 'Phone Number',
-                                prefixIcon: Icon(Icons.phone_outlined),
-                                border: OutlineInputBorder(),
+                                border: const OutlineInputBorder(),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
+                                prefixIconConstraints: const BoxConstraints(
+                                  minWidth: 0,
+                                  minHeight: 0,
+                                ),
+                                prefixIcon: InkWell(
+                                  onTap: () => _showCountryPicker(
+                                    context,
+                                    setModalState,
+                                    forPhone: true,
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 12,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          flagEmoji(_selectedCountryCode),
+                                          style: const TextStyle(fontSize: 18),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          _selectedDialCode,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        const Icon(
+                                          Icons.arrow_drop_down,
+                                          size: 18,
+                                          color: Colors.grey,
+                                        ),
+                                        const VerticalDivider(width: 16),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ),
-                              validator: (v) => (v == null || v.trim().isEmpty)
-                                  ? 'Phone is required'
-                                  : null,
+                              validator: (v) {
+                                final raw = (v ?? '').trim();
+                                if (raw.isEmpty) return 'Phone is required';
+                                // Validate only digits, 5 to 15 digits as per E.164 local part range
+                                final digits = raw.replaceAll(
+                                  RegExp(r'\D'),
+                                  '',
+                                );
+                                if (digits.length < 5 || digits.length > 15) {
+                                  return 'Enter a valid phone number';
+                                }
+                                return null;
+                              },
                             ),
                             const SizedBox(height: 12),
                             TextFormField(
                               controller: _nationalityController,
-                              decoration: const InputDecoration(
+                              readOnly: true,
+                              onTap: () => _showCountryPicker(
+                                context,
+                                setModalState,
+                                forPhone: false,
+                              ),
+                              decoration: InputDecoration(
                                 labelText: 'Nationality',
-                                prefixIcon: Icon(Icons.flag_outlined),
-                                border: OutlineInputBorder(),
+                                border: const OutlineInputBorder(),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
+                                suffixIcon: const Icon(Icons.arrow_drop_down),
+                                prefixIcon: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 12,
+                                  ),
+                                  child: Text(
+                                    flagEmoji(_selectedNationalityCode),
+                                    style: const TextStyle(fontSize: 18),
+                                  ),
+                                ),
                               ),
                               validator: (v) => (v == null || v.trim().isEmpty)
                                   ? 'Nationality is required'
@@ -681,8 +769,11 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                             _preUploadDetails = {
                               'fullName': _fullNameController.text.trim(),
                               'email': _emailController.text.trim(),
-                              'phone': _phoneController.text.trim(),
+                              'phone':
+                                  '$_selectedDialCode ${_phoneController.text.trim()}',
+                              'phoneCountry': _selectedCountryCode,
                               'nationality': _nationalityController.text.trim(),
+                              'nationalityCode': _selectedNationalityCode,
                             };
                             _detailsCompleted = true;
                           });
@@ -734,7 +825,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                                 children: [
                                   CircleAvatar(
                                     backgroundColor: isUploaded
-                                        ? Colors.green.withValues(alpha: 0.1)
+                                        ? Colors.green.withOpacity(0.1)
                                         : AppColors.purple.withValues(
                                             alpha: 0.1,
                                           ),
@@ -872,6 +963,109 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
         });
       }
     });
+  }
+
+  void _showCountryPicker(
+    BuildContext context,
+    StateSetter setModalState, {
+    required bool forPhone,
+  }) {
+    final controller = TextEditingController();
+    List<Country> filtered = countries;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 8),
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: TextField(
+                        controller: controller,
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(Icons.search),
+                          hintText: 'Search country',
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (q) {
+                          setSheetState(() {
+                            filtered = countries
+                                .where(
+                                  (c) =>
+                                      c.name.toLowerCase().contains(
+                                        q.toLowerCase(),
+                                      ) ||
+                                      c.code.toLowerCase().contains(
+                                        q.toLowerCase(),
+                                      ) ||
+                                      c.dialCode.contains(q),
+                                )
+                                .toList();
+                          });
+                        },
+                      ),
+                    ),
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: filtered.length,
+                        itemBuilder: (ctx, i) {
+                          final c = filtered[i];
+                          return ListTile(
+                            leading: Text(
+                              flagEmoji(c.code),
+                              style: const TextStyle(fontSize: 22),
+                            ),
+                            title: Text(c.name),
+                            subtitle: Text(c.dialCode),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              if (forPhone) {
+                                setModalState(() {
+                                  _selectedCountryCode = c.code;
+                                  _selectedDialCode = c.dialCode;
+                                });
+                                setState(() {});
+                              } else {
+                                setModalState(() {
+                                  _selectedNationalityCode = c.code;
+                                  _nationalityController.text = c.name;
+                                });
+                                setState(() {});
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _pickAndUploadFile(

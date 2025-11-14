@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wazeet/company_setup_flow.dart';
 import '../../providers/services_provider.dart';
 import '../../providers/user_profile_provider.dart';
-// import '../../providers/user_activity_provider.dart';
 import 'service_type_page.dart';
 import 'freezone_browser_page.dart';
 import 'freezone_investment_map_page.dart';
@@ -24,8 +23,6 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final serviceCategories = ref.watch(servicesProvider);
     final profile = ref.watch(userProfileProvider);
-    // Recent Activity removed per request; provider watch disabled
-    // final userActivities = ref.watch(userActivityProvider);
     final userName = profile?.name ?? 'User';
 
     final theme = Theme.of(context);
@@ -96,7 +93,7 @@ class HomePage extends ConsumerWidget {
                       height: 200,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.1),
+                        color: Colors.white.withOpacity(0.1),
                       ),
                     ),
                   ),
@@ -108,7 +105,7 @@ class HomePage extends ConsumerWidget {
                       height: 250,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.08),
+                        color: Colors.white.withOpacity(0.08),
                       ),
                     ),
                   ),
@@ -120,7 +117,7 @@ class HomePage extends ConsumerWidget {
                       height: 80,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.12),
+                        color: Colors.white.withOpacity(0.12),
                       ),
                     ),
                   ),
@@ -158,8 +155,8 @@ class HomePage extends ConsumerWidget {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              AppColors.purple.withValues(alpha: 0.2),
-                              AppColors.purple.withValues(alpha: 0.1),
+                              AppColors.purple.withOpacity(0.2),
+                              AppColors.purple.withOpacity(0.1),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(AppRadius.md),
@@ -295,8 +292,8 @@ class HomePage extends ConsumerWidget {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              AppColors.gold.withValues(alpha: 0.25),
-                              AppColors.gold.withValues(alpha: 0.12),
+                              AppColors.gold.withOpacity(0.25),
+                              AppColors.gold.withOpacity(0.12),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(AppRadius.md),
@@ -386,7 +383,7 @@ class HomePage extends ConsumerWidget {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: scheme.primary.withValues(alpha: 0.1),
+                            color: scheme.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -462,14 +459,14 @@ class HomePage extends ConsumerWidget {
         margin: const EdgeInsets.only(right: 14),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [scheme.primary, scheme.primary.withValues(alpha: 0.85)],
+            colors: [scheme.primary, scheme.primary.withOpacity(0.85)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: scheme.primary.withValues(alpha: 0.35),
+              color: scheme.primary.withOpacity(0.35),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -485,7 +482,7 @@ class HomePage extends ConsumerWidget {
                 height: 40,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.explore, color: Colors.white),
@@ -505,7 +502,7 @@ class HomePage extends ConsumerWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.95),
+                  color: Colors.white.withOpacity(0.95),
                   fontSize: 12.5,
                   height: 1.35,
                 ),
@@ -549,7 +546,7 @@ class HomePage extends ConsumerWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: color.withValues(alpha: 0.15),
+                color: color.withOpacity(0.15),
                 blurRadius: 16,
                 offset: Offset(0, AppSpacing.xs),
                 spreadRadius: 0,
@@ -566,14 +563,14 @@ class HomePage extends ConsumerWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      color.withValues(alpha: 0.2),
-                      color.withValues(alpha: 0.12),
+                      color.withOpacity(0.2),
+                      color.withOpacity(0.12),
                     ],
                   ),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: color.withValues(alpha: 0.3),
+                      color: color.withOpacity(0.3),
                       blurRadius: 12,
                       offset: Offset(0, AppSpacing.xs),
                     ),
@@ -621,14 +618,14 @@ class HomePage extends ConsumerWidget {
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [color.withValues(alpha: 0.9), color],
+              colors: [color.withOpacity(0.9), color],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(AppRadius.xl),
             boxShadow: [
               BoxShadow(
-                color: color.withValues(alpha: 0.4),
+                color: color.withOpacity(0.4),
                 blurRadius: 16,
                 offset: Offset(0, AppSpacing.sm),
                 spreadRadius: 0,
@@ -646,7 +643,7 @@ class HomePage extends ConsumerWidget {
                   height: 110,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.12),
+                    color: Colors.white.withOpacity(0.12),
                   ),
                 ),
               ),
@@ -658,7 +655,7 @@ class HomePage extends ConsumerWidget {
                   height: 80,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.08),
+                    color: Colors.white.withOpacity(0.08),
                   ),
                 ),
               ),
@@ -672,11 +669,11 @@ class HomePage extends ConsumerWidget {
                       height: 44,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.25),
+                        color: Colors.white.withOpacity(0.25),
                         borderRadius: BorderRadius.circular(AppRadius.md),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
+                            color: Colors.black.withOpacity(0.1),
                             blurRadius: 8,
                             offset: Offset(0, 2),
                           ),
@@ -699,7 +696,7 @@ class HomePage extends ConsumerWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyle.bodySmall.copyWith(
-                          color: Colors.white.withValues(alpha: 0.95),
+                          color: Colors.white.withOpacity(0.95),
                           height: 1.4,
                         ),
                       ),
@@ -740,7 +737,7 @@ class HomePage extends ConsumerWidget {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: 0.12),
+                            color: Colors.blue.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
@@ -1153,9 +1150,9 @@ class HomePage extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
+        color: color.withOpacity(0.08),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1233,7 +1230,7 @@ class HomePage extends ConsumerWidget {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.orange.withValues(alpha: 0.12),
+                            color: Colors.orange.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
@@ -1380,9 +1377,9 @@ class HomePage extends ConsumerWidget {
   Widget _chip(String label, Color base) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
     decoration: BoxDecoration(
-      color: base.withValues(alpha: 0.12),
+      color: base.withOpacity(0.12),
       borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: base.withValues(alpha: 0.2)),
+      border: Border.all(color: base.withOpacity(0.2)),
     ),
     child: Text(
       label,
@@ -1431,7 +1428,7 @@ class HomePage extends ConsumerWidget {
     contentPadding: EdgeInsets.zero,
     leading: CircleAvatar(
       radius: 18,
-      backgroundColor: Colors.orange.withValues(alpha: 0.12),
+      backgroundColor: Colors.orange.withOpacity(0.12),
       child: Icon(icon, color: Colors.orange),
     ),
     title: Text(
@@ -1492,7 +1489,7 @@ class HomePage extends ConsumerWidget {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           child: Material(
             color: Theme.of(context).colorScheme.surface,
-            child: const ProviderScope(child: CompanySetupFlow()),
+            child: ProviderScope(child: CompanySetupFlow()),
           ),
         ),
       ),
@@ -1519,8 +1516,8 @@ class _HeroTopOverlay extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.white.withValues(alpha: .35),
-                    Colors.white.withValues(alpha: .08),
+                    Colors.white.withOpacity(.35),
+                    Colors.white.withOpacity(.08),
                     Colors.transparent,
                   ],
                   stops: const [0, .55, 1],
@@ -1540,8 +1537,8 @@ class _HeroTopOverlay extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.white.withValues(alpha: .35),
-                    Colors.white.withValues(alpha: .12),
+                    Colors.white.withOpacity(.35),
+                    Colors.white.withOpacity(.12),
                     Colors.transparent,
                   ],
                   stops: const [0, .55, 1],
@@ -1572,16 +1569,16 @@ class _HeroBottomFade extends StatelessWidget {
               begin: Alignment.bottomCenter,
               end: Alignment.topCenter,
               colors: [
-                Colors.white.withValues(alpha: .65),
-                Colors.white.withValues(alpha: .35),
-                Colors.white.withValues(alpha: .08),
+                Colors.white.withOpacity(.65),
+                Colors.white.withOpacity(.35),
+                Colors.white.withOpacity(.08),
                 Colors.transparent,
               ],
               stops: const [0, .35, .7, 1],
             ),
           ),
           child: CustomPaint(
-            painter: _ArcPainter(color: Colors.white.withValues(alpha: .4)),
+            painter: _ArcPainter(color: Colors.white.withOpacity(.4)),
           ),
         ),
       ),
@@ -1609,7 +1606,7 @@ class _ArcPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.bottomCenter,
         end: Alignment.topCenter,
-        colors: [color.withValues(alpha: .55), color.withValues(alpha: .05)],
+        colors: [color.withOpacity(.55), color.withOpacity(.05)],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
     canvas.drawPath(path, paint);
   }

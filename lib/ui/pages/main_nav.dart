@@ -7,9 +7,6 @@ import 'services_page.dart';
 import 'community_page.dart';
 import 'applications_page.dart';
 import 'profile_page.dart';
-// Replaced legacy floating chat/support buttons with a merged AI assistant orb.
-// import '../widgets/floating_ai_chatbot.dart';
-// import '../widgets/floating_human_support.dart';
 import '../widgets/ai_assistant_orb.dart';
 
 class MainNav extends ConsumerStatefulWidget {
@@ -80,7 +77,7 @@ class _CustomBottomNavBar extends StatelessWidget {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: Colors.black.withOpacity(0.1),
                     blurRadius: 8,
                     offset: const Offset(0, -2),
                   ),
@@ -224,14 +221,14 @@ class _CustomBottomNavBar extends StatelessWidget {
                         BoxShadow(
                           color: const Color(
                             0xFF7A5AF8,
-                          ).withValues(alpha: 0.35),
+                          ).withOpacity(0.35),
                           blurRadius: 18,
                           spreadRadius: 1,
                           offset: const Offset(0, -4),
                         ),
                       ],
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.18),
+                        color: Colors.white.withOpacity(0.18),
                         width: 1,
                       ),
                     ),
@@ -244,11 +241,11 @@ class _CustomBottomNavBar extends StatelessWidget {
                       width: selected ? 58 : 54,
                       height: selected ? 58 : 54,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.28),
+                        color: Colors.white.withOpacity(0.28),
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.white.withValues(alpha: 0.25),
+                            color: Colors.white.withOpacity(0.25),
                             blurRadius: 12,
                             spreadRadius: 1,
                           ),

@@ -183,7 +183,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.purple.withValues(alpha: 0.3),
+                          color: AppColors.purple.withOpacity(0.3),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -287,7 +287,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
+                        color: Colors.black.withOpacity(0.08),
                         blurRadius: 20,
                         offset: const Offset(0, 4),
                       ),
@@ -322,7 +322,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                               borderRadius: BorderRadius.circular(16),
                             ),
                             disabledBackgroundColor: AppColors.purple
-                                .withValues(alpha: 0.6),
+                                .withOpacity(0.6),
                           ),
                         ),
                       ),

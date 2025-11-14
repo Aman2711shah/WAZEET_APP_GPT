@@ -16,6 +16,16 @@ class _CorpFormState extends State<CorpForm> {
       validators: [Validators.required, Validators.min(0)],
     ),
     'adjustments': FormControl<double>(
+          Row(
+            children: [
+              Expanded(child: Text('Calculation logic: Taxable Income = Profit Before Tax + Adjustments - Losses; Tax Due = (Taxable Income - Threshold) × Main Rate')), 
+              Tooltip(
+                message: 'Adjustments: positive for add-backs, negative for deductions. Free Zone: special rules apply for qualifying income.',
+                child: Icon(Icons.info_outline, color: scheme.primary, size: 20),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
       value: 0,
       validators: [Validators.min(-1000000000000)],
     ),
@@ -33,11 +43,16 @@ class _CorpFormState extends State<CorpForm> {
       value: 9,
       validators: [Validators.min(0), Validators.max(100)],
     ),
-  });
-
-  double? taxableIncome;
-  double? qualifyingAmount;
-  double? nonQualifyingAmount;
+            decoration: dec(
+              'Adjustments (net, AED)',
+              helper: 'Use positive for add-backs; negative for deductions',
+              suffix: 'AED',
+            ).copyWith(
+              suffixIcon: Tooltip(
+                message: 'Adjustments: add-backs (positive) increase taxable income, deductions (negative) reduce it.',
+                child: Icon(Icons.info_outline, color: scheme.primary, size: 20),
+              ),
+            ),
   double? slabAboveThreshold;
   double? taxDue;
   double? effectiveRate;
@@ -52,7 +67,16 @@ class _CorpFormState extends State<CorpForm> {
     final qPct = (form.control('qualifyingIncomePct').value ?? 0.0) as double;
     final threshold = (form.control('threshold').value ?? 375000.0) as double;
     final mainRatePct = (form.control('mainRatePct').value ?? 9.0) as double;
-
+            title: Row(
+              children: [
+                const Text('Free Zone entity?'),
+                const SizedBox(width: 6),
+                Tooltip(
+                  message: 'Free Zone entities may have special tax rates and qualifying income rules.',
+                  child: Icon(Icons.info_outline, color: scheme.primary, size: 20),
+                ),
+              ],
+            ),
     final taxable = (pbt + adj - losses);
     final sanitizedTaxable = taxable < 0 ? 0.0 : taxable;
     final rate = (mainRatePct.clamp(0, 100)) / 100.0;
@@ -130,49 +154,61 @@ class _CorpFormState extends State<CorpForm> {
 
     final isFreeZone = form.control('isFreeZone').value == true;
 
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    InputDecoration dec(String label, {String? helper, String? suffix}) {
-      return InputDecoration(
-        labelText: label,
-        helperText: helper,
-        suffixText: suffix,
-        filled: true,
-        fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.14),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 16,
-        ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: scheme.outlineVariant),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: scheme.primary, width: 1.6),
-        ),
-      );
-    }
-
-    return ReactiveForm(
-      formGroup: form,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-        children: [
-          Text(
-            'Corporate Tax (UAE)',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w800,
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              color: (taxDue ?? 0) > 0 ? Colors.red.shade50 : Colors.green.shade50,
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          (taxDue ?? 0) > 0 ? Icons.warning : Icons.check_circle,
+                          color: (taxDue ?? 0) > 0 ? Colors.red : Colors.green,
+                          size: 28,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Taxable Income: ${nf.format(taxableIncome)}',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Above Threshold Base: ${nf.format(slabAboveThreshold)}',
+                        ),
+                        Text(
+                          'Rate: ${((effectiveRate ?? 0) * 100).isNaN ? "0.00" : percent.format((effectiveRate ?? 0) * 100)}% eff',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    if (form.control('isFreeZone').value == true) ...[
+                      Text('Qualifying @ 0%: ${nf.format(qualifyingAmount)}'),
+                      Text('Non-qualifying: ${nf.format(nonQualifyingAmount)}'),
+                    ],
+                    const Divider(),
+                    Text(
+                      'Tax Due: ${nf.format(taxDue)}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: (taxDue ?? 0) > 0 ? Colors.red : Colors.green,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-
-          // Profit Before Tax
-          ReactiveTextField<double>(
-            formControlName: 'profitBeforeTax',
-            decoration: dec(
               'Accounting Profit Before Tax (AED)',
               suffix: 'AED',
             ),

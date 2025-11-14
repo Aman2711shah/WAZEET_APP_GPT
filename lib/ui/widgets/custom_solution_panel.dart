@@ -21,7 +21,7 @@ class CustomSolutionPanel extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: scheme.primary.withValues(alpha: .08),
+        color: scheme.primary.withOpacity(.08),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -112,7 +112,7 @@ class CustomSolutionPanel extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: scheme.primary.withValues(alpha: 0.1),
+                color: scheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: scheme.primary),

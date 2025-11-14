@@ -14,8 +14,12 @@ import 'package:flutter/services.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load environment variables
-  await dotenv.load(fileName: ".env");
+  // Load environment variables (optional - may not exist in production)
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint('No .env file found - using default configuration: $e');
+  }
 
   try {
     // Initialize Firebase
@@ -27,6 +31,8 @@ void main() async {
     AuthTokenService.initialize();
   } catch (e) {
     debugPrint('Firebase initialization error: $e');
+    // Re-throw to prevent app from running with broken Firebase
+    rethrow;
   }
 
   final themeController = await ThemeController.load();

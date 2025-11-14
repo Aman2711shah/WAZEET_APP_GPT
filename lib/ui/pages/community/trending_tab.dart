@@ -191,7 +191,7 @@ class _TrendingTabState extends State<TrendingTab> {
                             decoration: BoxDecoration(
                               color: Theme.of(
                                 context,
-                              ).colorScheme.primary.withValues(alpha: 0.2),
+                              ).colorScheme.primary.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(

@@ -45,6 +45,7 @@ migrate_working_dir/
 tools/import/serviceAccountKey.json
 freezone-import/*-firebase-adminsdk-*.json
 freezone-import/*.json
+!freezone-import/manual_freezone_packages.json
 
 # Fastlane and deployment secrets
 android/key.properties

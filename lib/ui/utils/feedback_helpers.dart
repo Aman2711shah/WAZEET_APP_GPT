@@ -16,7 +16,7 @@ class AppSnackBar {
             Container(
               padding: EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: Colors.white.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -61,7 +61,7 @@ class AppSnackBar {
             Container(
               padding: EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: Colors.white.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.error_rounded, color: Colors.white, size: 20),
@@ -109,7 +109,7 @@ class AppSnackBar {
             Container(
               padding: EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: Colors.white.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.warning_rounded, color: Colors.white, size: 20),
@@ -150,7 +150,7 @@ class AppSnackBar {
             Container(
               padding: EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: Colors.white.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.info_rounded, color: Colors.white, size: 20),
@@ -196,7 +196,7 @@ class AppSnackBar {
               Container(
                 padding: EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: Colors.white.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: Colors.white, size: 20),
@@ -257,7 +257,7 @@ class AppLoading {
               borderRadius: BorderRadius.circular(AppRadius.lg),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
+                  color: Colors.black.withOpacity(0.2),
                   blurRadius: 16,
                   offset: Offset(0, 8),
                 ),
@@ -363,7 +363,7 @@ class AppDialog {
             Container(
               padding: EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
-                color: AppColors.info.withValues(alpha: 0.15),
+                color: AppColors.info.withOpacity(0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.info_rounded, color: AppColors.info, size: 24),

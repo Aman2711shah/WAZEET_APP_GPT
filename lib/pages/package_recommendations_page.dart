@@ -72,6 +72,17 @@ class PackageRecommendationsPage extends StatelessWidget {
   Widget _buildPackageList() {
     return Column(
       children: [
+        // 🔍 DEBUG: Show package count at the very top
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(8),
+          color: Colors.yellow.shade100,
+          child: Text(
+            '🔍 DEBUG: Total packages received: ${packages.length}',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+        ),
         // Header with summary
         Container(
           width: double.infinity,
@@ -286,14 +297,20 @@ class _PackageCardState extends State<_PackageCard> {
                 ],
               ),
               const SizedBox(height: 16),
-              // Total cost (prominent)
+              // Total cost (prominent) - Using model's totalCost, NOT recalculated
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: widget.isTopChoice
                       ? const Color(0xFF6D5DF6).withOpacity(0.1)
                       : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: widget.isTopChoice
+                        ? const Color(0xFF6D5DF6).withOpacity(0.3)
+                        : Colors.grey.shade200,
+                    width: 2,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -302,8 +319,9 @@ class _PackageCardState extends State<_PackageCard> {
                       color: widget.isTopChoice
                           ? const Color(0xFF6D5DF6)
                           : Colors.grey.shade600,
+                      size: 28,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -311,20 +329,23 @@ class _PackageCardState extends State<_PackageCard> {
                           Text(
                             'Total Package Cost',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 13,
                               color: Colors.grey.shade600,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 4),
+                          // Display totalCost from model (already calculated in service)
                           Text(
-                            widget.package.formattedTotalCostRounded,
+                            'AED ${widget.package.totalCost.toStringAsFixed(2)}',
                             style: TextStyle(
-                              fontSize: 22,
+                              fontSize: 26,
                               fontWeight: FontWeight.w700,
                               color: widget.isTopChoice
                                   ? const Color(0xFF6D5DF6)
                                   : Colors.grey.shade900,
+                              letterSpacing: -0.5,
                             ),
                           ),
                         ],
@@ -351,7 +372,7 @@ class _PackageCardState extends State<_PackageCard> {
                   ),
                   _buildInfoPill(
                     icon: Icons.business_center,
-                    label: widget.package.activitiesAllowed + ' Activities',
+                    label: '${widget.package.activitiesAllowed} Activities',
                   ),
                   _buildInfoPill(
                     icon: Icons.location_on_outlined,

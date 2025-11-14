@@ -11,7 +11,6 @@ import 'account_settings_page.dart';
 import 'appearance_settings_page.dart';
 import 'privacy_policy_page.dart';
 import 'admin_requests_page.dart';
-import 'freezone_quote_page.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -55,7 +54,7 @@ class ProfilePage extends ConsumerWidget {
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
-                        color: AppColors.purple.withValues(alpha: 0.3),
+                        color: AppColors.purple.withOpacity(0.3),
                       );
                     },
                   ),
@@ -65,8 +64,8 @@ class ProfilePage extends ConsumerWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.35),
-                          AppColors.purple.withValues(alpha: 0.5),
+                          Colors.black.withOpacity(0.35),
+                          AppColors.purple.withOpacity(0.5),
                         ],
                       ),
                     ),
@@ -78,7 +77,7 @@ class ProfilePage extends ConsumerWidget {
                     child: Text(
                       'Settings, preferences & account management',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.95),
+                        color: Colors.white.withOpacity(0.95),
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0.3,
@@ -181,19 +180,6 @@ class ProfilePage extends ConsumerWidget {
                       );
                     },
                   ),
-                  _menuItem(
-                    context,
-                    icon: Icons.calculate_outlined,
-                    title: 'Get a Quote',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const FreezoneQuotePage(),
-                        ),
-                      );
-                    },
-                  ),
                   const Divider(height: 32),
                   // Admin section
                   Container(
@@ -214,7 +200,7 @@ class ProfilePage extends ConsumerWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.purple.withValues(alpha: 0.1),
+                            color: AppColors.purple.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(

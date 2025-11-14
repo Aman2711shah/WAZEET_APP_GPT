@@ -38,7 +38,7 @@ class _UserProfileDetailPageState extends ConsumerState<UserProfileDetailPage> {
                       gradient: LinearGradient(
                         colors: [
                           AppColors.purple,
-                          AppColors.purple.withValues(alpha: 0.7),
+                          AppColors.purple.withOpacity(0.7),
                         ],
                       ),
                     ),
@@ -359,7 +359,7 @@ class _IndividualProfileView extends StatelessWidget {
                   return Chip(
                     avatar: Text(industry.icon),
                     label: Text(industry.name),
-                    backgroundColor: AppColors.purple.withValues(alpha: 0.1),
+                    backgroundColor: AppColors.purple.withOpacity(0.1),
                     side: BorderSide.none,
                   );
                 }).toList(),
@@ -504,7 +504,7 @@ class _CompanyProfileView extends StatelessWidget {
                 border: Border.all(color: Colors.white, width: 4),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: Colors.black.withOpacity(0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -678,7 +678,7 @@ class _CompanyProfileView extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 24,
-                    backgroundColor: AppColors.purple.withValues(alpha: 0.15),
+                    backgroundColor: AppColors.purple.withOpacity(0.15),
                     child: Text(
                       initials,
                       style: const TextStyle(

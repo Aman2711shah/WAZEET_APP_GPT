@@ -32,15 +32,21 @@
 
   <title>WAZEET</title>
   <link rel="manifest" href="manifest.json">
+
+  <script>
+    // Configure Firebase before Flutter loads
+    window.flutterfire_web = {
+      apiKey: "AIzaSyBIxAfwEQ5kqPBiPr3Zf5B0oWYdEcKJhZo",
+      authDomain: "business-setup-application.firebaseapp.com",
+      projectId: "business-setup-application",
+      storageBucket: "business-setup-application.firebasestorage.app",
+      messagingSenderId: "350415177061",
+      appId: "1:350415177061:web:1c45ff3565a672d4408d8c"
+    };
+  </script>
 </head>
 
 <body>
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage-compat.js"></script>
-
   <script src="flutter_bootstrap.js" async></script>
 </body>
 

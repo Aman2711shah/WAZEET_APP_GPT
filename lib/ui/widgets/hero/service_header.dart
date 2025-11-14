@@ -43,7 +43,7 @@ class ServiceHeader extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
+                    color: Colors.black.withOpacity(0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -57,9 +57,9 @@ class ServiceHeader extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.white.withValues(alpha: 0.1),
+                    Colors.white.withOpacity(0.1),
                     Colors.transparent,
-                    Colors.black.withValues(alpha: 0.2),
+                    Colors.black.withOpacity(0.2),
                   ],
                 ),
               ),
@@ -77,16 +77,16 @@ class ServiceHeader extends StatelessWidget {
                       height: 48,
                       margin: const EdgeInsets.only(right: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.25),
+                        color: Colors.white.withOpacity(0.25),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.3),
+                            color: Colors.black.withOpacity(0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
                           BoxShadow(
-                            color: Colors.white.withValues(alpha: 0.1),
+                            color: Colors.white.withOpacity(0.1),
                             blurRadius: 4,
                             offset: const Offset(-2, -2),
                           ),
@@ -116,12 +116,12 @@ class ServiceHeader extends StatelessWidget {
                                 ),
                                 shadows: [
                                   Shadow(
-                                    color: Colors.black.withValues(alpha: 0.5),
+                                    color: Colors.black.withOpacity(0.5),
                                     blurRadius: 8,
                                     offset: const Offset(2, 3),
                                   ),
                                   Shadow(
-                                    color: Colors.black.withValues(alpha: 0.3),
+                                    color: Colors.black.withOpacity(0.3),
                                     blurRadius: 16,
                                     offset: const Offset(0, 4),
                                   ),

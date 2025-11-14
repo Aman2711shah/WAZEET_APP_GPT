@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../services/freezone_service.dart';
 
 class CompanySetupPage extends StatefulWidget {
   const CompanySetupPage({super.key});
@@ -23,6 +24,23 @@ class _CompanySetupPageState extends State<CompanySetupPage> {
   bool _busy = false;
   double _estimated = 0;
 
+  // Package recommendation state
+  List<FreezonePackage> _packages = [];
+  bool _loadingPackages = false;
+  String? _packageError;
+  String _officeType = 'Co-Working/Flexi-desk';
+  String _jurisdiction = 'Freezone';
+  int _investorVisas = 0;
+  int _managerVisas = 0;
+  int _employmentVisas = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch packages initially
+    _fetchPackagesIfReady();
+  }
+
   // very simple cost formula (you can tweak later)
   void _recalc() {
     final base = 3500.0;
@@ -34,6 +52,50 @@ class _CompanySetupPageState extends State<CompanySetupPage> {
       _ => 0.0,
     };
     setState(() => _estimated = base + perAct + perVisa + entityAdj);
+
+    // Auto-fetch packages when user changes selections
+    _fetchPackagesIfReady();
+  }
+
+  // Only fetch if we have minimum required selections
+  void _fetchPackagesIfReady() {
+    if (_selectedActivities.isNotEmpty && _jurisdiction.isNotEmpty) {
+      _fetchPackages();
+    }
+  }
+
+  // Fetch recommended packages from Firestore
+  Future<void> _fetchPackages() async {
+    setState(() {
+      _loadingPackages = true;
+      _packageError = null;
+    });
+
+    try {
+      final service = FreeZoneService();
+      final packages = await service.getRecommendedPackages(
+        noOfActivities: _selectedActivities.isNotEmpty
+            ? _selectedActivities.length
+            : 1,
+        investorVisas: _investorVisas,
+        managerVisas: _managerVisas,
+        employmentVisas: _employmentVisas,
+        officeType: _officeType,
+        jurisdiction: _jurisdiction,
+      );
+
+      setState(() {
+        _packages = packages;
+      });
+    } catch (e) {
+      setState(() {
+        _packageError = e.toString();
+      });
+    } finally {
+      setState(() {
+        _loadingPackages = false;
+      });
+    }
   }
 
   Future<List<String>> _loadActivities() async {
@@ -242,7 +304,48 @@ class _CompanySetupPageState extends State<CompanySetupPage> {
                 ),
                 const SizedBox(height: 12),
 
-                // Freezone (from Firestore)
+                // Office Type
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(
+                    labelText: 'Office Type',
+                    border: OutlineInputBorder(),
+                  ),
+                  initialValue: _officeType,
+                  items:
+                      const [
+                            'Co-Working/Flexi-desk',
+                            'Private Office',
+                            'Virtual Office',
+                          ]
+                          .map(
+                            (e) => DropdownMenuItem(value: e, child: Text(e)),
+                          )
+                          .toList(),
+                  onChanged: (v) {
+                    setState(() => _officeType = v ?? _officeType);
+                    _fetchPackagesIfReady();
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                // Jurisdiction
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(
+                    labelText: 'Jurisdiction',
+                    border: OutlineInputBorder(),
+                  ),
+                  initialValue: _jurisdiction,
+                  items: const ['Freezone', 'Mainland', 'Offshore']
+                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                      .toList(),
+                  onChanged: (v) {
+                    setState(() => _jurisdiction = v ?? _jurisdiction);
+                    _fetchPackagesIfReady();
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                // Freezone (from Firestore) - This will be auto-filled from recommendations
                 FutureBuilder<List<String>>(
                   future: _loadFreezones(),
                   builder: (context, snap) {
@@ -346,7 +449,11 @@ class _CompanySetupPageState extends State<CompanySetupPage> {
                             )
                             .toList(),
                         onChanged: (v) {
-                          setState(() => _visaCount = v ?? 0);
+                          setState(() {
+                            _visaCount = v ?? 0;
+                            // Default: set as employment visas
+                            _employmentVisas = _visaCount;
+                          });
                           _recalc();
                         },
                       ),
@@ -370,6 +477,130 @@ class _CompanySetupPageState extends State<CompanySetupPage> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 16),
+
+                // Recommended Freezones Section (Auto-updates based on selections)
+                if (_selectedActivities.isNotEmpty) ...[
+                  const Divider(thickness: 2),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Recommended Freezones',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                  const SizedBox(height: 8),
+
+                  if (_loadingPackages)
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+
+                  if (_packageError != null)
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        _packageError!,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+
+                  if (!_loadingPackages && _packages.isNotEmpty) ...[
+                    const Text(
+                      'Best options based on your selections (cheapest first):',
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 12),
+                    ..._packages
+                        .take(5)
+                        .map(
+                          (p) => Card(
+                            elevation: 3,
+                            margin: const EdgeInsets.only(bottom: 12),
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _freezone = p.freezone;
+                                });
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Selected ${p.freezone}'),
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            p.freezone,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.green,
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            'AED ${p.totalCost.toStringAsFixed(0)}',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      p.product,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      'License: AED ${p.licenseFee.toStringAsFixed(0)} | Visas: ${p.visaEligibility} | Activities: ${p.activitiesAllowed}',
+                                      style: const TextStyle(fontSize: 13),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                  ],
+
+                  if (!_loadingPackages && _packages.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text(
+                        'No packages found matching your criteria. Try adjusting your selections.',
+                        style: TextStyle(color: Colors.orange),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+
+                  const SizedBox(height: 16),
+                  const Divider(thickness: 2),
+                ],
                 const SizedBox(height: 16),
 
                 // Cost summary

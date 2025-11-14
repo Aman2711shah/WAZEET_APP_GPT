@@ -15,6 +15,16 @@ class _VatFormState extends State<VatForm> {
     'taxableSales': FormControl<double>(
       validators: [Validators.required, Validators.min(0)],
     ),
+          Row(
+            children: [
+              Expanded(child: Text('Calculation logic: Output VAT = Taxable Sales × VAT Rate; Net VAT = Output VAT - Input VAT')), 
+              Tooltip(
+                message: 'Output VAT is the VAT collected on sales. Net VAT is Output VAT minus Input VAT (VAT paid on purchases).',
+                child: Icon(Icons.info_outline, color: scheme.primary, size: 20),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
     'inputVat': FormControl<double>(value: 0),
     'ratePct': FormControl<double>(
       value: 5,
@@ -29,7 +39,12 @@ class _VatFormState extends State<VatForm> {
   bool loadingAI = false;
 
   Future<void> _calculate() async {
-    final sales = (form.control('taxableSales').value ?? 0) as double;
+            decoration: dec('Input VAT (AED)', suffix: 'AED').copyWith(
+              suffixIcon: Tooltip(
+                message: 'Input VAT is the VAT you paid on purchases. This is credited against your Output VAT.',
+                child: Icon(Icons.info_outline, color: scheme.primary, size: 20),
+              ),
+            ),
     final inputVatVal = (form.control('inputVat').value ?? 0) as double;
     final rate = (form.control('ratePct').value ?? 5) as double;
     final rateDecimal = rate / 100.0;
@@ -80,66 +95,78 @@ class _VatFormState extends State<VatForm> {
         fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.14),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 14,
-          vertical: 16,
-        ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: scheme.outlineVariant),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: scheme.primary, width: 1.6),
-        ),
-      );
-    }
-
-    return ReactiveForm(
-      formGroup: form,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-        children: [
-          Text(
-            'VAT Calculator',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w800,
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              color: (netVat ?? 0) < 0 ? Colors.green.shade50 : Colors.red.shade50,
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          (netVat ?? 0) < 0 ? Icons.check_circle : Icons.warning,
+                          color: (netVat ?? 0) < 0 ? Colors.green : Colors.red,
+                          size: 28,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Results',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Output VAT'),
+                              const SizedBox(height: 4),
+                              Text(
+                                nf.format(outputVat),
+                                style: theme.textTheme.titleMedium,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Net VAT'),
+                              const SizedBox(height: 4),
+                              Text(
+                                nf.format(netVat),
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: (netVat ?? 0) < 0
+                                      ? Colors.green
+                                      : Colors.red,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Effective Rate: ${((effRate ?? 0) * 100).toStringAsFixed(2)}%',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-
-          // Taxable sales
-          ReactiveTextField<double>(
-            formControlName: 'taxableSales',
-            decoration: dec('Taxable Sales (AED)', suffix: 'AED'),
-            keyboardType: TextInputType.number,
-            validationMessages: {
-              ValidationMessage.required: (_) => 'Required',
-              ValidationMessage.min: (_) => 'Must be ≥ 0',
-            },
-          ),
-          const SizedBox(height: 12),
-
-          // Input VAT credit
-          ReactiveTextField<double>(
-            formControlName: 'inputVat',
-            decoration: dec('Input VAT (AED)', suffix: 'AED'),
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: 12),
-
-          // VAT rate
-          ReactiveTextField<double>(
-            formControlName: 'ratePct',
-            decoration: dec('VAT Rate (%)', suffix: '%'),
-            keyboardType: TextInputType.number,
-            validationMessages: {
-              ValidationMessage.min: (_) => 'Min 0',
-              ValidationMessage.max: (_) => 'Max 100',
-            },
-          ),
-          const SizedBox(height: 20),
-
-          ReactiveFormConsumer(
             builder: (context, fg, __) {
               final enabled = fg.valid;
               return Row(

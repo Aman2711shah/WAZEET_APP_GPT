@@ -261,12 +261,42 @@ class FreeZoneService {
   }) async {
     final totalVisas = investorVisas + managerVisas + employmentVisas;
 
-    // Query Firestore for packages matching jurisdiction and office type
+    // Normalize jurisdiction to match Firestore exactly
+    // Expected values: "Freezone" or "Mainland"
+    String normalizedJurisdiction = jurisdiction.trim();
+    if (normalizedJurisdiction.toLowerCase() == 'freezone' ||
+        normalizedJurisdiction.toLowerCase() == 'free zone') {
+      normalizedJurisdiction = 'Freezone';
+    } else if (normalizedJurisdiction.toLowerCase() == 'mainland') {
+      normalizedJurisdiction = 'Mainland';
+    }
+
+    // Normalize office type for matching
+    final normalizedOfficeType = officeType.toLowerCase().trim();
+
+    // 🔍 DEBUG: Print filter parameters
+    print('🔍 DEBUG getRecommendedPackages called with:');
+    print(
+      '   - officeType: "$officeType" (normalized: "$normalizedOfficeType")',
+    );
+    print(
+      '   - jurisdiction: "$jurisdiction" (normalized: "$normalizedJurisdiction")',
+    );
+    print('   - noOfActivities: $noOfActivities');
+    print(
+      '   - totalVisas: $totalVisas (investor: $investorVisas, manager: $managerVisas, employment: $employmentVisas)',
+    );
+
+    // Query Firestore - RELAXED: Only filter by jurisdiction
+    // We'll do office type matching in Dart for flexibility
     final snapshot = await _firestore
         .collection('freezonePackages')
-        .where('jurisdiction', isEqualTo: jurisdiction)
-        .where('office_facility_requirements', isEqualTo: officeType)
+        .where('jurisdiction', isEqualTo: normalizedJurisdiction)
+        // Removed strict office_facility_requirements filter - doing it in Dart
         .get();
+
+    // 🔍 DEBUG: Print how many documents Firestore returned
+    print('📦 DEBUG: Firestore returned ${snapshot.docs.length} documents');
 
     // Helper: Convert Firestore values to numbers (handles "FREE", "TBD", etc. as 0)
     double numValue(dynamic v) {
@@ -290,15 +320,43 @@ class FreeZoneService {
       return n >= needed;
     }
 
+    // Helper: Check if office types match (relaxed, case-insensitive)
+    bool officeTypeMatches(String firestoreOfficeType, String userOfficeType) {
+      final fsType = firestoreOfficeType.toLowerCase().trim();
+      final userType = userOfficeType.toLowerCase().trim();
+
+      // Remove special characters for comparison
+      final fsTypeClean = fsType.replaceAll(RegExp(r'[/\-\s]'), '');
+      final userTypeClean = userType.replaceAll(RegExp(r'[/\-\s]'), '');
+
+      // Check if one contains the other
+      return fsTypeClean.contains(userTypeClean) ||
+          userTypeClean.contains(fsTypeClean) ||
+          fsType.contains(userType) ||
+          userType.contains(fsType);
+    }
+
     final List<FreezonePackageRecommendation> result = [];
+    int skippedOfficeType = 0;
+    int skippedVisa = 0;
+    int skippedActivities = 0;
 
     // Process each matching document
     for (final doc in snapshot.docs) {
       final data = doc.data();
 
+      // Filter: Check office type (relaxed matching)
+      final firestoreOfficeType = (data['office_facility_requirements'] ?? '')
+          .toString();
+      if (!officeTypeMatches(firestoreOfficeType, normalizedOfficeType)) {
+        skippedOfficeType++;
+        continue; // Skip if office type doesn't match
+      }
+
       // Filter: Check visa eligibility
       final visaEligibility = (data['visa_eligibility'] ?? 0) as int;
       if (visaEligibility < totalVisas) {
+        skippedVisa++;
         continue; // Skip if not enough visa quota
       }
 
@@ -306,6 +364,7 @@ class FreeZoneService {
       final allowedStr = (data['no_of_activities_allowed_under_license'] ?? '')
           .toString();
       if (!activitiesOk(allowedStr, noOfActivities)) {
+        skippedActivities++;
         continue; // Skip if activities requirement not met
       }
 
@@ -359,6 +418,22 @@ class FreeZoneService {
           eidTotal: eidTotal,
           totalCost: totalCost,
         ),
+      );
+    }
+
+    // 🔍 DEBUG: Print filtering statistics
+    print('📊 DEBUG: Filtering statistics:');
+    print('   - Skipped due to office type mismatch: $skippedOfficeType');
+    print('   - Skipped due to insufficient visa quota: $skippedVisa');
+    print('   - Skipped due to activity restrictions: $skippedActivities');
+
+    // 🔍 DEBUG: Print how many packages passed filters
+    print(
+      '✅ DEBUG: After filtering, ${result.length} packages matched requirements',
+    );
+    if (result.isNotEmpty) {
+      print(
+        '💰 DEBUG: Price range: ${result.first.totalCost.toStringAsFixed(2)} AED (cheapest) to ${result.last.totalCost.toStringAsFixed(2)} AED (most expensive)',
       );
     }
 

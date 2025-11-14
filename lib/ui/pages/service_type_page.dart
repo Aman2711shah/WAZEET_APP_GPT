@@ -53,7 +53,7 @@ class ServiceTypePage extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: Color(
                           int.parse(category.color),
-                        ).withValues(alpha: 0.1),
+                        ).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -190,7 +190,7 @@ class SubServiceListPage extends ConsumerWidget {
                                 decoration: BoxDecoration(
                                   color: Color(
                                     int.parse(categoryColor),
-                                  ).withValues(alpha: 0.1),
+                                  ).withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Icon(
