@@ -205,7 +205,6 @@ class _CompanySetupFlowState extends ConsumerState<CompanySetupFlow> {
     'Business Activities',
     'Shareholders',
     'Visa Requirements',
-    'Emirate',
     'Package Recommendations',
     'Summary',
   ];
@@ -234,10 +233,8 @@ class _CompanySetupFlowState extends ConsumerState<CompanySetupFlow> {
       case 2:
         return _VisaStep();
       case 3:
-        return _EmirateStep();
-      case 4:
         return const _RecommenderStep();
-      case 5:
+      case 4:
         return _SummaryStep(onComplete: () => Navigator.pop(context));
       default:
         return const Center(child: Text('Unknown step'));
@@ -1593,97 +1590,6 @@ class _OfficeAndJurisdictionSection extends StatelessWidget {
 
 // _TenureStep removed: license period default retained internally (1 year).
 // _EntityStep removed: Entity Type selection step removed from flow.
-
-class _EmirateStep extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final data = ref.watch(setupProvider);
-    final controller = ref.read(setupProvider.notifier);
-
-    final emirates = [
-      'Abu Dhabi',
-      'Dubai',
-      'Sharjah',
-      'Ajman',
-      'Umm Al Quwain',
-      'Ras Al Khaimah',
-      'Fujairah',
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: ListView(
-        children: [
-          const Text(
-            'Select Emirate',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Choose the emirate where you want to establish your business.',
-            style: TextStyle(color: Colors.grey.shade700),
-          ),
-          const SizedBox(height: 16),
-          ...emirates.map((emirate) {
-            final selected = data.emirate == emirate;
-            return Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              elevation: selected ? 2 : 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: selected ? Colors.blue.shade700 : Colors.grey.shade300,
-                  width: selected ? 2 : 1,
-                ),
-              ),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () => controller.setEmirate(emirate),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Icon(
-                        selected
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_unchecked,
-                        color: selected
-                            ? Colors.blue.shade700
-                            : Colors.grey.shade400,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Text(
-                          emirate,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: selected
-                                ? Colors.blue.shade900
-                                : Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }),
-          if (data.emirate.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text(
-                'Please select an emirate to proceed.',
-                style: TextStyle(color: Colors.red),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
 
 class _RecommenderStep extends ConsumerStatefulWidget {
   const _RecommenderStep();
