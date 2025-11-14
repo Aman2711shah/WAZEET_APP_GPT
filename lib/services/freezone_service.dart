@@ -356,11 +356,14 @@ class FreeZoneService {
         continue; // Skip if office type doesn't match
       }
 
-      // Filter: Check visa eligibility
-      final visaEligibility = (data['visa_eligibility'] ?? 0) as int;
-      if (visaEligibility < totalVisas) {
+      // Filter: Check visa eligibility (exact match only)
+      final dynamic visaField = data['visa_eligibility'];
+      final int visaEligibility = visaField is int
+          ? visaField
+          : int.tryParse(visaField?.toString() ?? '') ?? 0;
+      if (visaEligibility != totalVisas) {
         skippedVisa++;
-        continue; // Skip if not enough visa quota
+        continue; // Skip if visa quota doesn't exactly match user's need
       }
 
       // Filter: Check activities allowed
@@ -433,10 +436,11 @@ class FreeZoneService {
     // Sort by total cost (cheapest first) before deduplication
     result.sort((a, b) => a.totalCost.compareTo(b.totalCost));
 
-    // Deduplicate: Keep only the cheapest package for each freezone + product combination
+    // Deduplicate: Keep only the cheapest package per freezone
+    // Business rule: show one best option for each freezone.
     final Map<String, FreezonePackageRecommendation> uniquePackages = {};
     for (final package in result) {
-      final key = '${package.freezone}|${package.product}';
+      final key = package.freezone.trim();
       if (!uniquePackages.containsKey(key)) {
         uniquePackages[key] = package;
       }
