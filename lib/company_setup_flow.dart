@@ -2,10 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wazeet/utils/industry_loader.dart';
-import 'package:wazeet/services/openai_service.dart';
-import 'package:wazeet/services/freezone_package_service.dart';
-import 'package:wazeet/models/freezone_package.dart';
+// Old AI-based services removed from this flow
 import 'package:wazeet/services/freezone_service.dart';
+import 'package:wazeet/models/freezone_package_recommendation.dart';
 import 'package:wazeet/pages/package_recommendations_page.dart';
 
 // AI-based recommender removed; pricing will be handled by backend service
@@ -207,7 +206,7 @@ class _CompanySetupFlowState extends ConsumerState<CompanySetupFlow> {
     'Shareholders',
     'Visa Requirements',
     'Emirate',
-    'AI Recommendations',
+    'Package Recommendations',
     'Summary',
   ];
 
@@ -1534,23 +1533,33 @@ class _RecommenderStep extends ConsumerStatefulWidget {
 }
 
 class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
-  String? _aiRecommendation;
+  List<FreezonePackageRecommendation>? _packages;
   bool _isLoading = false;
   String? _error;
-  Map<String, List<FreezonePackage>> _freezonePricing = {};
-  final _packageService = FreezonePackageService();
+  final _freezoneService = FreeZoneService();
 
   @override
   void initState() {
     super.initState();
-    // Fetch AI recommendations when the step loads
+    // Fetch Firestore recommendations when the step loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchAIRecommendations();
+      _fetchRecommendations();
     });
   }
 
-  Future<void> _fetchAIRecommendations() async {
-    if (_aiRecommendation != null) return; // Already fetched
+  Future<void> _fetchRecommendations() async {
+    if (_packages != null) return; // Already fetched
+
+    final data = ref.read(setupProvider);
+
+    // Validate required fields
+    if (data.officeSpaceType.isEmpty || data.jurisdictionType.isEmpty) {
+      setState(() {
+        _error = 'Please select Office Type and Jurisdiction in previous steps';
+        _isLoading = false;
+      });
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -1558,93 +1567,30 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
     });
 
     try {
-      final data = ref.read(setupProvider);
-
-      // Fetch AI recommendations
-      final recommendation = await OpenAIService.getFreezoneRecommendations(
-        businessActivities: data.businessActivities,
-        shareholdersCount: data.shareholdersCount,
-        visaCount: data.visaCount,
-        licenseTenureYears: data.licenseTenureYears,
-        entityType: data.entityType,
-        emirate: data.emirate,
+      // Fetch recommendations from Firestore
+      final packages = await _freezoneService.getRecommendedPackages(
+        noOfActivities: data.businessActivities.length,
+        investorVisas: data.investorVisaCount,
+        managerVisas: 0, // Currently not tracked separately in UI
+        employmentVisas: data.employmentVisaCount,
+        officeType: data.officeSpaceType,
+        jurisdiction: data.jurisdictionType,
       );
 
-      // Extract freezone names from AI recommendation and fetch real pricing
-      await _fetchPricingData(recommendation, data.emirate);
-
       if (mounted) {
         setState(() {
-          _aiRecommendation = recommendation;
+          _packages = packages;
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Unable to fetch recommendations. Please try again.';
+          _error = 'Unable to fetch recommendations: ${e.toString()}';
           _isLoading = false;
         });
       }
     }
-  }
-
-  Future<void> _fetchPricingData(String recommendation, String emirate) async {
-    try {
-      // Extract freezone names from the recommendation text
-      final freezoneNames = _extractFreezoneNames(recommendation);
-
-      // Fetch pricing for each freezone from Firebase
-      for (final freezoneName in freezoneNames) {
-        final packages = await _packageService
-            .getPackagesForFreezone(freezoneName)
-            .first
-            .timeout(const Duration(seconds: 5));
-
-        if (packages.isNotEmpty) {
-          _freezonePricing[freezoneName] = packages;
-        }
-      }
-
-      // If no specific matches, try to fetch packages by emirate
-      if (_freezonePricing.isEmpty && emirate.isNotEmpty) {
-        debugPrint(
-          'No freezone-specific pricing found, fetching by emirate: $emirate',
-        );
-        // You could add emirate-based fetching here if needed
-      }
-    } catch (e) {
-      debugPrint('Error fetching pricing data: $e');
-    }
-  }
-
-  List<String> _extractFreezoneNames(String recommendation) {
-    final names = <String>[];
-
-    // Common UAE Freezone patterns
-    final patterns = [
-      'DMCC',
-      'IFZA',
-      'RAKEZ',
-      'Dubai Silicon Oasis',
-      'SHAMS',
-      'SAIF Zone',
-      'Ajman Free Zone',
-      'Fujairah Free Zone',
-      'RAK',
-      'JAFZA',
-      'DAFZA',
-      'DIFC',
-      'ADGM',
-    ];
-
-    for (final pattern in patterns) {
-      if (recommendation.contains(pattern)) {
-        names.add(pattern);
-      }
-    }
-
-    return names.toSet().toList(); // Remove duplicates
   }
 
   @override
@@ -1659,7 +1605,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
             children: [
               const Expanded(
                 child: Text(
-                  'AI-Powered Free Zone Recommendations',
+                  'Package Recommendations',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
                 ),
               ),
@@ -1673,7 +1619,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Based on your business requirements, our AI analyzes optimal free zone options with pricing:',
+            'Based on your requirements, here are the best freezone packages sorted by total cost:',
             style: TextStyle(color: Colors.grey.shade700),
           ),
           const SizedBox(height: 16),
@@ -1743,7 +1689,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
           ),
           const SizedBox(height: 20),
 
-          // AI Recommendations Section
+          // Recommendations Section
           if (_isLoading)
             Center(
               child: Column(
@@ -1751,7 +1697,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
                   const CircularProgressIndicator(),
                   const SizedBox(height: 16),
                   Text(
-                    'Analyzing options and pricing...',
+                    'Loading package recommendations...',
                     style: TextStyle(color: Colors.grey.shade600),
                   ),
                 ],
@@ -1781,7 +1727,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton.icon(
-                      onPressed: _fetchAIRecommendations,
+                      onPressed: _fetchRecommendations,
                       icon: const Icon(Icons.refresh),
                       label: const Text('Retry'),
                       style: ElevatedButton.styleFrom(
@@ -1793,13 +1739,52 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
                 ),
               ),
             )
-          else if (_aiRecommendation != null)
-            ..._buildEnhancedRecommendations(_aiRecommendation!),
+          else if (_packages != null && _packages!.isEmpty)
+            Card(
+              elevation: 0,
+              color: Colors.orange.shade50,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.search_off,
+                      color: Colors.orange.shade700,
+                      size: 48,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No packages found',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.orange.shade900,
+                        fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Try adjusting your office type or jurisdiction selections.',
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else if (_packages != null && _packages!.isNotEmpty)
+            ..._buildRecommendationCards(_packages!),
 
           const SizedBox(height: 16),
 
           // Action Buttons
-          if (!_isLoading && _aiRecommendation != null)
+          if (!_isLoading && _packages != null && _packages!.isNotEmpty)
             Card(
               elevation: 0,
               color: Colors.green.shade50,
@@ -1817,7 +1802,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Ready to proceed with your setup?',
+                      'Found ${_packages!.length} matching packages!',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: Colors.green.shade900,
@@ -1827,7 +1812,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Review your summary in the next step or go back to make changes.',
+                      'Review your summary in the next step or go back to adjust your requirements.',
                       style: TextStyle(
                         color: Colors.grey.shade700,
                         fontSize: 14,
@@ -1843,8 +1828,9 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
     );
   }
 
-  List<Widget> _buildEnhancedRecommendations(String recommendation) {
-    final sections = _parseRecommendation(recommendation);
+  List<Widget> _buildRecommendationCards(
+    List<FreezonePackageRecommendation> packages,
+  ) {
     final widgets = <Widget>[];
 
     // Header Card
@@ -1871,28 +1857,31 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
-                  Icons.auto_awesome,
+                  Icons.calculate,
                   color: Colors.white,
                   size: 32,
                 ),
               ),
               const SizedBox(width: 16),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'AI-Powered Analysis',
+                    const Text(
+                      'Calculated Recommendations',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
-                      'Personalized recommendations with pricing',
-                      style: TextStyle(fontSize: 14, color: Colors.white70),
+                      '${packages.length} packages found, sorted by price',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.white70,
+                      ),
                     ),
                   ],
                 ),
@@ -1905,635 +1894,223 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
 
     widgets.add(const SizedBox(height: 16));
 
-    // Parse and display each section
-    for (var section in sections) {
-      if (section['type'] == 'zone') {
-        widgets.add(_buildZoneCard(section));
-        widgets.add(const SizedBox(height: 12));
-      } else if (section['type'] == 'comparison') {
-        widgets.add(_buildComparisonCard(section));
-        widgets.add(const SizedBox(height: 12));
-      } else if (section['type'] == 'recommendation') {
-        widgets.add(_buildBestValueCard(section));
-        widgets.add(const SizedBox(height: 12));
-      } else if (section['type'] == 'note') {
-        widgets.add(_buildNoteCard(section));
-        widgets.add(const SizedBox(height: 12));
-      } else {
-        widgets.add(_buildGenericSection(section));
-        widgets.add(const SizedBox(height: 12));
-      }
+    // Package Cards - Displaying Firestore data
+    for (var i = 0; i < packages.length; i++) {
+      final package = packages[i];
+      final isTopChoice = i == 0;
+
+      widgets.add(
+        Card(
+          elevation: isTopChoice ? 3 : 1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: isTopChoice
+                ? const BorderSide(color: Color(0xFF6D5DF6), width: 2)
+                : BorderSide.none,
+          ),
+          child: Container(
+            decoration: isTopChoice
+                ? BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF6D5DF6).withOpacity(0.1),
+                        Colors.white,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  )
+                : null,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with rank badge
+                Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: isTopChoice
+                            ? const Color(0xFF6D5DF6)
+                            : Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${i + 1}',
+                          style: TextStyle(
+                            color: isTopChoice
+                                ? Colors.white
+                                : Colors.grey.shade700,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            package.freezone,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            package.product,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isTopChoice)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6D5DF6),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          'BEST VALUE',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Total Package Cost - Prominently displayed from Firestore
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isTopChoice
+                        ? const Color(0xFF6D5DF6).withOpacity(0.1)
+                        : Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isTopChoice
+                          ? const Color(0xFF6D5DF6).withOpacity(0.3)
+                          : Colors.grey.shade200,
+                      width: 2,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.account_balance_wallet,
+                        color: isTopChoice
+                            ? const Color(0xFF6D5DF6)
+                            : Colors.grey.shade600,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Total Package Cost',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            // Display totalCost from Firestore (NOT recalculated)
+                            Text(
+                              'AED ${package.totalCost.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w700,
+                                color: isTopChoice
+                                    ? const Color(0xFF6D5DF6)
+                                    : Colors.grey.shade900,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Quick info pills
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  children: [
+                    _buildInfoPill(
+                      icon: Icons.work_outline,
+                      label: '${package.visaEligibility} Visa Quota',
+                    ),
+                    _buildInfoPill(
+                      icon: Icons.business_center,
+                      label: '${package.activitiesAllowed} Activities',
+                    ),
+                    _buildInfoPill(
+                      icon: Icons.location_on_outlined,
+                      label: package.jurisdiction,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      widgets.add(const SizedBox(height: 12));
     }
 
     return widgets;
   }
 
-  List<Map<String, dynamic>> _parseRecommendation(String text) {
-    final sections = <Map<String, dynamic>>[];
-    final lines = text.split('\n');
-
-    Map<String, dynamic>? currentSection;
-    List<String> currentContent = [];
-
-    for (var line in lines) {
-      final trimmed = line.trim();
-
-      // Detect zone recommendations (starts with **number or number followed by zone name)
-      // Matches: **1. Dubai Silicon Oasis** or similar patterns
-      if (RegExp(r'^\*\*\d+\.').hasMatch(trimmed)) {
-        // Save previous section
-        if (currentSection != null) {
-          currentSection['content'] = currentContent.join('\n');
-          sections.add(currentSection);
-        }
-        // Start new zone section
-        currentSection = {
-          'type': 'zone',
-          'title': trimmed.replaceAll(RegExp(r'^\*\*|\*\*$'), ''),
-        };
-        currentContent = [];
-      }
-      // Detect comparison section
-      else if (trimmed.toLowerCase().contains('cost comparison') ||
-          (trimmed.toLowerCase().contains('comparison') &&
-              !trimmed.startsWith('•'))) {
-        if (currentSection != null) {
-          currentSection['content'] = currentContent.join('\n');
-          sections.add(currentSection);
-        }
-        currentSection = {'type': 'comparison', 'title': trimmed};
-        currentContent = [];
-      }
-      // Detect best value recommendation
-      else if ((trimmed.toLowerCase().contains('best value') ||
-              trimmed.toLowerCase().contains('recommended')) &&
-          !trimmed.startsWith('•')) {
-        if (currentSection != null) {
-          currentSection['content'] = currentContent.join('\n');
-          sections.add(currentSection);
-        }
-        currentSection = {'type': 'recommendation', 'title': trimmed};
-        currentContent = [];
-      }
-      // Skip **Note sections - they're generic disclaimers
-      else if (trimmed.startsWith('**Note') || trimmed == '**Note:**') {
-        if (currentSection != null) {
-          currentSection['content'] = currentContent.join('\n');
-          sections.add(currentSection);
-        }
-        currentSection = {'type': 'note', 'title': 'Important Note'};
-        currentContent = [];
-      }
-      // Regular content
-      else if (trimmed.isNotEmpty) {
-        currentContent.add(trimmed);
-      }
-    }
-
-    // Add final section
-    if (currentSection != null) {
-      currentSection['content'] = currentContent.join('\n');
-      sections.add(currentSection);
-    }
-
-    // If no structured sections found, try to split by numbered items
-    if (sections.isEmpty || sections.length == 1) {
-      sections.clear();
-      final zonePattern = RegExp(r'\*\*(\d+)\.\s*([^*]+)\*\*');
-      final matches = zonePattern.allMatches(text);
-
-      if (matches.isNotEmpty) {
-        for (var i = 0; i < matches.length; i++) {
-          final match = matches.elementAt(i);
-          final number = match.group(1);
-          final zoneName = match.group(2)?.trim() ?? '';
-
-          // Get content until next zone or end
-          final startIndex = match.end;
-          final endIndex = i < matches.length - 1
-              ? matches.elementAt(i + 1).start
-              : text.length;
-
-          final content = text.substring(startIndex, endIndex).trim();
-
-          sections.add({
-            'type': 'zone',
-            'title': '$number. $zoneName',
-            'content': content,
-          });
-        }
-      }
-    }
-
-    // If still no sections, return as generic
-    if (sections.isEmpty) {
-      sections.add({
-        'type': 'generic',
-        'title': 'Recommendations',
-        'content': text,
-      });
-    }
-
-    return sections;
-  }
-
-  Widget _buildZoneCard(Map<String, dynamic> section) {
-    final title = section['title'] as String;
-    final content = section['content'] as String;
-
-    // Extract zone name and pricing
-    final zoneMatch = RegExp(
-      r'([A-Z][A-Za-z\s&()]+(?:Free Zone|Centre|Authority|FZ|DMCC|IFZA|RAKEZ))',
-    ).firstMatch(title);
-    final zoneName = zoneMatch?.group(1) ?? title;
-
-    // Try to get real Firebase pricing for this freezone
-    String? priceRange;
-    List<FreezonePackage>? packages;
-
-    // Check if we have pricing data for this freezone
-    for (final entry in _freezonePricing.entries) {
-      if (zoneName.toLowerCase().contains(entry.key.toLowerCase()) ||
-          entry.key.toLowerCase().contains(zoneName.toLowerCase())) {
-        packages = entry.value;
-        if (packages.isNotEmpty) {
-          // Get price range from actual packages
-          final prices =
-              packages.map((p) => double.tryParse(p.priceAed) ?? 0).toList()
-                ..sort();
-          final minPrice = prices.first.toInt();
-          final maxPrice = prices.last.toInt();
-          priceRange = prices.length > 1
-              ? 'AED ${_formatCurrency(minPrice)} - ${_formatCurrency(maxPrice)}'
-              : 'From AED ${_formatCurrency(minPrice)}';
-        }
-        break;
-      }
-    }
-
-    // Fallback to AI-provided price if no Firebase data
-    if (priceRange == null) {
-      final priceMatch = RegExp(
-        r'AED\s+([\d,]+)\s*-\s*([\d,]+)',
-      ).firstMatch(content);
-      priceRange = priceMatch != null
-          ? 'AED ${priceMatch.group(1)} - ${priceMatch.group(2)}'
-          : null;
-    }
-
-    // Parse content into structured sections
-    final lines = content.split('\n');
-    final Map<String, String> sections = {};
-    String? currentKey;
-    final StringBuffer currentValue = StringBuffer();
-
-    for (var line in lines) {
-      final trimmed = line.trim();
-      if (trimmed.isEmpty) continue;
-
-      // Check if line is a key (contains colon)
-      if (trimmed.contains(':') && !trimmed.startsWith('•')) {
-        if (currentKey != null) {
-          sections[currentKey] = currentValue.toString().trim();
-          currentValue.clear();
-        }
-        final parts = trimmed.split(':');
-        currentKey = parts[0].trim();
-        if (parts.length > 1) {
-          currentValue.write(parts.sublist(1).join(':').trim());
-        }
-      } else {
-        if (currentValue.isNotEmpty) {
-          currentValue.write('\n');
-        }
-        currentValue.write(trimmed);
-      }
-    }
-    if (currentKey != null) {
-      sections[currentKey] = currentValue.toString().trim();
-    }
-
-    // Add real package details if available
-    if (packages != null && packages.isNotEmpty) {
-      final cheapestPackage = packages.first;
-      final price = double.tryParse(cheapestPackage.priceAed) ?? 0;
-      sections['✓ Live Pricing (from database)'] =
-          '${cheapestPackage.packageName}\n'
-          '• Activities: ${cheapestPackage.noOfActivitiesAllowed}\n'
-          '• Visas Included: ${cheapestPackage.noOfVisasIncluded}\n'
-          '• Price: AED ${_formatCurrency(price.toInt())}';
-    }
-    return Card(
-      elevation: 4,
-      shadowColor: Colors.blue.shade100,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: LinearGradient(
-            colors: [Colors.white, Colors.blue.shade50.withOpacity(0.3)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+  Widget _buildInfoPill({required IconData icon, required String label}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.grey.shade700),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade700,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-          border: Border.all(color: Colors.blue.shade300, width: 2),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with gradient
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blue.shade600, Colors.blue.shade400],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(18),
-                  topRight: Radius.circular(18),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 2,
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.account_balance,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          zoneName,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        if (priceRange != null) ...[
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.payments_outlined,
-                                  size: 16,
-                                  color: Colors.green.shade700,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  priceRange,
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.green.shade700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Content body
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Display parsed sections with icons
-                  if (sections.isNotEmpty) ...[
-                    ...sections.entries.map((entry) {
-                      IconData icon = Icons.info_outline;
-                      Color iconColor = Colors.blue.shade600;
-
-                      // Assign icons based on key
-                      if (entry.key.toLowerCase().contains('suited') ||
-                          entry.key.toLowerCase().contains('benefits')) {
-                        icon = Icons.check_circle_outline;
-                        iconColor = Colors.green.shade600;
-                      } else if (entry.key.toLowerCase().contains('cost') ||
-                          entry.key.toLowerCase().contains('estimated')) {
-                        icon = Icons.monetization_on_outlined;
-                        iconColor = Colors.amber.shade700;
-                      } else if (entry.key.toLowerCase().contains('includes')) {
-                        icon = Icons.inventory_2_outlined;
-                        iconColor = Colors.indigo.shade600;
-                      }
-
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: iconColor.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(icon, color: iconColor, size: 20),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    entry.key,
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.grey.shade800,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  SelectableText(
-                                    entry.value,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey.shade700,
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ] else ...[
-                    // Fallback if no structured content
-                    SelectableText(
-                      content,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade800,
-                        height: 1.6,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            // Footer with action hint
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50.withOpacity(0.5),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(18),
-                  bottomRight: Radius.circular(18),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.lightbulb_outline,
-                    size: 16,
-                    color: Colors.blue.shade700,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Contact our consultants for detailed quotes',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.blue.shade700,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildComparisonCard(Map<String, dynamic> section) {
-    return Card(
-      elevation: 1,
-      color: Colors.amber.shade50,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.compare_arrows,
-                  color: Colors.amber.shade700,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  section['title'] as String,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.amber.shade900,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            SelectableText(
-              section['content'] as String,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade800,
-                height: 1.6,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNoteCard(Map<String, dynamic> section) {
-    return Card(
-      elevation: 1,
-      color: Colors.blue.shade50,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.blue.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.info_outline, color: Colors.blue.shade700, size: 24),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    section['title'] as String,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.blue.shade900,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SelectableText(
-                    section['content'] as String,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade700,
-                      height: 1.5,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBestValueCard(Map<String, dynamic> section) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.green.shade400, Colors.green.shade600],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.star, color: Colors.white, size: 24),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    section['title'] as String,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            SelectableText(
-              section['content'] as String,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.white,
-                height: 1.6,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGenericSection(Map<String, dynamic> section) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (section['title'] != null) ...[
-              Text(
-                section['title'] as String,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-            SelectableText(
-              section['content'] as String,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade800,
-                height: 1.6,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatCurrency(int amount) {
-    // Format number with commas (e.g., 15000 -> 15,000)
-    return amount.toString().replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
     );
   }
 
