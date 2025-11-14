@@ -108,6 +108,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
+    // Freezone packages (camelCase collection name) - read by all, write by admin
+    match /freezonePackages/{packageId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
     // AI conversations - users can only access their own
     match /ai_conversations/{conversationId} {
       allow read, write: if isAuthenticated() && 
