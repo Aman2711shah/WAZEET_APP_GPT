@@ -430,20 +430,35 @@ class FreeZoneService {
     debugPrint('   - Skipped due to insufficient visa quota: $skippedVisa');
     debugPrint('   - Skipped due to activity restrictions: $skippedActivities');
 
-    // Sort by total cost (cheapest first) before reporting price range
+    // Sort by total cost (cheapest first) before deduplication
     result.sort((a, b) => a.totalCost.compareTo(b.totalCost));
+
+    // Deduplicate: Keep only the cheapest package for each freezone + product combination
+    final Map<String, FreezonePackageRecommendation> uniquePackages = {};
+    for (final package in result) {
+      final key = '${package.freezone}|${package.product}';
+      if (!uniquePackages.containsKey(key)) {
+        uniquePackages[key] = package;
+      }
+      // If we already have this combo, we keep the cheaper one (already sorted)
+    }
+
+    final deduplicatedResult = uniquePackages.values.toList();
+
+    // Re-sort after deduplication to ensure order is maintained
+    deduplicatedResult.sort((a, b) => a.totalCost.compareTo(b.totalCost));
 
     // 🔍 DEBUG: Print how many packages passed filters
     debugPrint(
-      '✅ DEBUG: After filtering, ${result.length} packages matched requirements',
+      '✅ DEBUG: After filtering, ${result.length} packages matched (${deduplicatedResult.length} unique)',
     );
-    if (result.isNotEmpty) {
+    if (deduplicatedResult.isNotEmpty) {
       debugPrint(
-        '💰 DEBUG: Price range: ${result.first.totalCost.toStringAsFixed(2)} AED (cheapest) to ${result.last.totalCost.toStringAsFixed(2)} AED (most expensive)',
+        '💰 DEBUG: Price range: ${deduplicatedResult.first.totalCost.toStringAsFixed(2)} AED (cheapest) to ${deduplicatedResult.last.totalCost.toStringAsFixed(2)} AED (most expensive)',
       );
     }
 
-    return result;
+    return deduplicatedResult;
   }
 }
 

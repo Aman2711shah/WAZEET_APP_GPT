@@ -963,50 +963,121 @@ class _ShareholdersStep extends ConsumerWidget {
     final controller = ref.read(setupProvider.notifier);
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       child: ListView(
         children: [
           const Text(
             'Number of Shareholders',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
             'Impacts compliance and documentation.',
-            style: TextStyle(color: Colors.grey.shade700),
+            style: TextStyle(
+              fontSize: 15,
+              color: Colors.grey.shade600,
+              height: 1.4,
+            ),
           ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              _NumberButton(
-                icon: Icons.remove,
-                onTap: () =>
-                    controller.setShareholdersCount(data.shareholdersCount - 1),
-              ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    '${data.shareholdersCount}',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
+          const SizedBox(height: 40),
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.deepPurple.withValues(alpha: 0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                _NumberButton(
+                  icon: Icons.remove_rounded,
+                  onTap: () => controller.setShareholdersCount(
+                    data.shareholdersCount - 1,
+                  ),
+                  enabled: data.shareholdersCount > 1,
+                ),
+                Expanded(
+                  child: Center(
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(
+                        begin: data.shareholdersCount.toDouble(),
+                        end: data.shareholdersCount.toDouble(),
+                      ),
+                      duration: const Duration(milliseconds: 200),
+                      builder: (context, value, child) {
+                        return Text(
+                          '${value.round()}',
+                          style: TextStyle(
+                            fontSize: 56,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.deepPurple.shade700,
+                            letterSpacing: -2,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
-              ),
-              _NumberButton(
-                icon: Icons.add,
-                onTap: () =>
-                    controller.setShareholdersCount(data.shareholdersCount + 1),
-              ),
-            ],
+                _NumberButton(
+                  icon: Icons.add_rounded,
+                  onTap: () => controller.setShareholdersCount(
+                    data.shareholdersCount + 1,
+                  ),
+                  enabled: data.shareholdersCount < 10,
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          const Text('Min 1, Max 10'),
+          const SizedBox(height: 16),
+          Center(
+            child: Text(
+              'Min 1, Max 10',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade500,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
           if (data.shareholdersCount < 1 || data.shareholdersCount > 10)
-            const Text(
-              'Enter a value between 1 and 10',
-              style: TextStyle(color: Colors.red),
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: Colors.red.shade700),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Please enter a value between 1 and 10',
+                        style: TextStyle(
+                          color: Colors.red.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
         ],
       ),
@@ -1021,19 +1092,27 @@ class _VisaStep extends ConsumerWidget {
     final controller = ref.read(setupProvider.notifier);
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       child: ListView(
         children: [
           const Text(
             'Visa Requirements',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
             'Adjust visa slots needed per type (0–10 each).',
-            style: TextStyle(color: Colors.grey.shade700),
+            style: TextStyle(
+              fontSize: 15,
+              color: Colors.grey.shade600,
+              height: 1.4,
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 32),
           // Employment Visa Card
           _VisaCounterCard(
             title: 'Employment Visa',
@@ -1044,7 +1123,7 @@ class _VisaStep extends ConsumerWidget {
             onDecrement: () =>
                 controller.setEmploymentVisaCount(data.employmentVisaCount - 1),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           // Investor Visa Card
           _VisaCounterCard(
             title: 'Investor Visa',
@@ -1055,45 +1134,69 @@ class _VisaStep extends ConsumerWidget {
             onDecrement: () =>
                 controller.setInvestorVisaCount(data.investorVisaCount - 1),
           ),
-          const SizedBox(height: 20),
-          // Total row
-          Card(
-            elevation: 0,
-            color: Colors.deepPurple.shade50,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.format_list_numbered,
-                    color: Colors.deepPurple,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Total Visa Slots',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.deepPurple.shade700,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    '${data.visaCount}',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.deepPurple.shade800,
-                    ),
-                  ),
+          const SizedBox(height: 24),
+          // Total row - Enhanced
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.deepPurple.shade50,
+                  Colors.deepPurple.shade100.withValues(alpha: 0.3),
                 ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.deepPurple.shade200, width: 1.5),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.deepPurple.shade600,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.people_rounded,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    'Total Visa Slots',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.deepPurple.shade900,
+                    ),
+                  ),
+                ),
+                TweenAnimationBuilder<double>(
+                  tween: Tween(
+                    begin: data.visaCount.toDouble(),
+                    end: data.visaCount.toDouble(),
+                  ),
+                  duration: const Duration(milliseconds: 300),
+                  builder: (context, value, child) {
+                    return Text(
+                      '${value.round()}',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.deepPurple.shade800,
+                        letterSpacing: -1,
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           // Office Space & Jurisdiction dropdowns
           _OfficeAndJurisdictionSection(data: data, controller: controller),
           Theme(
@@ -1130,7 +1233,7 @@ class _VisaStep extends ConsumerWidget {
   }
 }
 
-// New reusable card with +/- counter for visa types
+// Enhanced reusable card with +/- counter for visa types
 class _VisaCounterCard extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -1149,73 +1252,130 @@ class _VisaCounterCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final selected = count > 0;
     final borderColor = selected
-        ? Colors.deepPurple.shade700
+        ? Colors.deepPurple.shade400
         : Colors.grey.shade300;
-    return Card(
-      elevation: selected ? 2 : 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: borderColor, width: selected ? 2 : 1),
+    final backgroundColor = selected
+        ? Colors.deepPurple.shade50.withValues(alpha: 0.5)
+        : Colors.white;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor, width: selected ? 2 : 1.5),
+        boxShadow: selected
+            ? [
+                BoxShadow(
+                  color: Colors.deepPurple.withValues(alpha: 0.15),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : [],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  selected ? Icons.check_circle : Icons.radio_button_unchecked,
-                  color: selected
-                      ? Colors.deepPurple.shade700
-                      : Colors.grey.shade400,
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? Colors.deepPurple.shade600
+                        : Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    selected
+                        ? Icons.check_circle_rounded
+                        : Icons.circle_outlined,
+                    color: selected ? Colors.white : Colors.grey.shade400,
+                    size: 20,
+                  ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: selected
+                              ? Colors.deepPurple.shade900
+                              : Colors.grey.shade800,
+                        ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
                         subtitle,
-                        style: TextStyle(color: Colors.grey.shade700),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                          height: 1.3,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
             Row(
               children: [
-                _NumberButton(icon: Icons.remove, onTap: () => onDecrement()),
+                _NumberButton(
+                  icon: Icons.remove_rounded,
+                  onTap: onDecrement,
+                  enabled: count > 0,
+                ),
                 Expanded(
                   child: Center(
-                    child: Text(
-                      '$count',
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(
+                        begin: count.toDouble(),
+                        end: count.toDouble(),
                       ),
+                      duration: const Duration(milliseconds: 200),
+                      builder: (context, value, child) {
+                        return Text(
+                          '${value.round()}',
+                          style: TextStyle(
+                            fontSize: 42,
+                            fontWeight: FontWeight.w900,
+                            color: selected
+                                ? Colors.deepPurple.shade700
+                                : Colors.grey.shade700,
+                            letterSpacing: -1.5,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
-                _NumberButton(icon: Icons.add, onTap: () => onIncrement()),
+                _NumberButton(
+                  icon: Icons.add_rounded,
+                  onTap: onIncrement,
+                  enabled: count < 10,
+                ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerRight,
               child: Text(
                 '0–10',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey.shade600,
+                  color: Colors.grey.shade500,
+                  fontWeight: FontWeight.w600,
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -2316,24 +2476,52 @@ class _SummaryStepState extends ConsumerState<_SummaryStep> {
 
 // ---------------------- Small UI Helpers ----------------------
 class _NumberButton extends StatelessWidget {
-  const _NumberButton({required this.icon, required this.onTap});
+  const _NumberButton({
+    required this.icon,
+    required this.onTap,
+    this.enabled = true,
+  });
   final IconData icon;
   final VoidCallback onTap;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
-    return InkResponse(
-      onTap: onTap,
-      radius: 28,
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: Colors.blue.shade50,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.blue.shade100),
+    return AnimatedOpacity(
+      opacity: enabled ? 1.0 : 0.4,
+      duration: const Duration(milliseconds: 150),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          borderRadius: BorderRadius.circular(16),
+          splashColor: Colors.deepPurple.withValues(alpha: 0.2),
+          highlightColor: Colors.deepPurple.withValues(alpha: 0.1),
+          child: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: enabled
+                    ? [Colors.deepPurple.shade400, Colors.deepPurple.shade600]
+                    : [Colors.grey.shade300, Colors.grey.shade400],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: enabled
+                  ? [
+                      BoxShadow(
+                        color: Colors.deepPurple.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : [],
+            ),
+            child: Icon(icon, color: Colors.white, size: 28),
+          ),
         ),
-        child: Icon(icon, color: Colors.blue),
       ),
     );
   }
