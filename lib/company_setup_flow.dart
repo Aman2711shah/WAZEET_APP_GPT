@@ -3,180 +3,194 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wazeet/utils/industry_loader.dart';
 import 'package:wazeet/services/openai_service.dart';
+import 'package:wazeet/services/freezone_package_service.dart';
+import 'package:wazeet/models/freezone_package.dart';
+import 'package:wazeet/services/freezone_service.dart';
+import 'package:wazeet/pages/package_recommendations_page.dart';
+
+// AI-based recommender removed; pricing will be handled by backend service
 
 // =============================================================
-// Company Setup Flow (Single-file implementation)
-// - Model: SetupData
-// - State: Riverpod StateNotifier for data; separate step index
-// - UI: PageView-based wizard with gradient header + bottom controls
+// State Management
 // =============================================================
 
-// ---------------------- Model ----------------------
-class SetupData {
+class CompanySetupData {
   final List<String> businessActivities;
-  final int shareholdersCount; // 1..10
-  final int visaCount; // 0..10
-  final int licenseTenureYears; // 1/2/3
-  final String entityType; // 'LLC' | 'FZ-LLC' | 'Sole Proprietor'
-  final String emirate; // Selected emirate
-  final String recommendedZone; // computed/dummy
-  final String visaType; // 'Employment' | 'Investor' | '' (unset)
+  final int shareholdersCount;
+  // Aggregate visa count (sum of employment + investor)
+  final int visaCount;
+  // Derived type: 'Employment', 'Investor', 'Mixed', or '' (none)
+  final String visaType;
+  final int licenseTenureYears;
+  final String entityType;
+  final String emirate;
+  // New individual visa counts
+  final int employmentVisaCount;
+  final int investorVisaCount;
+  // New fields: office space type & jurisdiction type
+  final String officeSpaceType; // e.g., Flexi Desk, Private Office
+  final String jurisdictionType; // e.g., Free Zone, Mainland, Offshore
 
-  const SetupData({
+  CompanySetupData({
     this.businessActivities = const [],
     this.shareholdersCount = 1,
     this.visaCount = 0,
+    this.visaType = '',
     this.licenseTenureYears = 1,
     this.entityType = '',
     this.emirate = '',
-    this.recommendedZone = '',
-    this.visaType = '',
+    this.employmentVisaCount = 0,
+    this.investorVisaCount = 0,
+    this.officeSpaceType = '',
+    this.jurisdictionType = '',
   });
 
-  SetupData copyWith({
+  CompanySetupData copyWith({
     List<String>? businessActivities,
     int? shareholdersCount,
     int? visaCount,
+    String? visaType,
     int? licenseTenureYears,
     String? entityType,
     String? emirate,
-    String? recommendedZone,
-    String? visaType,
+    int? employmentVisaCount,
+    int? investorVisaCount,
+    String? officeSpaceType,
+    String? jurisdictionType,
   }) {
-    return SetupData(
+    return CompanySetupData(
       businessActivities: businessActivities ?? this.businessActivities,
       shareholdersCount: shareholdersCount ?? this.shareholdersCount,
       visaCount: visaCount ?? this.visaCount,
+      visaType: visaType ?? this.visaType,
       licenseTenureYears: licenseTenureYears ?? this.licenseTenureYears,
       entityType: entityType ?? this.entityType,
       emirate: emirate ?? this.emirate,
-      recommendedZone: recommendedZone ?? this.recommendedZone,
-      visaType: visaType ?? this.visaType,
+      employmentVisaCount: employmentVisaCount ?? this.employmentVisaCount,
+      investorVisaCount: investorVisaCount ?? this.investorVisaCount,
+      officeSpaceType: officeSpaceType ?? this.officeSpaceType,
+      jurisdictionType: jurisdictionType ?? this.jurisdictionType,
     );
   }
 }
 
-// ---------------------- Dummy Data ----------------------
-const kActivities = <String>[
-  'E-commerce',
-  'Consulting',
-  'Marketing',
-  'Logistics',
-  'Technology',
-  'Education',
-  'Healthcare',
-  'Real Estate',
-  'Hospitality',
-  'Manufacturing',
-  'Import/Export',
-];
-
-class EntityOption {
-  final String key;
-  final String label;
-  final String description;
-  const EntityOption(this.key, this.label, this.description);
-}
-
-const kEntityOptions = <EntityOption>[
-  EntityOption('LLC', 'LLC', 'Limited liability, versatile for most SMEs.'),
-  EntityOption(
-    'FZ-LLC',
-    'FZ-LLC',
-    'Free zone LLC, simplified setup and 100% ownership.',
-  ),
-  EntityOption(
-    'Sole Proprietor',
-    'Sole Proprietor',
-    'Single owner, simplest structure.',
-  ),
-];
-
-// ---------------------- State Notifiers ----------------------
-class SetupController extends StateNotifier<SetupData> {
-  SetupController() : super(const SetupData());
+class CompanySetupController extends StateNotifier<CompanySetupData> {
+  CompanySetupController() : super(CompanySetupData());
 
   void toggleActivity(String activity) {
-    final current = [...state.businessActivities];
-    if (current.contains(activity)) {
-      current.remove(activity);
+    final activities = List<String>.from(state.businessActivities);
+    if (activities.contains(activity)) {
+      activities.remove(activity);
     } else {
-      // Limit to maximum 5 activities
-      if (current.length < 5) {
-        current.add(activity);
+      if (activities.length < 5) {
+        activities.add(activity);
       }
     }
-    state = state.copyWith(businessActivities: current);
+    state = state.copyWith(businessActivities: activities);
   }
 
-  void setShareholdersCount(int v) {
-    final clamped = v.clamp(1, 10);
-    state = state.copyWith(shareholdersCount: clamped);
+  void setShareholdersCount(int count) {
+    if (count >= 1 && count <= 10) {
+      state = state.copyWith(shareholdersCount: count);
+    }
   }
 
-  void setVisaCount(int v) {
-    final clamped = v.clamp(0, 10);
-    state = state.copyWith(visaCount: clamped);
-  }
-
-  void setLicenseTenureYears(int v) {
-    final clamped = v.clamp(1, 3);
-    state = state.copyWith(licenseTenureYears: clamped);
-  }
-
-  void setEntityType(String entity) {
-    state = state.copyWith(entityType: entity);
-  }
-
-  void setEmirate(String emirate) {
-    state = state.copyWith(emirate: emirate);
+  void setVisaCount(int count) {
+    if (count >= 0 && count <= 50) {
+      state = state.copyWith(visaCount: count);
+    }
   }
 
   void setVisaType(String type) {
     state = state.copyWith(visaType: type);
   }
 
-  // Dummy recommender logic
-  void computeRecommendation() {
-    final acts = state.businessActivities.map((e) => e.toLowerCase()).toList();
-    String zone;
-    if (acts.contains('e-commerce') || acts.contains('ecommerce')) {
-      zone = 'IFZA Accelerator E-commerce';
-    } else if (acts.contains('consulting')) {
-      zone = 'ADGM Professional Services';
-    } else if (acts.contains('technology')) {
-      zone = 'DTEC Tech Hub';
-    } else {
-      zone = 'RAKEZ Business Hub';
+  // New independent visa counters. Each clamped 0–10.
+  void setEmploymentVisaCount(int count) {
+    if (count < 0 || count > 10) return;
+    final newTotal = count + state.investorVisaCount;
+    final newType = newTotal == 0
+        ? ''
+        : (count > 0 && state.investorVisaCount > 0
+              ? 'Mixed'
+              : (count > 0
+                    ? 'Employment'
+                    : (state.investorVisaCount > 0 ? 'Investor' : '')));
+    state = state.copyWith(
+      employmentVisaCount: count,
+      visaCount: newTotal,
+      visaType: newType,
+    );
+  }
+
+  void setInvestorVisaCount(int count) {
+    if (count < 0 || count > 10) return;
+    final newTotal = state.employmentVisaCount + count;
+    final newType = newTotal == 0
+        ? ''
+        : (state.employmentVisaCount > 0 && count > 0
+              ? 'Mixed'
+              : (count > 0
+                    ? 'Investor'
+                    : (state.employmentVisaCount > 0 ? 'Employment' : '')));
+    state = state.copyWith(
+      investorVisaCount: count,
+      visaCount: newTotal,
+      visaType: newType,
+    );
+  }
+
+  void setLicenseTenureYears(int years) {
+    if (years >= 1 && years <= 3) {
+      state = state.copyWith(licenseTenureYears: years);
     }
-    state = state.copyWith(recommendedZone: zone);
+  }
+
+  void setEntityType(String type) {
+    state = state.copyWith(entityType: type);
+  }
+
+  void setEmirate(String emirate) {
+    state = state.copyWith(emirate: emirate);
+  }
+
+  void setOfficeSpaceType(String type) {
+    state = state.copyWith(officeSpaceType: type);
+  }
+
+  void setJurisdictionType(String type) {
+    state = state.copyWith(jurisdictionType: type);
   }
 }
 
-final setupProvider = StateNotifierProvider<SetupController, SetupData>((ref) {
-  return SetupController();
-});
+final setupProvider =
+    StateNotifierProvider<CompanySetupController, CompanySetupData>(
+      (ref) => CompanySetupController(),
+    );
 
-class StepIndexController extends StateNotifier<int> {
-  StepIndexController() : super(0);
-  void next(int maxIndex) {
-    if (state < maxIndex) state = state + 1;
-  }
+// Entity type options
+const kEntityOptions = [
+  {
+    'key': 'FZ-LLC',
+    'label': 'Free Zone LLC',
+    'desc': 'Limited Liability Company',
+  },
+  {
+    'key': 'FZ-EST',
+    'label': 'Free Zone Establishment',
+    'desc': 'Sole Proprietorship',
+  },
+  {
+    'key': 'BRANCH',
+    'label': 'Branch Office',
+    'desc': 'Branch of existing company',
+  },
+];
 
-  void prev() {
-    if (state > 0) state = state - 1;
-  }
+// =============================================================
+// Main Company Setup Flow Widget
+// =============================================================
 
-  void jumpTo(int index) => state = index;
-}
-
-final stepIndexProvider = StateNotifierProvider<StepIndexController, int>((
-  ref,
-) {
-  return StepIndexController();
-});
-
-// ---------------------- UI Root ----------------------
 class CompanySetupFlow extends ConsumerStatefulWidget {
   const CompanySetupFlow({super.key});
 
@@ -185,194 +199,106 @@ class CompanySetupFlow extends ConsumerStatefulWidget {
 }
 
 class _CompanySetupFlowState extends ConsumerState<CompanySetupFlow> {
-  static const _totalSteps =
-      8; // 0..7 (Activities, Shareholders, Visa, Tenure, Entity, Emirate, Recommender, Summary)
-  final _pageController = PageController();
-  String _activityQuery = '';
-  Timer? _debounceTimer;
-  String _pendingQuery = '';
+  int _currentStep = 0;
+  String _searchQuery = '';
 
-  void _onSearchChanged(String value) {
-    _pendingQuery = value;
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-      if (mounted) {
-        setState(() {
-          _activityQuery = _pendingQuery;
-        });
-      }
-    });
+  final List<String> _stepTitles = [
+    'Business Activities',
+    'Shareholders',
+    'Visa Requirements',
+    'Emirate',
+    'AI Recommendations',
+    'Summary',
+  ];
+
+  void _nextStep() {
+    if (_currentStep < _stepTitles.length - 1) {
+      setState(() => _currentStep++);
+    }
   }
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    _debounceTimer?.cancel();
-    super.dispose();
+  void _previousStep() {
+    if (_currentStep > 0) {
+      setState(() => _currentStep--);
+    }
   }
 
-  bool _isCurrentStepValid(SetupData data, int step) {
-    switch (step) {
+  Widget _buildCurrentStep() {
+    switch (_currentStep) {
       case 0:
-        return data.businessActivities.isNotEmpty;
+        return _ActivitiesStep(
+          query: _searchQuery,
+          onQueryChanged: (q) => setState(() => _searchQuery = q),
+        );
       case 1:
-        return data.shareholdersCount >= 1 && data.shareholdersCount <= 10;
+        return _ShareholdersStep();
       case 2:
-        final baseValid = data.visaCount >= 0 && data.visaCount <= 10;
-        // If user requests visa slots, require explicit visa type selection
-        if (baseValid && data.visaCount > 0) {
-          return data.visaType.isNotEmpty;
-        }
-        return baseValid;
+        return _VisaStep();
       case 3:
-        return data.licenseTenureYears >= 1 && data.licenseTenureYears <= 3;
+        return _EmirateStep();
       case 4:
-        return data.entityType.isNotEmpty;
+        return const _RecommenderStep();
       case 5:
-        return data.emirate.isNotEmpty;
-      case 6:
-        return true; // Recommender screen always passable
-      case 7:
-        return true; // Summary: Complete is always enabled
+        return _SummaryStep(onComplete: () => Navigator.pop(context));
       default:
-        return false;
+        return const Center(child: Text('Unknown step'));
     }
-  }
-
-  void _goNext(int step) {
-    if (step == 4) {
-      // Compute recommendation before entering step 5
-      ref.read(setupProvider.notifier).computeRecommendation();
-    }
-    final maxIndex = _totalSteps - 1;
-    ref.read(stepIndexProvider.notifier).next(maxIndex);
-    _pageController.animateToPage(
-      ref.read(stepIndexProvider),
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOut,
-    );
-  }
-
-  void _goBack() {
-    ref.read(stepIndexProvider.notifier).prev();
-    _pageController.animateToPage(
-      ref.read(stepIndexProvider),
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOut,
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final step = ref.watch(stepIndexProvider);
-    final data = ref.watch(setupProvider);
-    final theme = Theme.of(context);
-
-    final progress = (step + 1) / _totalSteps;
-    final isValid = _isCurrentStepValid(data, step);
+    final progress = (_currentStep + 1) / _stepTitles.length;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        title: const Text(
-          'Company Setup',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-      ),
       body: Column(
         children: [
           _Header(
-            title: _stepTitle(step),
+            title: _stepTitles[_currentStep],
             progress: progress,
-            accent: theme.colorScheme.primary,
+            accent: Colors.deepPurple,
           ),
-          // Steps content
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _ActivitiesStep(
-                  query: _activityQuery,
-                  onQueryChanged: _onSearchChanged,
-                ),
-                _ShareholdersStep(),
-                _VisaStep(),
-                _TenureStep(),
-                _EntityStep(),
-                _EmirateStep(),
-                _RecommenderStep(),
-                _SummaryStep(
-                  onComplete: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Setup complete')),
-                    );
-                  },
+          Expanded(child: _buildCurrentStep()),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, -2),
                 ),
               ],
             ),
-          ),
-          // Bottom controls
-          SafeArea(
-            top: false,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
+            child: SafeArea(
+              top: false,
               child: Row(
                 children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: step > 0
-                          ? _goBack
-                          : () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  if (_currentStep > 0)
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _previousStep,
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
+                        child: const Text('Back'),
                       ),
-                      child: const Text('Back'),
                     ),
-                  ),
-                  const SizedBox(width: 12),
+                  if (_currentStep > 0) const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: isValid
-                          ? () {
-                              if (step < _totalSteps - 1) {
-                                _goNext(step);
-                              } else {
-                                // Complete on last step
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Setup complete'),
-                                  ),
-                                );
-                              }
-                            }
-                          : null,
+                      onPressed: _currentStep == _stepTitles.length - 1
+                          ? () => Navigator.pop(context)
+                          : _nextStep,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: Colors.deepPurple,
                         foregroundColor: Colors.white,
-                        minimumSize: const Size.fromHeight(48),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
                       ),
                       child: Text(
-                        step == _totalSteps - 1 ? 'Complete Setup' : 'Next',
+                        _currentStep == _stepTitles.length - 1
+                            ? 'Finish'
+                            : 'Continue',
                       ),
                     ),
                   ),
@@ -386,44 +312,20 @@ class _CompanySetupFlowState extends ConsumerState<CompanySetupFlow> {
   }
 }
 
-String _stepTitle(int step) {
-  switch (step) {
-    case 0:
-      return 'Business Activities';
-    case 1:
-      return 'Shareholders';
-    case 2:
-      return 'Visa Requirements';
-    case 3:
-      return 'License Tenure';
-    case 4:
-      return 'Legal Entity Type';
-    case 5:
-      return 'Select Emirate';
-    case 6:
-      return 'Smart Recommender';
-    case 7:
-      return 'Summary';
-    default:
-      return 'Company Setup';
-  }
-}
+// =============================================================
+// AI Recommender step removed; pricing and recommendations will be handled
+// by backend. Summary step will later display fetched pricing and options.
 
-// ---------------------- Steps ----------------------
-
-/// Filter activities by multiple keywords (supports 3-4 keywords)
-/// Each keyword is searched in both name and description
 List<ActivityData> _filterByKeywords(
   List<ActivityData> activities,
   String query,
 ) {
-  if (query.trim().isEmpty) {
+  final queryLower = query.toLowerCase().trim();
+
+  if (queryLower.isEmpty) {
     return activities;
   }
 
-  final queryLower = query.toLowerCase().trim();
-
-  // Split query into keywords (by spaces)
   final keywords = queryLower
       .split(RegExp(r'\s+'))
       .where((k) => k.length > 1) // Skip single characters for performance
@@ -904,7 +806,7 @@ class _TintedSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.deepPurple.shade50,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.deepPurple.withValues(alpha: 0.15)),
+        border: Border.all(color: Colors.deepPurple.withOpacity(0.15)),
       ),
       child: child,
     );
@@ -1129,69 +1031,72 @@ class _VisaStep extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'How many resident visa slots do you need? (0–10)',
+            'Adjust visa slots needed per type (0–10 each).',
             style: TextStyle(color: Colors.grey.shade700),
           ),
           const SizedBox(height: 20),
-          Row(
-            children: [
-              _NumberButton(
-                icon: Icons.remove,
-                onTap: () => controller.setVisaCount(data.visaCount - 1),
-              ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    '${data.visaCount}',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
+          // Employment Visa Card
+          _VisaCounterCard(
+            title: 'Employment Visa',
+            subtitle: 'For employees and managers hired by the company.',
+            count: data.employmentVisaCount,
+            onIncrement: () =>
+                controller.setEmploymentVisaCount(data.employmentVisaCount + 1),
+            onDecrement: () =>
+                controller.setEmploymentVisaCount(data.employmentVisaCount - 1),
+          ),
+          const SizedBox(height: 12),
+          // Investor Visa Card
+          _VisaCounterCard(
+            title: 'Investor Visa',
+            subtitle: 'For shareholders/owners with qualifying share capital.',
+            count: data.investorVisaCount,
+            onIncrement: () =>
+                controller.setInvestorVisaCount(data.investorVisaCount + 1),
+            onDecrement: () =>
+                controller.setInvestorVisaCount(data.investorVisaCount - 1),
+          ),
+          const SizedBox(height: 20),
+          // Total row
+          Card(
+            elevation: 0,
+            color: Colors.deepPurple.shade50,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.format_list_numbered,
+                    color: Colors.deepPurple,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Total Visa Slots',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.deepPurple.shade700,
+                      ),
                     ),
                   ),
-                ),
+                  Text(
+                    '${data.visaCount}',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.deepPurple.shade800,
+                    ),
+                  ),
+                ],
               ),
-              _NumberButton(
-                icon: Icons.add,
-                onTap: () => controller.setVisaCount(data.visaCount + 1),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (data.visaCount < 0 || data.visaCount > 10)
-            const Text(
-              'Enter a value between 0 and 10',
-              style: TextStyle(color: Colors.red),
             ),
-          const SizedBox(height: 16),
-          const Text(
-            'Select Visa Type',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
-          const SizedBox(height: 8),
-          Column(
-            children: [
-              _VisaTypeCard(
-                title: 'Employment Visa',
-                subtitle: 'For employees and managers hired by the company.',
-                selected: data.visaType == 'Employment',
-                onTap: () => controller.setVisaType('Employment'),
-              ),
-              const SizedBox(height: 8),
-              _VisaTypeCard(
-                title: 'Investor Visa',
-                subtitle:
-                    'For shareholders/owners with qualifying share capital.',
-                selected: data.visaType == 'Investor',
-                onTap: () => controller.setVisaType('Investor'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (data.visaCount > 0 && data.visaType.isEmpty)
-            const Text(
-              'Please select a visa type to proceed.',
-              style: TextStyle(color: Colors.red),
-            ),
+          const SizedBox(height: 20),
+          // Office Space & Jurisdiction dropdowns
+          _OfficeAndJurisdictionSection(data: data, controller: controller),
           Theme(
             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
@@ -1202,18 +1107,21 @@ class _VisaStep extends ConsumerWidget {
                 right: 8,
               ),
               children: [
-                if (data.visaType.isEmpty)
+                if (data.employmentVisaCount == 0 &&
+                    data.investorVisaCount == 0)
                   const Text(
-                    'Select a visa type above to see tailored steps. In general, the process includes an entry permit, medical exam, Emirates ID biometrics, and visa stamping. Details vary by free zone.',
+                    'Add visa slots above to view tailored steps. In general, the process includes an entry permit, medical exam, Emirates ID biometrics, and visa stamping. Details vary by free zone.',
                   )
-                else if (data.visaType == 'Investor')
-                  const Text(
-                    'Investor Visa overview:\n\n• Entry Permit issuance (e-visa)\n• Establishment Card & shareholding verification\n• Medical examination\n• Emirates ID biometrics\n• Visa stamping (or e-visa activation)\n\nNotes: Investor visas may have different minimum share capital requirements and may not require a labor contract. Timelines vary by authority.',
-                  )
-                else
-                  const Text(
-                    'Employment Visa overview:\n\n• Entry Permit issuance (e-visa)\n• Optional status change (if inside UAE)\n• Medical examination\n• Emirates ID biometrics\n• Labor contract (mainland) or equivalent free zone process\n• Visa stamping (or e-visa activation)\n\nTypical duration is 5–10 working days post company setup. Exact steps vary by free zone.',
-                  ),
+                else ...[
+                  if (data.investorVisaCount > 0)
+                    const Text(
+                      'Investor Visa overview:\n\n• Entry Permit issuance (e-visa)\n• Establishment Card & shareholding verification\n• Medical examination\n• Emirates ID biometrics\n• Visa stamping (or e-visa activation)\n\nNotes: Investor visas may have different minimum share capital requirements and may not require a labor contract. Timelines vary by authority.\n',
+                    ),
+                  if (data.employmentVisaCount > 0)
+                    const Text(
+                      'Employment Visa overview:\n\n• Entry Permit issuance (e-visa)\n• Optional status change (if inside UAE)\n• Medical examination\n• Emirates ID biometrics\n• Labor contract (mainland) or equivalent free zone process\n• Visa stamping (or e-visa activation)\n\nTypical duration is 5–10 working days post company setup. Exact steps vary by free zone.',
+                    ),
+                ],
               ],
             ),
           ),
@@ -1223,190 +1131,309 @@ class _VisaStep extends ConsumerWidget {
   }
 }
 
-// ---- Visa type card ----
-class _VisaTypeCard extends StatelessWidget {
+// New reusable card with +/- counter for visa types
+class _VisaCounterCard extends StatelessWidget {
   final String title;
   final String subtitle;
-  final bool selected;
-  final VoidCallback onTap;
-  const _VisaTypeCard({
+  final int count;
+  final VoidCallback onIncrement;
+  final VoidCallback onDecrement;
+  const _VisaCounterCard({
     required this.title,
     required this.subtitle,
-    required this.selected,
-    required this.onTap,
+    required this.count,
+    required this.onIncrement,
+    required this.onDecrement,
   });
 
   @override
   Widget build(BuildContext context) {
+    final selected = count > 0;
     final borderColor = selected
         ? Colors.deepPurple.shade700
         : Colors.grey.shade300;
-    final iconColor = selected
-        ? Colors.deepPurple.shade700
-        : Colors.grey.shade400;
-
     return Card(
       elevation: selected ? 2 : 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: borderColor, width: selected ? 2 : 1),
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                selected ? Icons.check_circle : Icons.radio_button_unchecked,
-                color: iconColor,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  selected ? Icons.check_circle : Icons.radio_button_unchecked,
+                  color: selected
+                      ? Colors.deepPurple.shade700
+                      : Colors.grey.shade400,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: TextStyle(color: Colors.grey.shade700),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _NumberButton(icon: Icons.remove, onTap: () => onDecrement()),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      '$count',
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(color: Colors.grey.shade700),
-                    ),
-                  ],
+                  ),
+                ),
+                _NumberButton(icon: Icons.add, onTap: () => onIncrement()),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                '0–10',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                  fontStyle: FontStyle.italic,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _TenureStep extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final data = ref.watch(setupProvider);
-    final controller = ref.read(setupProvider.notifier);
+class _OfficeAndJurisdictionSection extends StatelessWidget {
+  final CompanySetupData data;
+  final CompanySetupController controller;
+  const _OfficeAndJurisdictionSection({
+    required this.data,
+    required this.controller,
+  });
 
-    int selected = data.licenseTenureYears;
+  // Office space type descriptions
+  static const Map<String, String> _officeDescriptions = {
+    'Co-Working / Flexi-desk':
+        'Shared workspace with flexible desk arrangements. Ideal for freelancers and small teams. Cost-effective with access to common amenities.',
+    'Physical Office':
+        'Traditional private office space for your business. Full control over your workspace with dedicated amenities.',
+    'Dedicated Office':
+        'A private, enclosed office space exclusively for your team. Professional environment with more privacy than co-working.',
+    'Dedicated 1 Desk':
+        'A single dedicated desk in a shared office environment. Perfect for solo entrepreneurs or remote workers needing a professional address.',
+  };
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: ListView(
-        children: [
-          const Text(
-            'License Tenure',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+  // Jurisdiction descriptions
+  static const Map<String, String> _jurisdictionDescriptions = {
+    'Mainland':
+        'Mainland UAE companies can trade freely within the UAE and internationally. Requires a local service agent or sponsor. Suitable for businesses targeting the local market.',
+    'Freezone':
+        'Free zones offer 100% foreign ownership, tax exemptions, and simplified setup. Ideal for international businesses. Some restrictions on trading within UAE mainland.',
+    'Not sure':
+        'Not sure which is best? We\'ll help you choose based on your business activities, target market, and expansion plans.',
+  };
+
+  void _showInfoDialog(BuildContext context, String title, String description) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.info_outline, color: Colors.deepPurple.shade600),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          description,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey.shade800,
+            height: 1.5,
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Choose for how many years you want the license (1–3).',
-            style: TextStyle(color: Colors.grey.shade700),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Got it'),
           ),
-          const SizedBox(height: 12),
-          // Migrate to RadioGroup API: manages selection and change handling
-          RadioGroup<int>(
-            groupValue: selected,
-            onChanged: (v) => controller.setLicenseTenureYears(v ?? 1),
-            child: Column(
+        ],
+      ),
+    );
+  }
+
+  Widget buildDropdown({
+    required BuildContext context,
+    required String label,
+    required List<String> items,
+    required String value,
+    required ValueChanged<String?> onChanged,
+    required Map<String, String> descriptions,
+    IconData icon = Icons.arrow_drop_down_circle,
+  }) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.deepPurple.withOpacity(0.25)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                ...[1, 2, 3].map(
-                  (y) => RadioListTile<int>(
-                    value: y,
-                    title: Text('$y year${y > 1 ? 's' : ''}'),
+                Icon(icon, color: Colors.deepPurple.shade400, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
                   ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.help_outline,
+                    color: Colors.deepPurple.shade400,
+                    size: 20,
+                  ),
+                  onPressed: () {
+                    _showInfoDialog(
+                      context,
+                      label,
+                      'Tap any option below to see details about it.',
+                    );
+                  },
+                  tooltip: 'Info about $label options',
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EntityStep extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final data = ref.watch(setupProvider);
-    final controller = ref.read(setupProvider.notifier);
-
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: ListView(
-        children: [
-          const Text(
-            'Legal Entity Type',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Select a structure. You can change this later.',
-            style: TextStyle(color: Colors.grey.shade700),
-          ),
-          const SizedBox(height: 12),
-          ...kEntityOptions.map((opt) {
-            final selected = data.entityType == opt.key;
-            return Card(
-              elevation: selected ? 2 : 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () => controller.setEntityType(opt.key),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        selected
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_unchecked,
-                        color: selected ? Colors.blue : Colors.grey,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              opt.label,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(opt.description),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+            const SizedBox(height: 4),
+            DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                isExpanded: true,
+                value: value.isEmpty ? null : value,
+                hint: Text(
+                  'Select $label',
+                  style: TextStyle(color: Colors.grey.shade600),
                 ),
-              ),
-            );
-          }),
-          if (data.entityType.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text(
-                'Please choose an entity type to proceed.',
-                style: TextStyle(color: Colors.red),
+                items: items.map((e) {
+                  return DropdownMenuItem<String>(
+                    value: e,
+                    child: Row(
+                      children: [
+                        Expanded(child: Text(e)),
+                        if (descriptions.containsKey(e))
+                          IconButton(
+                            icon: Icon(
+                              Icons.info_outline,
+                              color: Colors.grey.shade600,
+                              size: 18,
+                            ),
+                            onPressed: () {
+                              _showInfoDialog(context, e, descriptions[e]!);
+                            },
+                            tooltip: 'Info about $e',
+                          ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: onChanged,
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }
+
+  @override
+  Widget build(BuildContext context) {
+    final officeOptions = [
+      'Co-Working / Flexi-desk',
+      'Physical Office',
+      'Dedicated Office',
+      'Dedicated 1 Desk',
+    ];
+    final jurisdictionOptions = ['Mainland', 'Freezone', 'Not sure'];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Location & Space Preferences',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: Colors.grey.shade800,
+          ),
+        ),
+        const SizedBox(height: 12),
+        buildDropdown(
+          context: context,
+          label: 'Type of Office Space',
+          items: officeOptions,
+          value: data.officeSpaceType,
+          onChanged: (v) => controller.setOfficeSpaceType(v ?? ''),
+          descriptions: _officeDescriptions,
+          icon: Icons.meeting_room,
+        ),
+        const SizedBox(height: 12),
+        buildDropdown(
+          context: context,
+          label: 'Type of Jurisdiction',
+          items: jurisdictionOptions,
+          value: data.jurisdictionType,
+          onChanged: (v) => controller.setJurisdictionType(v ?? ''),
+          descriptions: _jurisdictionDescriptions,
+          icon: Icons.public,
+        ),
+      ],
+    );
+  }
 }
+
+// _TenureStep removed: license period default retained internally (1 year).
+// _EntityStep removed: Entity Type selection step removed from flow.
 
 class _EmirateStep extends ConsumerWidget {
   @override
@@ -1510,6 +1537,8 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
   String? _aiRecommendation;
   bool _isLoading = false;
   String? _error;
+  Map<String, List<FreezonePackage>> _freezonePricing = {};
+  final _packageService = FreezonePackageService();
 
   @override
   void initState() {
@@ -1531,6 +1560,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
     try {
       final data = ref.read(setupProvider);
 
+      // Fetch AI recommendations
       final recommendation = await OpenAIService.getFreezoneRecommendations(
         businessActivities: data.businessActivities,
         shareholdersCount: data.shareholdersCount,
@@ -1539,6 +1569,9 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
         entityType: data.entityType,
         emirate: data.emirate,
       );
+
+      // Extract freezone names from AI recommendation and fetch real pricing
+      await _fetchPricingData(recommendation, data.emirate);
 
       if (mounted) {
         setState(() {
@@ -1554,6 +1587,64 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
         });
       }
     }
+  }
+
+  Future<void> _fetchPricingData(String recommendation, String emirate) async {
+    try {
+      // Extract freezone names from the recommendation text
+      final freezoneNames = _extractFreezoneNames(recommendation);
+
+      // Fetch pricing for each freezone from Firebase
+      for (final freezoneName in freezoneNames) {
+        final packages = await _packageService
+            .getPackagesForFreezone(freezoneName)
+            .first
+            .timeout(const Duration(seconds: 5));
+
+        if (packages.isNotEmpty) {
+          _freezonePricing[freezoneName] = packages;
+        }
+      }
+
+      // If no specific matches, try to fetch packages by emirate
+      if (_freezonePricing.isEmpty && emirate.isNotEmpty) {
+        debugPrint(
+          'No freezone-specific pricing found, fetching by emirate: $emirate',
+        );
+        // You could add emirate-based fetching here if needed
+      }
+    } catch (e) {
+      debugPrint('Error fetching pricing data: $e');
+    }
+  }
+
+  List<String> _extractFreezoneNames(String recommendation) {
+    final names = <String>[];
+
+    // Common UAE Freezone patterns
+    final patterns = [
+      'DMCC',
+      'IFZA',
+      'RAKEZ',
+      'Dubai Silicon Oasis',
+      'SHAMS',
+      'SAIF Zone',
+      'Ajman Free Zone',
+      'Fujairah Free Zone',
+      'RAK',
+      'JAFZA',
+      'DAFZA',
+      'DIFC',
+      'ADGM',
+    ];
+
+    for (final pattern in patterns) {
+      if (recommendation.contains(pattern)) {
+        names.add(pattern);
+      }
+    }
+
+    return names.toSet().toList(); // Remove duplicates
   }
 
   @override
@@ -1623,14 +1714,29 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
                     data.businessActivities.join(', '),
                   ),
                   _buildInfoRow('Shareholders', '${data.shareholdersCount}'),
-                  _buildInfoRow('Visas', '${data.visaCount}'),
-                  _buildInfoRow('Visa Type', data.visaType),
+                  _buildInfoRow(
+                    'Employment Visas',
+                    '${data.employmentVisaCount}',
+                  ),
+                  _buildInfoRow('Investor Visas', '${data.investorVisaCount}'),
+                  _buildInfoRow('Total Visas', '${data.visaCount}'),
+                  _buildInfoRow(
+                    'Visa Mix',
+                    data.visaType.isEmpty ? '-' : data.visaType,
+                  ),
                   _buildInfoRow(
                     'License Period',
                     '${data.licenseTenureYears} year(s)',
                   ),
-                  _buildInfoRow('Entity Type', data.entityType),
                   _buildInfoRow('Emirate', data.emirate),
+                  _buildInfoRow(
+                    'Office Space',
+                    data.officeSpaceType.isEmpty ? '-' : data.officeSpaceType,
+                  ),
+                  _buildInfoRow(
+                    'Jurisdiction',
+                    data.jurisdictionType.isEmpty ? '-' : data.jurisdictionType,
+                  ),
                 ],
               ),
             ),
@@ -1761,7 +1867,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -1941,12 +2047,39 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
     ).firstMatch(title);
     final zoneName = zoneMatch?.group(1) ?? title;
 
-    final priceMatch = RegExp(
-      r'AED\s+([\d,]+)\s*-\s*([\d,]+)',
-    ).firstMatch(content);
-    final priceRange = priceMatch != null
-        ? 'AED ${priceMatch.group(1)} - ${priceMatch.group(2)}'
-        : null;
+    // Try to get real Firebase pricing for this freezone
+    String? priceRange;
+    List<FreezonePackage>? packages;
+
+    // Check if we have pricing data for this freezone
+    for (final entry in _freezonePricing.entries) {
+      if (zoneName.toLowerCase().contains(entry.key.toLowerCase()) ||
+          entry.key.toLowerCase().contains(zoneName.toLowerCase())) {
+        packages = entry.value;
+        if (packages.isNotEmpty) {
+          // Get price range from actual packages
+          final prices =
+              packages.map((p) => double.tryParse(p.priceAed) ?? 0).toList()
+                ..sort();
+          final minPrice = prices.first.toInt();
+          final maxPrice = prices.last.toInt();
+          priceRange = prices.length > 1
+              ? 'AED ${_formatCurrency(minPrice)} - ${_formatCurrency(maxPrice)}'
+              : 'From AED ${_formatCurrency(minPrice)}';
+        }
+        break;
+      }
+    }
+
+    // Fallback to AI-provided price if no Firebase data
+    if (priceRange == null) {
+      final priceMatch = RegExp(
+        r'AED\s+([\d,]+)\s*-\s*([\d,]+)',
+      ).firstMatch(content);
+      priceRange = priceMatch != null
+          ? 'AED ${priceMatch.group(1)} - ${priceMatch.group(2)}'
+          : null;
+    }
 
     // Parse content into structured sections
     final lines = content.split('\n');
@@ -1980,6 +2113,16 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
       sections[currentKey] = currentValue.toString().trim();
     }
 
+    // Add real package details if available
+    if (packages != null && packages.isNotEmpty) {
+      final cheapestPackage = packages.first;
+      final price = double.tryParse(cheapestPackage.priceAed) ?? 0;
+      sections['✓ Live Pricing (from database)'] =
+          '${cheapestPackage.packageName}\n'
+          '• Activities: ${cheapestPackage.noOfActivitiesAllowed}\n'
+          '• Visas Included: ${cheapestPackage.noOfVisasIncluded}\n'
+          '• Price: AED ${_formatCurrency(price.toInt())}';
+    }
     return Card(
       elevation: 4,
       shadowColor: Colors.blue.shade100,
@@ -1988,7 +2131,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           gradient: LinearGradient(
-            colors: [Colors.white, Colors.blue.shade50.withValues(alpha: 0.3)],
+            colors: [Colors.white, Colors.blue.shade50.withOpacity(0.3)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -2016,10 +2159,10 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.3),
+                        color: Colors.white.withOpacity(0.3),
                         width: 2,
                       ),
                     ),
@@ -2055,7 +2198,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.1),
+                                  color: Colors.black.withOpacity(0.1),
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 ),
@@ -2123,7 +2266,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: iconColor.withValues(alpha: 0.1),
+                                color: iconColor.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(icon, color: iconColor, size: 20),
@@ -2176,7 +2319,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50.withValues(alpha: 0.5),
+                color: Colors.blue.shade50.withOpacity(0.5),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(18),
                   bottomRight: Radius.circular(18),
@@ -2320,7 +2463,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.3),
+                    color: Colors.white.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(Icons.star, color: Colors.white, size: 24),
@@ -2386,6 +2529,14 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
     );
   }
 
+  String _formatCurrency(int amount) {
+    // Format number with commas (e.g., 15000 -> 15,000)
+    return amount.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+  }
+
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -2411,12 +2562,84 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
   }
 }
 
-class _SummaryStep extends ConsumerWidget {
+class _SummaryStep extends ConsumerStatefulWidget {
   const _SummaryStep({required this.onComplete});
   final VoidCallback onComplete;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SummaryStep> createState() => _SummaryStepState();
+}
+
+class _SummaryStepState extends ConsumerState<_SummaryStep> {
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  /// Navigate to package recommendations screen
+  /// Calls FreeZoneService to get matching packages based on user selections
+  Future<void> _showRecommendations() async {
+    final data = ref.read(setupProvider);
+
+    // Validate required fields
+    if (data.officeSpaceType.isEmpty || data.jurisdictionType.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please complete all required fields (Office Type and Jurisdiction)',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Initialize the FreeZone service
+      final freezoneService = FreeZoneService();
+
+      // Call the service to get recommended packages
+      final packages = await freezoneService.getRecommendedPackages(
+        noOfActivities: data.businessActivities.length,
+        investorVisas: data.investorVisaCount,
+        managerVisas: 0, // Currently not tracked separately in UI
+        employmentVisas: data.employmentVisaCount,
+        officeType: data.officeSpaceType,
+        jurisdiction: data.jurisdictionType,
+      );
+
+      if (!mounted) return;
+
+      // Navigate to recommendations page
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => PackageRecommendationsPage(
+            packages: packages,
+            totalVisas: data.visaCount,
+            noOfActivities: data.businessActivities.length,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Failed to load packages: ${e.toString()}';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_errorMessage!), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final data = ref.watch(setupProvider);
 
     return Padding(
@@ -2436,41 +2659,76 @@ class _SummaryStep extends ConsumerWidget {
             title: 'Shareholders',
             value: '${data.shareholdersCount}',
           ),
-          _SummaryTile(title: 'Visa Slots', value: '${data.visaCount}'),
           _SummaryTile(
-            title: 'Visa Type',
+            title: 'Employment Visas',
+            value: '${data.employmentVisaCount}',
+          ),
+          _SummaryTile(
+            title: 'Investor Visas',
+            value: '${data.investorVisaCount}',
+          ),
+          _SummaryTile(title: 'Total Visa Slots', value: '${data.visaCount}'),
+          _SummaryTile(
+            title: 'Visa Mix',
             value: data.visaType.isEmpty ? '-' : data.visaType,
           ),
-          _SummaryTile(
-            title: 'License Tenure',
-            value: '${data.licenseTenureYears} year(s)',
-          ),
-          _SummaryTile(
-            title: 'Entity Type',
-            value: data.entityType.isEmpty ? '-' : data.entityType,
-          ),
+          _SummaryTile(title: 'License Tenure', value: 'Removed from flow'),
           _SummaryTile(
             title: 'Emirate',
             value: data.emirate.isEmpty ? '-' : data.emirate,
           ),
           _SummaryTile(
-            title: 'Recommended Zone',
-            value: data.recommendedZone.isEmpty ? '-' : data.recommendedZone,
+            title: 'Office Space',
+            value: data.officeSpaceType.isEmpty ? '-' : data.officeSpaceType,
+          ),
+          _SummaryTile(
+            title: 'Jurisdiction',
+            value: data.jurisdictionType.isEmpty ? '-' : data.jurisdictionType,
           ),
           const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: onComplete,
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+
+          // Show loading or error state
+          if (_isLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
               ),
+            )
+          else if (_errorMessage != null)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline, color: Colors.red.shade700),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _errorMessage!,
+                      style: TextStyle(color: Colors.red.shade700),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            ElevatedButton(
+              onPressed: _showRecommendations,
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('View Package Recommendations'),
             ),
-            child: const Text('Complete Setup'),
-          ),
           const SizedBox(height: 8),
           Text(
-            'You can go back to adjust anything before completing.',
+            'You can go back to adjust anything before viewing recommendations.',
             style: TextStyle(color: Colors.grey.shade700),
           ),
         ],

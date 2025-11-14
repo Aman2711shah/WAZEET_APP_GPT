@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/freezone.dart';
+import '../models/freezone_package_recommendation.dart';
 
 class FreeZoneService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -239,6 +240,132 @@ class FreeZoneService {
   void clearCache() {
     _cache.clear();
     _lastFetch = null;
+  }
+
+  /// Get recommended packages based on user requirements
+  ///
+  /// This method:
+  /// 1. Queries Firestore collection 'freezonePackages'
+  /// 2. Filters by jurisdiction (Freezone/Mainland) and office type
+  /// 3. Filters by visa eligibility (must support total visas requested)
+  /// 4. Filters by activities allowed (must support number of activities)
+  /// 5. Calculates total package cost including all fees
+  /// 6. Returns sorted list by total cost (cheapest first)
+  Future<List<FreezonePackageRecommendation>> getRecommendedPackages({
+    required int noOfActivities,
+    required int investorVisas,
+    required int managerVisas,
+    required int employmentVisas,
+    required String officeType, // e.g. "Co-Working/Flexi-desk"
+    required String jurisdiction, // e.g. "Freezone"
+  }) async {
+    final totalVisas = investorVisas + managerVisas + employmentVisas;
+
+    // Query Firestore for packages matching jurisdiction and office type
+    final snapshot = await _firestore
+        .collection('freezonePackages')
+        .where('jurisdiction', isEqualTo: jurisdiction)
+        .where('office_facility_requirements', isEqualTo: officeType)
+        .get();
+
+    // Helper: Convert Firestore values to numbers (handles "FREE", "TBD", etc. as 0)
+    double numValue(dynamic v) {
+      if (v == null) return 0;
+      if (v is int) return v.toDouble();
+      if (v is double) return v;
+      if (v is String) {
+        final clean = v.replaceAll(RegExp('[^0-9.]'), '');
+        if (clean.isEmpty) return 0;
+        return double.tryParse(clean) ?? 0;
+      }
+      return 0;
+    }
+
+    // Helper: Check if activities allowed meets requirement
+    bool activitiesOk(String allowedStr, int needed) {
+      final s = allowedStr.toLowerCase();
+      if (s.contains('upto')) return true;
+      if (s.contains('mix')) return true;
+      final n = int.tryParse(allowedStr) ?? needed;
+      return n >= needed;
+    }
+
+    final List<FreezonePackageRecommendation> result = [];
+
+    // Process each matching document
+    for (final doc in snapshot.docs) {
+      final data = doc.data();
+
+      // Filter: Check visa eligibility
+      final visaEligibility = (data['visa_eligibility'] ?? 0) as int;
+      if (visaEligibility < totalVisas) {
+        continue; // Skip if not enough visa quota
+      }
+
+      // Filter: Check activities allowed
+      final allowedStr = (data['no_of_activities_allowed_under_license'] ?? '')
+          .toString();
+      if (!activitiesOk(allowedStr, noOfActivities)) {
+        continue; // Skip if activities requirement not met
+      }
+
+      // Calculate costs
+      final licenseFee = numValue(data['license_cost_including_quota_fee']);
+      final visaInvestorCost =
+          numValue(data['visa_cost_investor']) * investorVisas;
+      final visaManagerCost =
+          numValue(data['visa_cost_manager']) * managerVisas;
+      final visaEmploymentCost =
+          numValue(data['visa_cost_employment']) * employmentVisas;
+
+      final establishmentCard = numValue(
+        data['immigration_establishment_card'],
+      );
+      final eChannel = numValue(data['e_channel_registration']);
+
+      final perPersonMedical = numValue(data['medical_cost']);
+      final perPersonEid = numValue(data['eid_cost']);
+      final medicalTotal = perPersonMedical * totalVisas;
+      final eidTotal = perPersonEid * totalVisas;
+
+      // Calculate total package cost
+      final totalCost =
+          licenseFee +
+          visaInvestorCost +
+          visaManagerCost +
+          visaEmploymentCost +
+          establishmentCard +
+          eChannel +
+          medicalTotal +
+          eidTotal;
+
+      // Create recommendation object
+      result.add(
+        FreezonePackageRecommendation(
+          id: doc.id,
+          freezone: (data['freezone'] ?? '').toString(),
+          product: (data['product'] ?? '').toString(),
+          jurisdiction: jurisdiction,
+          officeType: officeType,
+          activitiesAllowed: allowedStr,
+          visaEligibility: visaEligibility,
+          licenseFee: licenseFee,
+          visaInvestorCost: visaInvestorCost,
+          visaManagerCost: visaManagerCost,
+          visaEmploymentCost: visaEmploymentCost,
+          establishmentCard: establishmentCard,
+          eChannel: eChannel,
+          medicalTotal: medicalTotal,
+          eidTotal: eidTotal,
+          totalCost: totalCost,
+        ),
+      );
+    }
+
+    // Sort by total cost (cheapest first)
+    result.sort((a, b) => a.totalCost.compareTo(b.totalCost));
+
+    return result;
   }
 }
 
