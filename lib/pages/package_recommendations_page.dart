@@ -86,7 +86,8 @@ class PackageRecommendationsPage extends StatelessWidget {
         // Header with summary
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(12),
+          // More compact header
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFF6D5DF6), Color(0xFF9B7BF7)],
@@ -107,26 +108,26 @@ class PackageRecommendationsPage extends StatelessWidget {
                   '${packages.length} Packages Found',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 20,
+                    fontSize: 18, // reduced
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   'Sorted by total cost (cheapest first)',
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.9),
-                    fontSize: 13,
+                    fontSize: 12, // reduced
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     _buildInfoChip(
                       icon: Icons.business_center,
                       label: '$noOfActivities Activities',
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     _buildInfoChip(
                       icon: Icons.people,
                       label: '$totalVisas Visas',
@@ -140,7 +141,7 @@ class PackageRecommendationsPage extends StatelessWidget {
         // Package cards list
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10), // tighter list padding
             itemCount: packages.length,
             itemBuilder: (context, index) {
               final package = packages[index];
@@ -160,7 +161,10 @@ class PackageRecommendationsPage extends StatelessWidget {
   /// Small chip for displaying requirements summary
   Widget _buildInfoChip({required IconData icon, required String label}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 4,
+      ), // tighter chip
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.2),
         borderRadius: BorderRadius.circular(16),
@@ -168,13 +172,13 @@ class PackageRecommendationsPage extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.white),
-          const SizedBox(width: 5),
+          Icon(icon, size: 12, color: Colors.white),
+          const SizedBox(width: 4),
           Text(
             label,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 12,
+              fontSize: 11, // reduced
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -206,19 +210,19 @@ class _PackageCardState extends State<_PackageCard> {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 8), // tighter between cards
       elevation: widget.isTopChoice ? 4 : 1,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12), // slightly smaller radius
         side: widget.isTopChoice
             ? const BorderSide(color: Color(0xFF6D5DF6), width: 2)
             : BorderSide.none,
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         onTap: () => setState(() => _showDetails = !_showDetails),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10), // tighter internal padding
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -228,13 +232,13 @@ class _PackageCardState extends State<_PackageCard> {
                 children: [
                   // Rank badge
                   Container(
-                    width: 28,
-                    height: 28,
+                    width: 24,
+                    height: 24,
                     decoration: BoxDecoration(
                       color: widget.isTopChoice
                           ? const Color(0xFF6D5DF6)
                           : Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(7),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Center(
                       child: Text(
@@ -244,12 +248,12 @@ class _PackageCardState extends State<_PackageCard> {
                               ? Colors.white
                               : Colors.grey.shade700,
                           fontWeight: FontWeight.w700,
-                          fontSize: 14,
+                          fontSize: 12,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                   // Freezone and product info
                   Expanded(
                     child: Column(
@@ -258,15 +262,15 @@ class _PackageCardState extends State<_PackageCard> {
                         Text(
                           widget.package.freezone,
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 14, // reduced
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(height: 3),
+                        const SizedBox(height: 2),
                         Text(
                           widget.package.product,
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 12, // reduced
                             color: Colors.grey.shade700,
                           ),
                         ),
@@ -277,18 +281,18 @@ class _PackageCardState extends State<_PackageCard> {
                   if (widget.isTopChoice)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
+                        horizontal: 6,
+                        vertical: 2,
                       ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF6D5DF6),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(9),
                       ),
                       child: const Text(
                         'BEST VALUE',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 10,
+                          fontSize: 9,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.5,
                         ),
@@ -296,15 +300,15 @@ class _PackageCardState extends State<_PackageCard> {
                     ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               // Total cost (prominent) - Using model's totalCost, NOT recalculated
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: widget.isTopChoice
                       ? const Color(0xFF6D5DF6).withOpacity(0.1)
                       : Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: widget.isTopChoice
                         ? const Color(0xFF6D5DF6).withOpacity(0.3)
@@ -319,9 +323,9 @@ class _PackageCardState extends State<_PackageCard> {
                       color: widget.isTopChoice
                           ? const Color(0xFF6D5DF6)
                           : Colors.grey.shade600,
-                      size: 24,
+                      size: 20,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,18 +333,18 @@ class _PackageCardState extends State<_PackageCard> {
                           Text(
                             'Total Package Cost',
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: 10, // reduced
                               color: Colors.grey.shade600,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.3,
                             ),
                           ),
-                          const SizedBox(height: 3),
+                          const SizedBox(height: 2),
                           // Display totalCost from model (already calculated in service)
                           Text(
                             'AED ${widget.package.totalCost.toStringAsFixed(2)}',
                             style: TextStyle(
-                              fontSize: 22,
+                              fontSize: 20, // reduced
                               fontWeight: FontWeight.w700,
                               color: widget.isTopChoice
                                   ? const Color(0xFF6D5DF6)
@@ -356,16 +360,16 @@ class _PackageCardState extends State<_PackageCard> {
                           ? Icons.keyboard_arrow_up
                           : Icons.keyboard_arrow_down,
                       color: Colors.grey.shade600,
-                      size: 20,
+                      size: 18,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               // Quick info row
               Wrap(
-                spacing: 8,
-                runSpacing: 6,
+                spacing: 6,
+                runSpacing: 5,
                 children: [
                   _buildInfoPill(
                     icon: Icons.work_outline,
@@ -383,22 +387,22 @@ class _PackageCardState extends State<_PackageCard> {
               ),
               // Expandable cost breakdown
               if (_showDetails) ...[
-                const SizedBox(height: 12),
-                const Divider(),
                 const SizedBox(height: 10),
+                const Divider(),
+                const SizedBox(height: 8),
                 Text(
                   'Cost Breakdown',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13, // reduced
                     fontWeight: FontWeight.w700,
                     color: Colors.grey.shade800,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 ...widget.package.costBreakdown.entries
                     .where((entry) => entry.value > 0)
                     .map((entry) => _buildCostRow(entry.key, entry.value)),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 const Divider(),
                 _buildCostRow('TOTAL', widget.package.totalCost, isTotal: true),
               ],
@@ -412,21 +416,24 @@ class _PackageCardState extends State<_PackageCard> {
   /// Small pill showing quick info
   Widget _buildInfoPill({required IconData icon, required String label}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 6,
+        vertical: 4,
+      ), // tighter pill
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: Colors.grey.shade700),
-          const SizedBox(width: 5),
+          Icon(icon, size: 11, color: Colors.grey.shade700),
+          const SizedBox(width: 4),
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 10, // reduced
               color: Colors.grey.shade700,
               fontWeight: FontWeight.w500,
             ),
@@ -439,14 +446,14 @@ class _PackageCardState extends State<_PackageCard> {
   /// Row showing individual cost item
   Widget _buildCostRow(String label, double amount, {bool isTotal = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: 2), // tighter rows
       child: Row(
         children: [
           Expanded(
             child: Text(
               label,
               style: TextStyle(
-                fontSize: isTotal ? 14 : 12,
+                fontSize: isTotal ? 13 : 11,
                 fontWeight: isTotal ? FontWeight.w700 : FontWeight.w500,
                 color: isTotal ? Colors.grey.shade900 : Colors.grey.shade700,
               ),
@@ -455,7 +462,7 @@ class _PackageCardState extends State<_PackageCard> {
           Text(
             'AED ${amount.round().toStringAsFixed(0)}',
             style: TextStyle(
-              fontSize: isTotal ? 15 : 12,
+              fontSize: isTotal ? 14 : 11,
               fontWeight: isTotal ? FontWeight.w700 : FontWeight.w600,
               color: isTotal ? const Color(0xFF6D5DF6) : Colors.grey.shade800,
             ),
