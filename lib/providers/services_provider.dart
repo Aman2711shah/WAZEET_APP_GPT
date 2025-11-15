@@ -688,11 +688,11 @@ List<ServiceCategory> _loadServices() {
               name: 'HR System Development',
               serviceTypeId: 'fahr_services',
               premium: PricingTier(
-                cost: 'Custom engagement',
+                cost: '15000-25000',
                 timeline: 'Project specific',
               ),
               standard: PricingTier(
-                cost: 'Request proposal',
+                cost: '10000-18000',
                 timeline: 'Project specific',
               ),
               documentRequirements: [
@@ -1214,11 +1214,11 @@ List<ServiceCategory> _loadServices() {
               icon: 'do_not_disturb_on',
               serviceTypeId: 'corporate_tax',
               premium: PricingTier(
-                cost: 'Request quote',
+                cost: '2500-3500',
                 timeline: '5-7 working days',
               ),
               standard: PricingTier(
-                cost: 'FTA fees',
+                cost: '1500-2200',
                 timeline: '7-14 working days',
               ),
               documentRequirements: [
@@ -1285,11 +1285,11 @@ List<ServiceCategory> _loadServices() {
               icon: 'remove_circle_outline',
               serviceTypeId: 'vat',
               premium: PricingTier(
-                cost: 'Request quote',
+                cost: '1800-2500',
                 timeline: '3-5 working days',
               ),
               standard: PricingTier(
-                cost: 'FTA fees',
+                cost: '1200-1800',
                 timeline: '5-10 working days',
               ),
               documentRequirements: [
@@ -1406,11 +1406,11 @@ List<ServiceCategory> _loadServices() {
               icon: 'group_add',
               serviceTypeId: 'vat',
               premium: PricingTier(
-                cost: 'Request quote',
+                cost: '5000-8000',
                 timeline: '5-7 working days',
               ),
               standard: PricingTier(
-                cost: 'FTA fees',
+                cost: '3500-5500',
                 timeline: '7-14 working days',
               ),
               documentRequirements: [
@@ -1601,11 +1601,11 @@ List<ServiceCategory> _loadServices() {
               icon: 'assignment_add',
               serviceTypeId: 'excise_tax',
               premium: PricingTier(
-                cost: 'Request quote',
+                cost: '4500-6500',
                 timeline: '5-10 working days',
               ),
               standard: PricingTier(
-                cost: 'FTA fees',
+                cost: '3000-4500',
                 timeline: '10-15 working days',
               ),
               documentRequirements: [
@@ -1723,11 +1723,11 @@ List<ServiceCategory> _loadServices() {
               description: 'Register a designated zone for excise tax',
               serviceTypeId: 'excise_tax',
               premium: PricingTier(
-                cost: 'Request quote',
+                cost: '8000-12000',
                 timeline: '10-15 working days',
               ),
               standard: PricingTier(
-                cost: 'FTA fees',
+                cost: '5500-8500',
                 timeline: '15-25 working days',
               ),
               documentRequirements: [
@@ -1818,11 +1818,11 @@ List<ServiceCategory> _loadServices() {
               description: 'Register as excise warehouse keeper',
               serviceTypeId: 'excise_tax',
               premium: PricingTier(
-                cost: 'Request quote',
+                cost: '6000-9000',
                 timeline: '7-10 working days',
               ),
               standard: PricingTier(
-                cost: 'FTA fees',
+                cost: '4000-6500',
                 timeline: '10-15 working days',
               ),
               documentRequirements: [
@@ -1889,11 +1889,11 @@ List<ServiceCategory> _loadServices() {
               description: 'Register a customs clearance company with FTA',
               serviceTypeId: 'customs_clearance',
               premium: PricingTier(
-                cost: 'Request quote',
+                cost: '5000-7500',
                 timeline: '5-7 working days',
               ),
               standard: PricingTier(
-                cost: 'FTA fees',
+                cost: '3500-5500',
                 timeline: '7-14 working days',
               ),
               documentRequirements: [
@@ -1958,11 +1958,11 @@ List<ServiceCategory> _loadServices() {
               description: 'Register as an FTA-approved tax agent',
               serviceTypeId: 'tax_agents',
               premium: PricingTier(
-                cost: 'Request quote',
+                cost: '3500-5000',
                 timeline: '10-15 working days',
               ),
               standard: PricingTier(
-                cost: 'FTA fees',
+                cost: '2500-3800',
                 timeline: '15-25 working days',
               ),
               documentRequirements: [
@@ -1987,11 +1987,11 @@ List<ServiceCategory> _loadServices() {
               description: 'Register a tax agency with FTA',
               serviceTypeId: 'tax_agents',
               premium: PricingTier(
-                cost: 'Request quote',
+                cost: '7500-10000',
                 timeline: '7-10 working days',
               ),
               standard: PricingTier(
-                cost: 'FTA fees',
+                cost: '5000-7500',
                 timeline: '10-15 working days',
               ),
               documentRequirements: [
@@ -2084,11 +2084,11 @@ List<ServiceCategory> _loadServices() {
                   'Tax residency and commercial activities certificates',
               serviceTypeId: 'tax_certificates',
               premium: PricingTier(
-                cost: 'Request quote',
+                cost: '1500-2500',
                 timeline: '3-5 working days',
               ),
               standard: PricingTier(
-                cost: 'FTA fees',
+                cost: '1000-1800',
                 timeline: '5-7 working days',
               ),
               documentRequirements: [
