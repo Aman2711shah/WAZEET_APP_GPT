@@ -140,7 +140,7 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
                     errorBuilder: (context, error, stackTrace) {
                       debugPrint('Header image failed to load: $error');
                       return Container(
-                        color: AppColors.purple.withOpacity(0.3),
+                        color: AppColors.purple.withValues(alpha: 0.3),
                       );
                     },
                   ),
@@ -150,8 +150,8 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withOpacity(0.35),
-                          AppColors.purple.withOpacity(0.5),
+                          Colors.black.withValues(alpha: 0.35),
+                          AppColors.purple.withValues(alpha: 0.5),
                         ],
                       ),
                     ),
@@ -163,7 +163,7 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
                     child: Text(
                       'Monitor your service request status in real-time',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.95),
+                        color: Colors.white.withValues(alpha: 0.95),
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0.3,
@@ -300,7 +300,7 @@ class _ApplicationsPageState extends State<ApplicationsPage> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.12),
+                    color: color.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(

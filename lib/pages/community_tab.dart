@@ -25,10 +25,7 @@ class CommunityTab extends ConsumerWidget {
                 const AppSearchBar(hint: 'Search for people or posts'),
                 const SizedBox(height: 16),
                 ...posts.map(
-                  (post) => PostCard(
-                    post: post,
-                    onOpenComments: () {},
-                  ),
+                  (post) => PostCard(post: post, onOpenComments: () {}),
                 ),
               ],
             ),

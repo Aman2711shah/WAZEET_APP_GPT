@@ -162,9 +162,9 @@ class _EmailAuthPageState extends State<EmailAuthPage> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF8B5CF6).withOpacity(0.15), // Purple tint
-              const Color(0xFF6366F1).withOpacity(0.1), // Indigo tint
-              const Color(0xFFEC4899).withOpacity(0.05), // Pink tint
+              const Color(0xFF8B5CF6).withValues(alpha: 0.15), // Purple tint
+              const Color(0xFF6366F1).withValues(alpha: 0.1), // Indigo tint
+              const Color(0xFFEC4899).withValues(alpha: 0.05), // Pink tint
               Colors.white,
             ],
             stops: const [0.0, 0.3, 0.6, 1.0],
@@ -183,8 +183,8 @@ class _EmailAuthPageState extends State<EmailAuthPage> {
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFF8B5CF6).withOpacity(0.2),
-                      const Color(0xFF8B5CF6).withOpacity(0.0),
+                      const Color(0xFF8B5CF6).withValues(alpha: 0.2),
+                      const Color(0xFF8B5CF6).withValues(alpha: 0.0),
                     ],
                   ),
                 ),
@@ -200,8 +200,8 @@ class _EmailAuthPageState extends State<EmailAuthPage> {
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFFEC4899).withOpacity(0.15),
-                      const Color(0xFFEC4899).withOpacity(0.0),
+                      const Color(0xFFEC4899).withValues(alpha: 0.15),
+                      const Color(0xFFEC4899).withValues(alpha: 0.0),
                     ],
                   ),
                 ),
@@ -264,23 +264,23 @@ class _EmailAuthPageState extends State<EmailAuthPage> {
                         Container(
                           padding: const EdgeInsets.all(32),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.95),
+                            color: Colors.white.withValues(alpha: 0.95),
                             borderRadius: BorderRadius.circular(32),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.6),
+                              color: Colors.white.withValues(alpha: 0.6),
                               width: 1.5,
                             ),
                             boxShadow: [
                               BoxShadow(
                                 color: const Color(
                                   0xFF8B5CF6,
-                                ).withOpacity(0.1),
+                                ).withValues(alpha: 0.1),
                                 blurRadius: 40,
                                 spreadRadius: 0,
                                 offset: const Offset(0, 10),
                               ),
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 80,
                                 spreadRadius: 0,
                                 offset: const Offset(0, 30),
@@ -796,7 +796,7 @@ class _EmailAuthPageState extends State<EmailAuthPage> {
                                           BoxShadow(
                                             color: const Color(
                                               0xFF8B5CF6,
-                                            ).withOpacity(0.4),
+                                            ).withValues(alpha: 0.4),
                                             blurRadius: 20,
                                             offset: const Offset(0, 8),
                                           ),
@@ -813,7 +813,7 @@ class _EmailAuthPageState extends State<EmailAuthPage> {
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     disabledBackgroundColor: AppColors.purple
-                                        .withOpacity(0.6),
+                                        .withValues(alpha: 0.6),
                                   ),
                                   child: _isLoading
                                       ? const SizedBox(

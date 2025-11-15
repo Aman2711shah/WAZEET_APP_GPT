@@ -80,21 +80,21 @@ class _SupportButton extends StatelessWidget {
         boxShadow: [
           // Outer soft glow
           BoxShadow(
-            color: const Color(0xFF7A5AF8).withOpacity(0.5),
+            color: const Color(0xFF7A5AF8).withValues(alpha: 0.5),
             blurRadius: 24,
             spreadRadius: 4,
             offset: const Offset(0, 8),
           ),
           // Inner highlight for 3D effect
           BoxShadow(
-            color: Colors.white.withOpacity(0.3),
+            color: Colors.white.withValues(alpha: 0.3),
             blurRadius: 8,
             spreadRadius: -4,
             offset: const Offset(-2, -2),
           ),
           // Bottom shadow for depth
           BoxShadow(
-            color: const Color(0xFF6448D6).withOpacity(0.6),
+            color: const Color(0xFF6448D6).withValues(alpha: 0.6),
             blurRadius: 12,
             offset: const Offset(4, 6),
           ),
@@ -105,8 +105,8 @@ class _SupportButton extends StatelessWidget {
         child: InkWell(
           onTap: () => _openSupportSheet(context),
           customBorder: const CircleBorder(),
-          splashColor: Colors.white.withOpacity(0.3),
-          highlightColor: Colors.white.withOpacity(0.1),
+          splashColor: Colors.white.withValues(alpha: 0.3),
+          highlightColor: Colors.white.withValues(alpha: 0.1),
           child: Center(
             child: Icon(
               Icons.headset_mic,

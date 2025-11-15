@@ -161,7 +161,7 @@ class _AIBusinessChatPageState extends ConsumerState<AIBusinessChatPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.smart_toy, color: Colors.white, size: 24),
@@ -262,7 +262,7 @@ class _AIBusinessChatPageState extends ConsumerState<AIBusinessChatPage> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),
@@ -276,18 +276,28 @@ class _AIBusinessChatPageState extends ConsumerState<AIBusinessChatPage> {
                       controller: _messageController,
                       maxLines: null,
                       textCapitalization: TextCapitalization.sentences,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
+                      ),
                       decoration: InputDecoration(
-                        hintText: 'Ask about UAE business setup...',
-                        hintStyle: TextStyle(color: Colors.grey.shade400),
+                        hintText: 'Ask anything about UAE business setup…',
+                        hintStyle: TextStyle(
+                          color: Colors.grey.shade400,
+                          fontSize: 15,
+                          fontFamily: 'Inter',
+                        ),
                         filled: true,
                         fillColor: Colors.grey.shade100,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(28),
                           borderSide: BorderSide.none,
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 20,
-                          vertical: 12,
+                          vertical: 18, // Increased height
                         ),
                       ),
                       onSubmitted: (_) => _sendMessage(),
@@ -299,10 +309,10 @@ class _AIBusinessChatPageState extends ConsumerState<AIBusinessChatPage> {
                       gradient: const LinearGradient(
                         colors: [Color(0xFF9333EA), Color(0xFF7C3AED)],
                       ),
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(28),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.purple.withOpacity(0.3),
+                          color: AppColors.purple.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -340,9 +350,9 @@ class _AIBusinessChatPageState extends ConsumerState<AIBusinessChatPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: AppColors.purple.withOpacity(0.1),
+          color: AppColors.purple.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.purple.withOpacity(0.3)),
+          border: Border.all(color: AppColors.purple.withValues(alpha: 0.3)),
         ),
         child: Text(
           question,
@@ -356,11 +366,45 @@ class _AIBusinessChatPageState extends ConsumerState<AIBusinessChatPage> {
     );
   }
 
+  String formatAssistantMessage(String raw) {
+    // Remove markdown headings
+    final headingRegex = RegExp(r'^#+\s*(.*)', multiLine: true);
+    String formatted = raw.replaceAllMapped(headingRegex, (m) => m[1] ?? '');
+
+    // Convert numbered headings to bold subtitles
+    final numberedStepRegex = RegExp(r'^(\d+\.)\s*(.*)', multiLine: true);
+    formatted = formatted.replaceAllMapped(
+      numberedStepRegex,
+      (m) => '\u2022 ${m[2]!.trim()}',
+    ); // Use bullet for step, will bold in widget
+
+    // Convert markdown lists to bullets
+    final bulletRegex = RegExp(r'^[-*]\s*(.*)', multiLine: true);
+    formatted = formatted.replaceAllMapped(
+      bulletRegex,
+      (m) => '\u2022 ${m[1]!.trim()}',
+    );
+
+    // Remove extra markdown symbols
+    formatted = formatted.replaceAll(RegExp(r'[`>_\[\]]'), '');
+
+    // Remove double blank lines
+    formatted = formatted.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+
+    return formatted.trim();
+  }
+
   Widget _buildMessageBubble(ChatMessage message) {
+    final isAssistant = !message.isUser;
+    final formattedContent = isAssistant
+        ? formatAssistantMessage(message.content)
+        : message.content;
     return Align(
       alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: EdgeInsets.only(
+          bottom: isAssistant ? 16 : 20,
+        ), // More vertical spacing for user
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
@@ -370,21 +414,27 @@ class _AIBusinessChatPageState extends ConsumerState<AIBusinessChatPage> {
               : CrossAxisAlignment.start,
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: message.isUser
+                  ? const EdgeInsets.symmetric(horizontal: 10, vertical: 14)
+                  : const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
               decoration: BoxDecoration(
-                gradient: message.isUser
+                gradient: isAssistant
                     ? const LinearGradient(
-                        colors: [Color(0xFF9333EA), Color(0xFF7C3AED)],
+                        colors: [Color(0xFF6D5DF6), Color(0xFF9B7BF7)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       )
-                    : null,
-                color: message.isUser ? null : Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                    : const LinearGradient(
+                        colors: [Color(0xFF9333EA), Color(0xFF7C3AED)],
+                      ),
+                color: isAssistant ? null : Colors.white,
+                borderRadius: BorderRadius.circular(18),
                 boxShadow: [
                   BoxShadow(
-                    color: message.isUser
-                        ? AppColors.purple.withOpacity(0.2)
-                        : Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
+                    color: isAssistant
+                        ? Colors.deepPurple.withValues(alpha: 0.10)
+                        : Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 12,
                     offset: const Offset(0, 2),
                   ),
                 ],
@@ -406,16 +456,20 @@ class _AIBusinessChatPageState extends ConsumerState<AIBusinessChatPage> {
                         ],
                       ),
                     )
+                  : isAssistant
+                  ? _renderFormattedMessage(formattedContent, isAssistant)
                   : Text(
-                      message.content,
-                      style: TextStyle(
-                        color: message.isUser ? Colors.white : Colors.black87,
+                      formattedContent,
+                      style: const TextStyle(
+                        color: Colors.white,
                         fontSize: 15,
-                        height: 1.4,
+                        height: 1.5,
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
             ),
-            if (!message.isUser && !message.isStreaming)
+            if (isAssistant && !message.isStreaming)
               Padding(
                 padding: const EdgeInsets.only(left: 4, top: 4),
                 child: Row(
@@ -440,6 +494,73 @@ class _AIBusinessChatPageState extends ConsumerState<AIBusinessChatPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _renderFormattedMessage(String content, bool isAssistant) {
+    final lines = content.split('\n');
+    return Column(
+      crossAxisAlignment: isAssistant
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.end,
+      children: lines.map((line) {
+        if (line.startsWith('• ')) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('• ', style: TextStyle(fontWeight: FontWeight.bold)),
+                Expanded(
+                  child: Text(
+                    line.substring(2),
+                    softWrap: true,
+                    overflow: TextOverflow.visible,
+                    style: TextStyle(
+                      fontSize: 15,
+                      height: 1.5,
+                      fontWeight: FontWeight.w500,
+                      color: isAssistant ? Colors.white : Colors.black87,
+                      fontFamily: 'Inter',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        } else if (RegExp(r'^(\d+\.)').hasMatch(line)) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              line,
+              softWrap: true,
+              overflow: TextOverflow.visible,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                height: 1.5,
+                color: isAssistant ? Colors.white : Colors.black87,
+                fontFamily: 'Inter',
+              ),
+            ),
+          );
+        } else {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(
+              line,
+              softWrap: true,
+              overflow: TextOverflow.visible,
+              style: TextStyle(
+                fontSize: 15,
+                height: 1.5,
+                color: isAssistant ? Colors.white : Colors.black87,
+                fontFamily: 'Inter',
+              ),
+            ),
+          );
+        }
+      }).toList(),
     );
   }
 }

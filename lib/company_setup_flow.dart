@@ -10,12 +10,41 @@ import 'package:wazeet/pages/package_recommendations_page.dart';
 // AI-based recommender removed; pricing will be handled by backend service
 
 // =============================================================
+// Shareholder Model
+// =============================================================
+
+class Shareholder {
+  final String name;
+  final String nationality;
+  final DateTime? dateOfBirth;
+
+  Shareholder({
+    required this.name,
+    required this.nationality,
+    this.dateOfBirth,
+  });
+
+  Shareholder copyWith({
+    String? name,
+    String? nationality,
+    DateTime? dateOfBirth,
+  }) {
+    return Shareholder(
+      name: name ?? this.name,
+      nationality: nationality ?? this.nationality,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+    );
+  }
+}
+
+// =============================================================
 // State Management
 // =============================================================
 
 class CompanySetupData {
   final List<String> businessActivities;
   final int shareholdersCount;
+  final List<Shareholder> shareholders;
   // Aggregate visa count (sum of employment + investor)
   final int visaCount;
   // Derived type: 'Employment', 'Investor', 'Mixed', or '' (none)
@@ -33,6 +62,7 @@ class CompanySetupData {
   CompanySetupData({
     this.businessActivities = const [],
     this.shareholdersCount = 1,
+    this.shareholders = const [],
     this.visaCount = 0,
     this.visaType = '',
     this.licenseTenureYears = 1,
@@ -47,6 +77,7 @@ class CompanySetupData {
   CompanySetupData copyWith({
     List<String>? businessActivities,
     int? shareholdersCount,
+    List<Shareholder>? shareholders,
     int? visaCount,
     String? visaType,
     int? licenseTenureYears,
@@ -60,6 +91,7 @@ class CompanySetupData {
     return CompanySetupData(
       businessActivities: businessActivities ?? this.businessActivities,
       shareholdersCount: shareholdersCount ?? this.shareholdersCount,
+      shareholders: shareholders ?? this.shareholders,
       visaCount: visaCount ?? this.visaCount,
       visaType: visaType ?? this.visaType,
       licenseTenureYears: licenseTenureYears ?? this.licenseTenureYears,
@@ -90,7 +122,32 @@ class CompanySetupController extends StateNotifier<CompanySetupData> {
 
   void setShareholdersCount(int count) {
     if (count >= 1 && count <= 10) {
-      state = state.copyWith(shareholdersCount: count);
+      final currentShareholders = List<Shareholder>.from(state.shareholders);
+
+      // Add empty shareholders if count increased
+      while (currentShareholders.length < count) {
+        currentShareholders.add(
+          Shareholder(name: '', nationality: '', dateOfBirth: null),
+        );
+      }
+
+      // Remove shareholders if count decreased
+      while (currentShareholders.length > count) {
+        currentShareholders.removeLast();
+      }
+
+      state = state.copyWith(
+        shareholdersCount: count,
+        shareholders: currentShareholders,
+      );
+    }
+  }
+
+  void updateShareholder(int index, Shareholder shareholder) {
+    if (index >= 0 && index < state.shareholders.length) {
+      final updatedShareholders = List<Shareholder>.from(state.shareholders);
+      updatedShareholders[index] = shareholder;
+      state = state.copyWith(shareholders: updatedShareholders);
     }
   }
 
@@ -245,66 +302,90 @@ class _CompanySetupFlowState extends ConsumerState<CompanySetupFlow> {
   Widget build(BuildContext context) {
     final progress = (_currentStep + 1) / _stepTitles.length;
 
-    return Scaffold(
-      body: Column(
-        children: [
-          _Header(
-            title: _stepTitles[_currentStep],
-            progress: progress,
-            accent: Colors.deepPurple,
-          ),
-          Expanded(child: _buildCurrentStep()),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              top: false,
-              child: Row(
-                children: [
-                  if (_currentStep > 0)
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: _previousStep,
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child: const Text('Back'),
-                      ),
-                    ),
-                  if (_currentStep > 0) const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _currentStep == _stepTitles.length - 1
-                          ? () => Navigator.pop(context)
-                          : _nextStep,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: Colors.deepPurple,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: Text(
-                        _currentStep == _stepTitles.length - 1
-                            ? 'Finish'
-                            : 'Continue',
-                      ),
-                    ),
-                  ),
-                ],
+    return Consumer(
+      builder: (context, ref, _) {
+        final data = ref.watch(setupProvider);
+        final canProceed = _canProceedFromCurrentStep(data);
+
+        return Scaffold(
+          body: Column(
+            children: [
+              _Header(
+                title: _stepTitles[_currentStep],
+                progress: progress,
+                accent: Colors.deepPurple,
               ),
-            ),
+              Expanded(child: _buildCurrentStep()),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: Row(
+                    children: [
+                      if (_currentStep > 0)
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: _previousStep,
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            child: const Text('Back'),
+                          ),
+                        ),
+                      if (_currentStep > 0) const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: canProceed
+                              ? (_currentStep == _stepTitles.length - 1
+                                    ? () => Navigator.pop(context)
+                                    : _nextStep)
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: Colors.deepPurple,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: Colors.grey.shade300,
+                            disabledForegroundColor: Colors.grey.shade500,
+                          ),
+                          child: Text(
+                            _currentStep == _stepTitles.length - 1
+                                ? 'Finish'
+                                : 'Continue',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
+  }
+
+  bool _canProceedFromCurrentStep(CompanySetupData data) {
+    switch (_currentStep) {
+      case 0: // Business Activities
+        return data.businessActivities.isNotEmpty;
+      case 1: // Shareholders - always allow
+      case 2: // Visa - always allow
+      case 3: // Package Recommendations - always allow
+      case 4: // Summary - always allow
+      default:
+        return true;
+    }
   }
 }
 
@@ -802,7 +883,7 @@ class _TintedSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.deepPurple.shade50,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.deepPurple.withOpacity(0.15)),
+        border: Border.all(color: Colors.deepPurple.withValues(alpha: 0.15)),
       ),
       child: child,
     );
@@ -1046,36 +1127,444 @@ class _ShareholdersStep extends ConsumerWidget {
               ),
             ),
           ),
-          if (data.shareholdersCount < 1 || data.shareholdersCount > 10)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
+          const SizedBox(height: 32),
+
+          // Shareholder Details Forms
+          const Text(
+            'Shareholder Details',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...List.generate(data.shareholdersCount, (index) {
+            return _ShareholderForm(
+              index: index,
+              shareholder: index < data.shareholders.length
+                  ? data.shareholders[index]
+                  : Shareholder(name: '', nationality: '', dateOfBirth: null),
+              onChanged: (shareholder) =>
+                  controller.updateShareholder(index, shareholder),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShareholderForm extends StatefulWidget {
+  final int index;
+  final Shareholder shareholder;
+  final Function(Shareholder) onChanged;
+
+  const _ShareholderForm({
+    required this.index,
+    required this.shareholder,
+    required this.onChanged,
+  });
+
+  @override
+  State<_ShareholderForm> createState() => _ShareholderFormState();
+}
+
+class _ShareholderFormState extends State<_ShareholderForm> {
+  late TextEditingController _nameController;
+  String? _selectedNationality;
+  DateTime? _selectedDate;
+
+  static const List<String> _nationalities = [
+    'Afghan',
+    'Albanian',
+    'Algerian',
+    'American',
+    'Andorran',
+    'Angolan',
+    'Argentine',
+    'Armenian',
+    'Australian',
+    'Austrian',
+    'Azerbaijani',
+    'Bahraini',
+    'Bangladeshi',
+    'Barbadian',
+    'Belarusian',
+    'Belgian',
+    'Belizean',
+    'Beninese',
+    'Bhutanese',
+    'Bolivian',
+    'Bosnian',
+    'Brazilian',
+    'British',
+    'Bruneian',
+    'Bulgarian',
+    'Burkinabe',
+    'Burundian',
+    'Cambodian',
+    'Cameroonian',
+    'Canadian',
+    'Cape Verdean',
+    'Central African',
+    'Chadian',
+    'Chilean',
+    'Chinese',
+    'Colombian',
+    'Comoran',
+    'Congolese',
+    'Costa Rican',
+    'Croatian',
+    'Cuban',
+    'Cypriot',
+    'Czech',
+    'Danish',
+    'Djiboutian',
+    'Dominican',
+    'Dutch',
+    'East Timorese',
+    'Ecuadorean',
+    'Egyptian',
+    'Emirati',
+    'English',
+    'Equatorial Guinean',
+    'Eritrean',
+    'Estonian',
+    'Ethiopian',
+    'Fijian',
+    'Filipino',
+    'Finnish',
+    'French',
+    'Gabonese',
+    'Gambian',
+    'Georgian',
+    'German',
+    'Ghanaian',
+    'Greek',
+    'Grenadian',
+    'Guatemalan',
+    'Guinean',
+    'Guyanese',
+    'Haitian',
+    'Honduran',
+    'Hungarian',
+    'Icelandic',
+    'Indian',
+    'Indonesian',
+    'Iranian',
+    'Iraqi',
+    'Irish',
+    'Israeli',
+    'Italian',
+    'Ivorian',
+    'Jamaican',
+    'Japanese',
+    'Jordanian',
+    'Kazakhstani',
+    'Kenyan',
+    'Kuwaiti',
+    'Kyrgyz',
+    'Laotian',
+    'Latvian',
+    'Lebanese',
+    'Liberian',
+    'Libyan',
+    'Liechtensteiner',
+    'Lithuanian',
+    'Luxembourger',
+    'Macedonian',
+    'Malagasy',
+    'Malawian',
+    'Malaysian',
+    'Maldivian',
+    'Malian',
+    'Maltese',
+    'Marshallese',
+    'Mauritanian',
+    'Mauritian',
+    'Mexican',
+    'Micronesian',
+    'Moldovan',
+    'Monacan',
+    'Mongolian',
+    'Moroccan',
+    'Mozambican',
+    'Namibian',
+    'Nauruan',
+    'Nepalese',
+    'New Zealander',
+    'Nicaraguan',
+    'Nigerian',
+    'Nigerien',
+    'North Korean',
+    'Norwegian',
+    'Omani',
+    'Pakistani',
+    'Palauan',
+    'Palestinian',
+    'Panamanian',
+    'Papua New Guinean',
+    'Paraguayan',
+    'Peruvian',
+    'Polish',
+    'Portuguese',
+    'Qatari',
+    'Romanian',
+    'Russian',
+    'Rwandan',
+    'Saint Lucian',
+    'Salvadoran',
+    'Samoan',
+    'Saudi',
+    'Scottish',
+    'Senegalese',
+    'Serbian',
+    'Seychellois',
+    'Sierra Leonean',
+    'Singaporean',
+    'Slovak',
+    'Slovenian',
+    'Solomon Islander',
+    'Somali',
+    'South African',
+    'South Korean',
+    'Spanish',
+    'Sri Lankan',
+    'Sudanese',
+    'Surinamer',
+    'Swazi',
+    'Swedish',
+    'Swiss',
+    'Syrian',
+    'Taiwanese',
+    'Tajik',
+    'Tanzanian',
+    'Thai',
+    'Togolese',
+    'Tongan',
+    'Trinidadian',
+    'Tunisian',
+    'Turkish',
+    'Turkmen',
+    'Tuvaluan',
+    'Ugandan',
+    'Ukrainian',
+    'Uruguayan',
+    'Uzbek',
+    'Venezuelan',
+    'Vietnamese',
+    'Welsh',
+    'Yemeni',
+    'Zambian',
+    'Zimbabwean',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.shareholder.name);
+    _selectedNationality = widget.shareholder.nationality.isEmpty
+        ? null
+        : widget.shareholder.nationality;
+    _selectedDate = widget.shareholder.dateOfBirth;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  void _updateShareholder() {
+    widget.onChanged(
+      Shareholder(
+        name: _nameController.text,
+        nationality: _selectedNationality ?? '',
+        dateOfBirth: _selectedDate,
+      ),
+    );
+  }
+
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime(1990, 1, 1),
+      firstDate: DateTime(1920),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.deepPurple.shade600,
+              onPrimary: Colors.white,
+              onSurface: Colors.black87,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+      _updateShareholder();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.red.shade200),
+                  color: Colors.deepPurple.shade50,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.error_outline, color: Colors.red.shade700),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Please enter a value between 1 and 10',
-                        style: TextStyle(
-                          color: Colors.red.shade700,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                child: Center(
+                  child: Text(
+                    '${widget.index + 1}',
+                    style: TextStyle(
+                      color: Colors.deepPurple.shade700,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
                     ),
-                  ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Shareholder ${widget.index + 1}',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Name Field
+          TextField(
+            controller: _nameController,
+            decoration: InputDecoration(
+              labelText: 'Full Name',
+              hintText: 'Enter full name',
+              prefixIcon: const Icon(Icons.person_outline),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Colors.deepPurple.shade600,
+                  width: 2,
                 ),
               ),
             ),
+            onChanged: (_) => _updateShareholder(),
+          ),
+          const SizedBox(height: 16),
+
+          // Nationality Dropdown
+          DropdownButtonFormField<String>(
+            initialValue: _selectedNationality,
+            decoration: InputDecoration(
+              labelText: 'Nationality',
+              hintText: 'Select nationality',
+              prefixIcon: const Icon(Icons.flag_outlined),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Colors.deepPurple.shade600,
+                  width: 2,
+                ),
+              ),
+            ),
+            items: _nationalities.map((String nationality) {
+              return DropdownMenuItem<String>(
+                value: nationality,
+                child: Text(nationality),
+              );
+            }).toList(),
+            onChanged: (String? newValue) {
+              setState(() {
+                _selectedNationality = newValue;
+              });
+              _updateShareholder();
+            },
+            isExpanded: true,
+          ),
+          const SizedBox(height: 16),
+
+          // Date of Birth Field
+          InkWell(
+            onTap: _selectDate,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today_outlined,
+                    color: Colors.grey.shade600,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _selectedDate != null
+                          ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'
+                          : 'Select Date of Birth',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: _selectedDate != null
+                            ? Colors.black87
+                            : Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.arrow_drop_down, color: Colors.grey.shade600),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1465,7 +1954,7 @@ class _OfficeAndJurisdictionSection extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.deepPurple.withOpacity(0.25)),
+        side: BorderSide(color: Colors.deepPurple.withValues(alpha: 0.25)),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1919,7 +2408,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -1979,7 +2468,7 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
                 ? BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        const Color(0xFF6D5DF6).withOpacity(0.1),
+                        const Color(0xFF6D5DF6).withValues(alpha: 0.1),
                         Colors.white,
                       ],
                       begin: Alignment.topLeft,
@@ -2069,12 +2558,12 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: isTopChoice
-                        ? const Color(0xFF6D5DF6).withOpacity(0.1)
+                        ? const Color(0xFF6D5DF6).withValues(alpha: 0.1)
                         : Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isTopChoice
-                          ? const Color(0xFF6D5DF6).withOpacity(0.3)
+                          ? const Color(0xFF6D5DF6).withValues(alpha: 0.3)
                           : Colors.grey.shade200,
                       width: 2,
                     ),

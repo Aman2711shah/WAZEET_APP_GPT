@@ -160,7 +160,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -298,7 +298,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: AppColors.purple.withOpacity(0.1),
+                  backgroundColor: AppColors.purple.withValues(alpha: 0.1),
                   backgroundImage: currentUser?.photoUrl != null
                       ? NetworkImage(currentUser!.photoUrl!)
                       : null,

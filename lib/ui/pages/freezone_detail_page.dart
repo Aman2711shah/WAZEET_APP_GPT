@@ -61,7 +61,7 @@ class FreeZoneDetailPage extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -175,7 +175,7 @@ class FreeZoneDetailPage extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.purple.withOpacity(0.1),
+                          color: AppColors.purple.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -626,7 +626,7 @@ class FreeZoneDetailPage extends ConsumerWidget {
         border: Border.all(color: Colors.grey[200]!, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -637,7 +637,7 @@ class FreeZoneDetailPage extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.purple.withOpacity(0.1),
+              color: AppColors.purple.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: AppColors.purple, size: 22),
@@ -701,7 +701,7 @@ class FreeZoneDetailPage extends ConsumerWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.purple.withOpacity(0.2),
+          color: AppColors.purple.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -710,7 +710,7 @@ class FreeZoneDetailPage extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: AppColors.purple.withOpacity(0.1),
+              color: AppColors.purple.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(

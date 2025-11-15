@@ -153,7 +153,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
                                       colors: [
-                                        Colors.white.withOpacity(0.12),
+                                        Colors.white.withValues(alpha: 0.12),
                                         Colors.transparent,
                                       ],
                                       stops: const [0.0, 0.4],
@@ -227,7 +227,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                               width: 32,
                               height: 32,
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.25),
+                                color: Colors.white.withValues(alpha: 0.25),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(
@@ -273,7 +273,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                             width: 60,
                             height: 60,
                             decoration: BoxDecoration(
-                              color: AppColors.purple.withOpacity(0.1),
+                              color: AppColors.purple.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
@@ -434,7 +434,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.purple.withOpacity(0.1),
+                      color: AppColors.purple.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -467,7 +467,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, -5),
               ),
@@ -825,7 +825,7 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
                                 children: [
                                   CircleAvatar(
                                     backgroundColor: isUploaded
-                                        ? Colors.green.withOpacity(0.1)
+                                        ? Colors.green.withValues(alpha: 0.1)
                                         : AppColors.purple.withValues(
                                             alpha: 0.1,
                                           ),

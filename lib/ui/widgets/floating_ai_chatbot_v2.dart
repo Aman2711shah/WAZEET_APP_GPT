@@ -147,7 +147,7 @@ class _FloatingAIChatbotV2State extends ConsumerState<FloatingAIChatbotV2>
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.25),
+                          color: Colors.black.withValues(alpha: 0.25),
                           blurRadius: 20,
                           spreadRadius: 2,
                         ),
@@ -177,7 +177,7 @@ class _FloatingAIChatbotV2State extends ConsumerState<FloatingAIChatbotV2>
                       color: Colors.transparent,
                       borderRadius: BorderRadius.circular(30),
                       elevation: _pressed ? 6 : (_hovering ? 14 : 10),
-                      shadowColor: Colors.black.withOpacity(0.35),
+                      shadowColor: Colors.black.withValues(alpha: 0.35),
                       child: Container(
                         width: 60,
                         height: 60,
@@ -190,7 +190,7 @@ class _FloatingAIChatbotV2State extends ConsumerState<FloatingAIChatbotV2>
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.deepOrange.withOpacity(0.55),
+                              color: Colors.deepOrange.withValues(alpha: 0.55),
                               blurRadius: 16,
                               offset: const Offset(0, 8),
                             ),
@@ -207,9 +207,9 @@ class _FloatingAIChatbotV2State extends ConsumerState<FloatingAIChatbotV2>
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              Colors.white.withOpacity(0.28),
-                              Colors.white.withOpacity(0.04),
-                              Colors.white.withOpacity(0.0),
+                              Colors.white.withValues(alpha: 0.28),
+                              Colors.white.withValues(alpha: 0.04),
+                              Colors.white.withValues(alpha: 0.0),
                             ],
                             stops: const [0.0, 0.35, 1.0],
                           ),
@@ -221,7 +221,7 @@ class _FloatingAIChatbotV2State extends ConsumerState<FloatingAIChatbotV2>
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                   width: 1.2,
                                 ),
                               ),
@@ -283,7 +283,7 @@ class _FloatingAIChatbotV2State extends ConsumerState<FloatingAIChatbotV2>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -308,7 +308,7 @@ class _FloatingAIChatbotV2State extends ConsumerState<FloatingAIChatbotV2>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(

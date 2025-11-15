@@ -45,13 +45,13 @@ class GradientHeader extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.35),
+            color: Colors.black.withValues(alpha: 0.35),
             blurRadius: 24,
             offset: const Offset(0, 10),
             spreadRadius: 2,
           ),
           BoxShadow(
-            color: const Color(0xFF6200EE).withOpacity(0.4),
+            color: const Color(0xFF6200EE).withValues(alpha: 0.4),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -68,9 +68,9 @@ class GradientHeader extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Colors.white.withOpacity(0.15),
+                    Colors.white.withValues(alpha: 0.15),
                     Colors.transparent,
-                    Colors.black.withOpacity(0.25),
+                    Colors.black.withValues(alpha: 0.25),
                   ],
                   stops: const [0.0, 0.5, 1.0],
                 ),
@@ -85,7 +85,7 @@ class GradientHeader extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.white.withOpacity(0.12),
+                    Colors.white.withValues(alpha: 0.12),
                     Colors.transparent,
                   ],
                   stops: const [0.0, 0.4],
@@ -102,11 +102,11 @@ class GradientHeader extends StatelessWidget {
                   padding: const EdgeInsets.only(right: 8),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
+                      color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
+                          color: Colors.black.withValues(alpha: 0.2),
                           blurRadius: 6,
                           offset: const Offset(0, 3),
                         ),
@@ -131,22 +131,22 @@ class GradientHeader extends StatelessWidget {
                   height: 48,
                   margin: const EdgeInsets.only(right: 12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.25),
+                    color: Colors.white.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.4),
+                        color: Colors.black.withValues(alpha: 0.4),
                         blurRadius: 12,
                         offset: const Offset(0, 6),
                         spreadRadius: 1,
                       ),
                       BoxShadow(
-                        color: Colors.white.withOpacity(0.15),
+                        color: Colors.white.withValues(alpha: 0.15),
                         blurRadius: 6,
                         offset: const Offset(-3, -3),
                       ),
                       BoxShadow(
-                        color: const Color(0xFF6200EE).withOpacity(0.3),
+                        color: const Color(0xFF6200EE).withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -166,12 +166,12 @@ class GradientHeader extends StatelessWidget {
                     height: 1.2,
                     shadows: [
                       Shadow(
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withValues(alpha: 0.5),
                         blurRadius: 8,
                         offset: const Offset(2, 3),
                       ),
                       Shadow(
-                        color: Colors.black.withOpacity(0.3),
+                        color: Colors.black.withValues(alpha: 0.3),
                         blurRadius: 16,
                         offset: const Offset(0, 4),
                       ),

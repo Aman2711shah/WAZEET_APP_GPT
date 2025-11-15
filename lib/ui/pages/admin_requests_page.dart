@@ -162,7 +162,7 @@ class AdminRequestsPage extends StatelessWidget {
                       leading: CircleAvatar(
                         backgroundColor: _getStatusColor(
                           data['status'],
-                        ).withOpacity(0.1),
+                        ).withValues(alpha: 0.1),
                         child: Icon(
                           _getStatusIcon(data['status']),
                           color: _getStatusColor(data['status']),
@@ -188,7 +188,7 @@ class AdminRequestsPage extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: _getStatusColor(
                                 data['status'],
-                              ).withOpacity(0.1),
+                              ).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(

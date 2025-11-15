@@ -116,7 +116,7 @@ class PackageRecommendationsPage extends StatelessWidget {
                 Text(
                   'Sorted by total cost (cheapest first)',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 11,
                   ),
                 ),
@@ -163,7 +163,7 @@ class PackageRecommendationsPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -303,12 +303,12 @@ class _PackageCardState extends State<_PackageCard> {
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: widget.isTopChoice
-                      ? const Color(0xFF6D5DF6).withOpacity(0.1)
+                      ? const Color(0xFF6D5DF6).withValues(alpha: 0.1)
                       : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(7),
                   border: Border.all(
                     color: widget.isTopChoice
-                        ? const Color(0xFF6D5DF6).withOpacity(0.3)
+                        ? const Color(0xFF6D5DF6).withValues(alpha: 0.3)
                         : Colors.grey.shade200,
                     width: 2,
                   ),

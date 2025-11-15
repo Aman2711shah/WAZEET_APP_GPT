@@ -43,7 +43,7 @@ class ServiceTierCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: selected
-                ? AppColors.purple.withOpacity(0.1)
+                ? AppColors.purple.withValues(alpha: 0.1)
                 : Colors.white,
             border: Border.all(
               color: selected ? AppColors.purple : Colors.grey.shade300,
@@ -53,14 +53,14 @@ class ServiceTierCard extends StatelessWidget {
             boxShadow: selected
                 ? [
                     BoxShadow(
-                      color: AppColors.purple.withOpacity(0.2),
+                      color: AppColors.purple.withValues(alpha: 0.2),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),

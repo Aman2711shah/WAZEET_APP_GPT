@@ -265,7 +265,7 @@ class _AskWithAISheetState extends State<AskWithAISheet> {
           if (!isUser) ...[
             CircleAvatar(
               radius: 16,
-              backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+              backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
               child: Icon(
                 Icons.smart_toy,
                 size: 18,
@@ -319,7 +319,7 @@ class _AskWithAISheetState extends State<AskWithAISheet> {
             radius: 16,
             backgroundColor: Theme.of(
               context,
-            ).colorScheme.primary.withOpacity(0.1),
+            ).colorScheme.primary.withValues(alpha: 0.1),
             child: Icon(
               Icons.smart_toy,
               size: 18,

@@ -127,8 +127,8 @@ class _AiAssistantOrbState extends State<AiAssistantOrb>
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
                                   colors: [
-                                    Colors.white.withOpacity(0.55),
-                                    Colors.white.withOpacity(0.0),
+                                    Colors.white.withValues(alpha: 0.55),
+                                    Colors.white.withValues(alpha: 0.0),
                                   ],
                                 ),
                               ),
@@ -174,7 +174,7 @@ class _AiAssistantOrbState extends State<AiAssistantOrb>
               height: 40,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [color.withOpacity(0.85), color],
+                  colors: [color.withValues(alpha: 0.85), color],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),

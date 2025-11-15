@@ -39,8 +39,8 @@ class _CustomPageHeaderState extends State<CustomPageHeader> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.black.withOpacity(0.3),
-              AppColors.purple.withOpacity(0.85),
+              Colors.black.withValues(alpha: 0.3),
+              AppColors.purple.withValues(alpha: 0.85),
             ],
           ),
         ),
@@ -76,7 +76,7 @@ class _CustomPageHeaderState extends State<CustomPageHeader> {
                       Text(
                         widget.subtitle,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.95),
+                          color: Colors.white.withValues(alpha: 0.95),
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.3,

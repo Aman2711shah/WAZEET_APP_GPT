@@ -27,24 +27,26 @@ class IndustryData {
   }) async {
     final raw = await rootBundle.loadString(assetPath);
     final List<dynamic> json = jsonDecode(raw);
-    
+
     // Check if this is the new flat format (array of activities directly)
-    if (json.isNotEmpty && json.first is Map && json.first.containsKey('code')) {
+    if (json.isNotEmpty &&
+        json.first is Map &&
+        json.first.containsKey('code')) {
       // New format: flat array of activities
       final actsByCategory = <String, List<Map<String, dynamic>>>{};
-      
+
       for (final item in json) {
         if (item is! Map<String, dynamic>) continue;
-        
+
         final category = (item['category'] as String?) ?? 'Other';
         actsByCategory.putIfAbsent(category, () => []);
         actsByCategory[category]!.add(item);
       }
-      
+
       return actsByCategory.entries.map((entry) {
         final acts = <String>[];
         final descriptions = <String, String>{};
-        
+
         for (final activity in entry.value) {
           final name = activity['name'] as String?;
           if (name != null && name.isNotEmpty) {
@@ -57,7 +59,7 @@ class IndustryData {
             }
           }
         }
-        
+
         return IndustryData(
           industry: entry.key,
           industryArabic: null,
@@ -66,7 +68,7 @@ class IndustryData {
         );
       }).toList();
     }
-    
+
     // Old format: array of industries with business_activities
     return json.map((e) {
       final businessActivities = e['business_activities'] as List<dynamic>?;

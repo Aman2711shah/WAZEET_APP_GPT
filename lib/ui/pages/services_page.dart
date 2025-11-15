@@ -133,7 +133,7 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
-                          color: scheme.primary.withOpacity(0.3),
+                          color: scheme.primary.withValues(alpha: 0.3),
                         );
                       },
                     ),
@@ -143,8 +143,8 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Colors.black.withOpacity(0.35),
-                            scheme.primary.withOpacity(0.5),
+                            Colors.black.withValues(alpha: 0.35),
+                            scheme.primary.withValues(alpha: 0.5),
                           ],
                         ),
                       ),
@@ -156,7 +156,7 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                       child: Text(
                         'Professional business services in Dubai',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.95),
+                          color: Colors.white.withValues(alpha: 0.95),
                           fontSize: rFont(context, sm: 12, md: 13, lg: 14),
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.3,
@@ -260,7 +260,7 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                           decoration: BoxDecoration(
                             color: Color(
                               int.tryParse(category.color) ?? 0xFF6200EE,
-                            ).withOpacity(0.1),
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
@@ -288,7 +288,7 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                         trailing: Icon(
                           Icons.arrow_forward_ios,
                           size: 16,
-                          color: scheme.onSurfaceVariant.withOpacity(0.7),
+                          color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
                         ),
                         onTap: () {
                           Navigator.push(
@@ -353,7 +353,7 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                           decoration: BoxDecoration(
                             color: Color(
                               int.tryParse(r.category.color) ?? 0xFF6200EE,
-                            ).withOpacity(0.1),
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
@@ -450,9 +450,9 @@ class _ComplianceSeal extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

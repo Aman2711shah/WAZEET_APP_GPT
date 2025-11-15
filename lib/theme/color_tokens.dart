@@ -30,7 +30,7 @@ class AppColors extends ThemeExtension<AppColors> {
       // Brighter purple → soft pink/purple for the light theme
       colors: [Color(0xFF7B5CF9), Color(0xFFE29BFF)],
     ),
-    surfaceContainer: scheme.surface.withOpacity(0.9),
+    surfaceContainer: scheme.surface.withValues(alpha: 0.9),
     surfaceContainerHigh: scheme.surfaceContainerHigh,
     surfaceContainerHighest: scheme.surfaceContainerHighest,
   );

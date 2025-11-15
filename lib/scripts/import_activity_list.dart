@@ -6,7 +6,9 @@ import 'dart:convert';
 /// Simple script to convert Activity List CSV to JSON for Firebase import
 /// Run: dart lib/scripts/import_activity_list.dart
 void main() async {
-  debugPrint('🔄 Converting Activity List CSV to JSON for Firebase import...\n');
+  debugPrint(
+    '🔄 Converting Activity List CSV to JSON for Firebase import...\n',
+  );
 
   final csvFile = File('/Users/amanshah/Downloads/Activity List - Master.csv');
 

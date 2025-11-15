@@ -70,7 +70,9 @@ class _IndustrySelectionPageState extends ConsumerState<IndustrySelectionPage> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: AppColors.purple.withOpacity(0.1)),
+            decoration: BoxDecoration(
+              color: AppColors.purple.withValues(alpha: 0.1),
+            ),
             child: Column(
               children: [
                 Icon(Icons.business_center, size: 48, color: AppColors.purple),
@@ -131,7 +133,7 @@ class _IndustrySelectionPageState extends ConsumerState<IndustrySelectionPage> {
                             height: 50,
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? AppColors.purple.withOpacity(0.1)
+                                  ? AppColors.purple.withValues(alpha: 0.1)
                                   : Colors.grey.shade100,
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -213,7 +215,7 @@ class _IndustrySelectionPageState extends ConsumerState<IndustrySelectionPage> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),

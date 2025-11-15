@@ -121,7 +121,7 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
                     end: Alignment.bottomRight,
                     colors: [
                       AppColors.primary,
-                      AppColors.primary.withOpacity(0.8),
+                      AppColors.primary.withValues(alpha: 0.8),
                       AppColors.purple,
                     ],
                   ),
@@ -137,7 +137,7 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
                         height: 150,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                         ),
                       ),
                     ),
@@ -149,7 +149,7 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
                         height: 200,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.05),
+                          color: Colors.white.withValues(alpha: 0.05),
                         ),
                       ),
                     ),
@@ -188,7 +188,7 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -228,7 +228,7 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: AppColors.primary.withValues(alpha: 0.1),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -327,7 +327,7 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
                             });
                           },
                           deleteIconColor: Colors.red,
-                          backgroundColor: Colors.red.withOpacity(0.1),
+                          backgroundColor: Colors.red.withValues(alpha: 0.1),
                         ),
                       ],
                     ),
@@ -344,13 +344,13 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.orange.withOpacity(0.15),
-                          Colors.deepOrange.withOpacity(0.1),
+                          Colors.orange.withValues(alpha: 0.15),
+                          Colors.deepOrange.withValues(alpha: 0.1),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.orange.withOpacity(0.3),
+                        color: Colors.orange.withValues(alpha: 0.3),
                         width: 1.5,
                       ),
                     ),
@@ -396,10 +396,10 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
                     padding: const EdgeInsets.all(12),
                     margin: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppColors.primary.withOpacity(0.3),
+                        color: AppColors.primary.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -613,16 +613,16 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.white, AppColors.purple.withOpacity(0.05)],
+          colors: [Colors.white, AppColors.purple.withValues(alpha: 0.05)],
         ),
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
-          color: AppColors.purple.withOpacity(0.2),
+          color: AppColors.purple.withValues(alpha: 0.2),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.purple.withOpacity(0.08),
+            color: AppColors.purple.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -651,7 +651,7 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
               vertical: AppSpacing.xs,
             ),
             decoration: BoxDecoration(
-              color: AppColors.purple.withOpacity(0.1),
+              color: AppColors.purple.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Text(
@@ -847,7 +847,7 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
             Icon(
               Icons.business_center_outlined,
               size: 80,
-              color: AppColors.primary.withOpacity(0.5),
+              color: AppColors.primary.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 24),
             Text(
@@ -872,7 +872,7 @@ class _FreezoneBrowserPageState extends State<FreezoneBrowserPage>
             Icon(
               Icons.arrow_upward,
               size: 48,
-              color: AppColors.primary.withOpacity(0.3),
+              color: AppColors.primary.withValues(alpha: 0.3),
             ),
           ],
         ),

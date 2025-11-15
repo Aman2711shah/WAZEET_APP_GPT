@@ -28,7 +28,9 @@ class OpenAIService {
 
       // Check if API key is configured
       if (!AppConfig.hasOpenAiKey) {
-        debugPrint('OpenAI API key not configured, using fallback recommendations');
+        debugPrint(
+          'OpenAI API key not configured, using fallback recommendations',
+        );
         return _getFallbackRecommendation(
           businessActivities: businessActivities,
           emirate: emirate,
