@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:simple_icons/simple_icons.dart';
 
@@ -43,21 +42,6 @@ class CustomSolutionPanel extends StatelessWidget {
             title: 'Send Email',
             subtitle: 'Contact us via email',
             onTap: () => _sendEmail(context),
-          ),
-          _divider(scheme),
-          _actionTile(
-            context,
-            icon: Icons.ios_share,
-            title: 'Share Freezones & Mention',
-            subtitle: 'Share with your network',
-            onTap: () => _shareFreezones(),
-          ),
-          _actionTile(
-            context,
-            icon: Icons.group_add_outlined,
-            title: 'Share with team members',
-            subtitle: 'Send details to your team',
-            onTap: () => _shareWithTeam(),
           ),
           _divider(scheme),
           _actionTile(
@@ -163,24 +147,6 @@ class CustomSolutionPanel extends StatelessWidget {
         const SnackBar(content: Text('Email not supported on this device.')),
       );
     }
-  }
-
-  static void _shareFreezones() {
-    SharePlus.instance.share(
-      ShareParams(
-        text:
-            'Check these Free Zones on Wazeet: https://wazeet.com/freezones — @wazeet',
-      ),
-    );
-  }
-
-  static void _shareWithTeam() {
-    SharePlus.instance.share(
-      ShareParams(
-        text:
-            'Team, please review Wazeet services for our business setup: https://wazeet.com/services',
-      ),
-    );
   }
 
   static Future<void> _callNow(BuildContext context) async {
