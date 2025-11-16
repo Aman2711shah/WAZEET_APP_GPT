@@ -17,7 +17,6 @@ import '../widgets/post_card.dart';
 import '../widgets/post_comments_sheet.dart';
 import 'community/events_tab.dart';
 import 'community/news_tab.dart';
-import 'community/trending_tab.dart';
 import 'industry_selection_page.dart';
 import 'user_profile_detail_page.dart';
 
@@ -49,7 +48,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -92,7 +91,6 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
                 indicatorColor: scheme.primary,
                 tabs: const [
                   Tab(text: 'Feed'),
-                  Tab(text: 'Trending'),
                   Tab(text: 'Events'),
                   Tab(text: 'Business News'),
                 ],
@@ -102,12 +100,7 @@ class _CommunityPageState extends ConsumerState<CommunityPage>
         ],
         body: TabBarView(
           controller: _tabController,
-          children: [
-            _buildFeedTab(),
-            const TrendingTab(),
-            const EventsTab(),
-            const NewsTab(),
-          ],
+          children: [_buildFeedTab(), const EventsTab(), const NewsTab()],
         ),
       ),
     );
