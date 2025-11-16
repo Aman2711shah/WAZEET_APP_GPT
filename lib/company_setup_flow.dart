@@ -1784,27 +1784,263 @@ class _VisaStep extends ConsumerWidget {
           Theme(
             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
-              title: const Text('What does visa processing involve?'),
-              childrenPadding: const EdgeInsets.only(
-                bottom: 8,
-                left: 8,
-                right: 8,
+              title: const Text(
+                'What does visa processing involve?',
+                style: TextStyle(fontWeight: FontWeight.w600),
               ),
+              childrenPadding: const EdgeInsets.all(16),
               children: [
                 if (data.employmentVisaCount == 0 &&
                     data.investorVisaCount == 0)
-                  const Text(
-                    'Add visa slots above to view tailored steps. In general, the process includes an entry permit, medical exam, Emirates ID biometrics, and visa stamping. Details vary by free zone.',
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: const Text(
+                      'Select visa slots above to view detailed requirements. UAE visa processing includes entry permits, medical examinations, Emirates ID registration, and final visa stamping as per MOHRE and ICP regulations.',
+                      style: TextStyle(height: 1.5),
+                    ),
                   )
                 else ...[
-                  if (data.investorVisaCount > 0)
-                    const Text(
-                      'Investor Visa overview:\n\n• Entry Permit issuance (e-visa)\n• Establishment Card & shareholding verification\n• Medical examination\n• Emirates ID biometrics\n• Visa stamping (or e-visa activation)\n\nNotes: Investor visas may have different minimum share capital requirements and may not require a labor contract. Timelines vary by authority.\n',
+                  if (data.investorVisaCount > 0) ...[
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.business_center,
+                                color: Colors.blue.shade700,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Investor Visa Process',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Complete Process as per UAE Federal Decree-Law No. 6 of 2022:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildVisaStep(
+                            '1. Entry Permit Application',
+                            'Submit e-visa application through ICP (Immigration & Checkpoints Portal) or relevant Free Zone authority. Required documents: passport copy, company trade license, establishment card, investment proof.',
+                          ),
+                          _buildVisaStep(
+                            '2. Establishment Card Verification',
+                            'Obtain Establishment Card from Ministry of Human Resources & Emiratisation (MOHRE) for Mainland or Free Zone authority. Verify minimum share capital as per Authority requirements (typically AED 1M+ for investor visas).',
+                          ),
+                          _buildVisaStep(
+                            '3. Entry Permit Issuance',
+                            'Validity: 60 days from issuance. Entry to UAE must occur within this period. Digital e-visa sent via email and accessible through ICP portal.',
+                          ),
+                          _buildVisaStep(
+                            '4. Medical Fitness Test',
+                            'Mandatory health screening at MOHAP-approved medical centers. Tests include: blood tests (HIV, Hepatitis B/C, Syphilis), chest X-ray (tuberculosis), and general physical examination. Results valid for 3 months.',
+                          ),
+                          _buildVisaStep(
+                            '5. Emirates ID Registration',
+                            'Biometric enrollment at Federal Authority for Identity, Citizenship, Customs and Ports Security (ICP) typing centers. Includes: fingerprints, eye scan, photograph. ID card delivery within 5-7 working days.',
+                          ),
+                          _buildVisaStep(
+                            '6. Visa Stamping / E-Visa Activation',
+                            'Final step: Residence visa stamped in passport or e-visa activated in system. Validity: 2 years (renewable) or 3 years for Golden Visa eligible investors (investment ≥ AED 2M).',
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.amber.shade300),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  color: Colors.amber.shade900,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                const Expanded(
+                                  child: Text(
+                                    'Important Notes:\n• Investor visa holders can sponsor family members\n• No labor contract required for investors\n• Minimum share capital varies by Emirate and Free Zone\n• Processing time: 10-15 working days (post-license)\n• Fees vary by Free Zone (AED 3,000 - 6,000 typical)',
+                                    style: TextStyle(fontSize: 13, height: 1.4),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  if (data.employmentVisaCount > 0)
-                    const Text(
-                      'Employment Visa overview:\n\n• Entry Permit issuance (e-visa)\n• Optional status change (if inside UAE)\n• Medical examination\n• Emirates ID biometrics\n• Labor contract (mainland) or equivalent free zone process\n• Visa stamping (or e-visa activation)\n\nTypical duration is 5–10 working days post company setup. Exact steps vary by free zone.',
+                    const SizedBox(height: 16),
+                  ],
+                  if (data.employmentVisaCount > 0) ...[
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.green.shade200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.badge_outlined,
+                                color: Colors.green.shade700,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Employment Visa Process',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Process as per MOHRE Ministerial Resolution No. 1186 of 2022:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildVisaStep(
+                            '1. Work Permit Application',
+                            'Submit through MOHRE portal or Free Zone authority. Required: employment contract, educational certificates (attested by UAE Embassy/MOFA), passport copy, company license.',
+                          ),
+                          _buildVisaStep(
+                            '2. Entry Permit (E-Visa)',
+                            'ICP approval for employee entry. Valid for 60 days. Employee must enter UAE within validity period. Digital entry permit accessible via ICP/GDRFA portals.',
+                          ),
+                          _buildVisaStep(
+                            '3. Status Change (if applicable)',
+                            'For candidates already in UAE on visit/tourist visa. Change status to employment residence without exit. Additional fee: AED 500-800. Processing: 2-3 working days.',
+                          ),
+                          _buildVisaStep(
+                            '4. Medical Fitness Certificate',
+                            'MOHAP-approved center examination (same as investor visa). Mandatory for all employment visa applicants. Cost: AED 300-500 per person. Tests: HIV, Hepatitis B/C, TB screening, pregnancy test (for females aged 18-60).',
+                          ),
+                          _buildVisaStep(
+                            '5. Emirates ID Biometric Enrollment',
+                            'Register at ICP-approved typing center. Biometrics: 10 fingerprints, iris scan, photo. Fee: AED 370 for 2-year card, AED 670 for 3-year card. Card delivery: 5-7 working days to registered address.',
+                          ),
+                          _buildVisaStep(
+                            '6. Labor Contract Registration',
+                            'Mainland: Register unified contract with MOHRE. Includes: salary, job title, benefits, working hours (max 48 hours/week as per UAE Labour Law). Free Zone: Equivalent employment contract as per zone regulations.',
+                          ),
+                          _buildVisaStep(
+                            '7. Residence Visa Stamping',
+                            'Final residence visa stamped in passport. Validity: 2 years (renewable). Must be completed within 60 days of entry permit. Fee included in package: AED 2,500-4,000 total.',
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.amber.shade300),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  color: Colors.amber.shade900,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                const Expanded(
+                                  child: Text(
+                                    'Employment Visa Guidelines:\n• Quota system applies (company size determines visa allocation)\n• Minimum salary requirements vary by job category and nationality\n• Educational certificates must be attested by MOFA\n• Employee can sponsor family once earning ≥ AED 4,000-5,000/month (or AED 3,000 + accommodation)\n• Total processing time: 5-10 working days\n• Visa ban period: 6 months if employee resigns within 6 months of joining (unless waived by employer)',
+                                    style: TextStyle(fontSize: 13, height: 1.4),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(height: 16),
+                  ],
+                  // General UAE Visa Regulations
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.purple.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.gavel,
+                              color: Colors.purple.shade700,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'UAE Visa Regulations Summary',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        _buildRegulationPoint(
+                          'Governing Laws',
+                          'Federal Decree-Law No. 6 of 2022 on Entry & Residence of Foreigners\nCabinet Resolution No. 360 of 2023 (Executive Regulations)\nMOHRE Ministerial Resolutions on Work Permits',
+                        ),
+                        _buildRegulationPoint(
+                          'Visa Validity & Renewal',
+                          '• Standard residence visa: 2 years renewable\n• Golden Visa: 10 years (for investors ≥ AED 2M, specialists, entrepreneurs)\n• Green Visa: 5 years (for skilled professionals, freelancers)\n• Renewal must occur before expiry to avoid AED 25-50/day overstay fines',
+                        ),
+                        _buildRegulationPoint(
+                          'Cancellation Process',
+                          'Employer must cancel visa within 30 days of employee departure. Grace period post-cancellation: 30 days to find new employment or exit UAE. Overstaying incurs fines: AED 50/day (first 6 months), AED 100/day thereafter.',
+                        ),
+                        _buildRegulationPoint(
+                          'Free Zone vs Mainland',
+                          'Free Zone visas tied to Free Zone license (office required). Mainland visas allow work anywhere in UAE. Some Free Zones offer flexible desk options reducing costs.',
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ],
             ),
@@ -1813,6 +2049,90 @@ class _VisaStep extends ConsumerWidget {
       ),
     );
   }
+}
+
+// Helper widgets for visa information display
+Widget _buildVisaStep(String title, String description) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          margin: const EdgeInsets.only(top: 2),
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Colors.blue.shade100,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(Icons.check, size: 14, color: Colors.blue.shade700),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey.shade700,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildRegulationPoint(String title, String description) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.circle, size: 8, color: Colors.purple.shade600),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: Colors.purple.shade900,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Padding(
+          padding: const EdgeInsets.only(left: 16),
+          child: Text(
+            description,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey.shade700,
+              height: 1.5,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 // Enhanced reusable card with +/- counter for visa types
