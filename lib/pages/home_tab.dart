@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../ui/theme.dart';
-import '../ui/widgets/gradient_header.dart';
+import '../ui/widgets/promotional_banner.dart';
 import '../ui/widgets/service_square_button.dart';
 import '../ui/widgets/event_card.dart';
 import 'company_setup_page.dart';
@@ -12,18 +12,13 @@ class HomeTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(
-          child: GradientHeader(
-            title: 'Welcome, David Chen',
-            leading: const SizedBox(),
-            trailing: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircleAvatar(radius: 16, child: Text('D')),
-                SizedBox(width: 8),
-                Text('Profile', style: TextStyle(color: Colors.white)),
-              ],
-            ),
+        const SliverToBoxAdapter(
+          child: PromotionalBanner(
+            title: 'Scale your business in Dubai',
+            subtitle: 'Company setup • Banking • Visas • Compliance',
+            height: 200,
+            imageUrl:
+                'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1600&h=800&fit=crop',
           ),
         ),
         SliverToBoxAdapter(

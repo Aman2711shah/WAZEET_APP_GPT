@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../ui/widgets/gradient_header.dart';
+import '../ui/widgets/promotional_banner.dart';
 import '../ui/widgets/settings_item.dart';
 
 class MoreTab extends StatelessWidget {
@@ -9,7 +9,13 @@ class MoreTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       children: [
-        const GradientHeader(title: '', height: 200),
+        const PromotionalBanner(
+          title: 'Exclusive: Business services at member rates',
+          subtitle: 'Priority support • Fast-track processing • Expert help',
+          height: 200,
+          imageUrl:
+              'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1600&h=800&fit=crop',
+        ),
         Padding(
           padding: const EdgeInsets.all(16),
           child: Column(

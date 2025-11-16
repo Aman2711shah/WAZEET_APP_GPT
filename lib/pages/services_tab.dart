@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../ui/theme.dart';
-import '../ui/widgets/gradient_header.dart';
+import '../ui/widgets/promotional_banner.dart';
 import '../ui/widgets/custom_solution_panel.dart';
 import '../ui/widgets/search_bar.dart';
 import '../ui/widgets/service_square_button.dart';
@@ -13,7 +13,13 @@ class ServicesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       children: [
-        const GradientHeader(title: 'Services'),
+        const PromotionalBanner(
+          title: 'Launch in Dubai with confidence',
+          subtitle: 'Limited-time setup offers • Free 15‑min consultation',
+          height: 200,
+          imageUrl:
+              'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1600&h=800&fit=crop',
+        ),
         Padding(
           padding: const EdgeInsets.all(16),
           child: Column(

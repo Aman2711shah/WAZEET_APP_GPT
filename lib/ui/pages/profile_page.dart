@@ -31,32 +31,18 @@ class ProfilePage extends ConsumerWidget {
       body: CustomScrollView(
         controller: scrollController,
         slivers: [
-          SliverAppBar(
-            expandedHeight: Responsive.heroHeight(context),
-            pinned: true,
-            floating: false,
-            backgroundColor: AppColors.purple,
-            flexibleSpace: FlexibleSpaceBar(
-              title: const Text(
-                'More',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  shadows: [Shadow(color: Colors.black38, blurRadius: 8)],
-                ),
-              ),
-              background: Stack(
-                clipBehavior: Clip.hardEdge,
+          SliverToBoxAdapter(
+            child: Container(
+              height: Responsive.heroHeight(context),
+              margin: const EdgeInsets.only(bottom: 8),
+              child: Stack(
                 fit: StackFit.expand,
                 children: [
                   Image.network(
                     'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1600&h=800&fit=crop',
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: AppColors.purple.withValues(alpha: 0.3),
-                      );
-                    },
+                    errorBuilder: (_, __, ___) =>
+                        Container(color: AppColors.purple),
                   ),
                   Container(
                     decoration: BoxDecoration(
@@ -64,26 +50,38 @@ class ProfilePage extends ConsumerWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.35),
-                          AppColors.purple.withValues(alpha: 0.5),
+                          Colors.black.withValues(alpha: 0.4),
+                          AppColors.purple.withValues(alpha: 0.6),
                         ],
                       ),
                     ),
                   ),
+                  // Promotional content replacing old header
                   Positioned(
                     left: 16,
                     right: 16,
-                    bottom: 56,
-                    child: Text(
-                      'Settings, preferences & account management',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.95),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.3,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    bottom: 24,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Limited-time member benefits',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Fast-track company setup • Priority support • Discounted fees',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.95),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

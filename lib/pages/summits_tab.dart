@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../ui/widgets/gradient_header.dart';
+import '../ui/widgets/promotional_banner.dart';
 import '../ui/widgets/event_card.dart';
 
 class SummitsTab extends StatelessWidget {
@@ -9,7 +9,13 @@ class SummitsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       children: [
-        const GradientHeader(title: 'Business Summits', height: 120),
+        const PromotionalBanner(
+          title: 'Meet investors and mentors',
+          subtitle: 'Upcoming business summits across the UAE',
+          height: 160,
+          imageUrl:
+              'https://images.unsplash.com/photo-1518600506278-4e8ef466b810?w=1600&h=800&fit=crop',
+        ),
         Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
