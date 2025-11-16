@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/foundation.dart';
 import '../../theme.dart';
 import '../../../services/auth_service.dart';
 
@@ -117,21 +118,83 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
   }
 
   Future<void> _openMailApp() async {
-    final mailtoUri = Uri(scheme: 'mailto');
-    try {
-      if (await canLaunchUrl(mailtoUri)) {
-        await launchUrl(mailtoUri);
-      } else {
+    setState(() {
+      _message = null;
+      _isError = false;
+    });
+
+    // Helper to try opening a list of URIs in order, returning true on first success
+    Future<bool> tryLaunchInOrder(List<Uri> uris) async {
+      for (final uri in uris) {
+        try {
+          if (await canLaunchUrl(uri)) {
+            final ok = await launchUrl(
+              uri,
+              mode: LaunchMode.externalApplication,
+            );
+            if (ok) return true;
+          }
+        } catch (_) {
+          // continue to next uri
+        }
+      }
+      return false;
+    }
+
+    // Web: open a mailto link which will use the system handler
+    if (kIsWeb) {
+      final success = await tryLaunchInOrder([Uri(scheme: 'mailto')]);
+      if (!success && mounted) {
         setState(() {
-          _message = 'Could not open mail app';
+          _message = 'No email app found. Please open your inbox manually.';
           _isError = true;
         });
       }
-    } catch (e) {
-      setState(() {
-        _message = 'Could not open mail app';
-        _isError = true;
-      });
+      return;
+    }
+
+    // Platform-specific flows
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        // 1) Try Gmail
+        // Using the Gmail URL scheme. If unavailable, fall back to mailto (system chooser)
+        final openedAndroid = await tryLaunchInOrder([
+          Uri.parse('googlegmail://'),
+          Uri.parse('mailto:'),
+        ]);
+        if (!openedAndroid && mounted) {
+          setState(() {
+            _message = 'No email app found. Please open your inbox manually.';
+            _isError = true;
+          });
+        }
+        break;
+      case TargetPlatform.iOS:
+        // 1) Try default Mail via message:// then mailto://
+        // 2) Try Gmail and Outlook schemes
+        final openedIOS = await tryLaunchInOrder([
+          Uri.parse('message://'),
+          Uri.parse('mailto://'),
+          Uri.parse('mailto:'),
+          Uri.parse('googlegmail://'),
+          Uri.parse('ms-outlook://'),
+        ]);
+        if (!openedIOS && mounted) {
+          setState(() {
+            _message = 'No email app found. Please open your inbox manually.';
+            _isError = true;
+          });
+        }
+        break;
+      default:
+        // Other platforms: best-effort mailto
+        final ok = await tryLaunchInOrder([Uri(scheme: 'mailto')]);
+        if (!ok && mounted) {
+          setState(() {
+            _message = 'No email app found. Please open your inbox manually.';
+            _isError = true;
+          });
+        }
     }
   }
 

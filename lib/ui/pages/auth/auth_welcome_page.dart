@@ -225,60 +225,57 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
 
                       const SizedBox(height: 36),
 
-                      // Enhanced title with better contrast
+                      // Typography hierarchy: "WELCOME TO" + "Wazeet" + subtitle
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'WELCOME TO Wazeet',
-                          style: TextStyle(
-                            fontSize: 44,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.black,
-                            letterSpacing: -1.0,
-                            height: 1.1,
-                            shadows: [
-                              Shadow(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                blurRadius: 12,
-                                offset: const Offset(0, 2),
-                              ),
-                              Shadow(
-                                color: Colors.white.withValues(alpha: 0.5),
-                                blurRadius: 24,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
+                        child: Column(
+                          children: [
+                            // "WELCOME TO" - smaller, all caps, medium weight
+                            Text(
+                              'WELCOME TO',
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                    letterSpacing: 2.5,
+                                    height: 1.2,
+                                  ),
+                              textAlign: TextAlign.center,
+                            ),
 
-                      const SizedBox(height: 16),
+                            const SizedBox(height: 8),
 
-                      // Enhanced subtitle with stronger contrast
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Text(
-                          'Simplify Your Business',
-                          style: TextStyle(
-                            fontSize: 22,
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.8,
-                            shadows: [
-                              Shadow(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
-                              Shadow(
-                                color: Colors.white.withValues(alpha: 0.5),
-                                blurRadius: 22,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          textAlign: TextAlign.center,
+                            // "Wazeet" - main brand title, largest and bold
+                            Text(
+                              'Wazeet',
+                              style: Theme.of(context).textTheme.displayLarge
+                                  ?.copyWith(
+                                    fontSize: 52,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.black,
+                                    letterSpacing: -0.5,
+                                    height: 1.1,
+                                  ),
+                              textAlign: TextAlign.center,
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // "Simplify Your Business" - subtitle, smaller, regular weight
+                            Text(
+                              'Simplify Your Business',
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black87,
+                                    letterSpacing: 0.3,
+                                    height: 1.4,
+                                  ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
                       ),
 

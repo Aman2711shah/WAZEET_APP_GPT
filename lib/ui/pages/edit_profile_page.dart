@@ -150,6 +150,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.image,
         allowMultiple: false,
+        withData: true, // ensure bytes are available on mobile as well
       );
       if (result == null || result.files.isEmpty) return;
       final file = result.files.first;
@@ -195,15 +196,18 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       setState(() => _isUploadingImage = true);
       final profile = ref.read(userProfileProvider);
       if (profile == null) return;
+      final ext = (file.extension?.isNotEmpty == true)
+          ? file.extension!
+          : 'jpeg';
       final fileName =
-          '${profile.id}_${DateTime.now().millisecondsSinceEpoch}.${file.extension}';
+          '${profile.id}_${DateTime.now().millisecondsSinceEpoch}.$ext';
       final storageRef = FirebaseStorage.instance.ref().child(
         'profile_pictures/${profile.id}/$fileName',
       );
       if (file.bytes != null) {
         await storageRef.putData(
           file.bytes!,
-          SettableMetadata(contentType: 'image/${file.extension}'),
+          SettableMetadata(contentType: 'image/$ext'),
         );
         final downloadUrl = await storageRef.getDownloadURL();
         await ref
