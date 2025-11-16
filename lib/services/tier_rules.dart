@@ -114,6 +114,6 @@ TierPair buildTiers({
 ///
 /// Example:
 /// ```dart
-/// ctaLabel(premiumTier) => "Proceed with Premium Tier"
+/// ctaLabel(premiumTier) => "Proceed"
 /// ```
-String ctaLabel(ServiceTier tier) => 'Proceed with ${tier.name} Tier';
+String ctaLabel(ServiceTier tier) => 'Proceed';

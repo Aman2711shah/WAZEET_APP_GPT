@@ -134,8 +134,8 @@ void main() {
         fastBadge: true,
       );
 
-      expect(ctaLabel(standard), 'Proceed with Standard Tier');
-      expect(ctaLabel(premium), 'Proceed with Premium Tier');
+      expect(ctaLabel(standard), 'Proceed');
+      expect(ctaLabel(premium), 'Proceed');
     });
   });
 
