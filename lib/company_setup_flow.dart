@@ -6,7 +6,6 @@ import 'package:wazeet/utils/industry_loader.dart';
 import 'package:wazeet/services/freezone_service.dart';
 import 'package:wazeet/models/freezone_package_recommendation.dart';
 import 'package:wazeet/pages/package_recommendations_page.dart';
-import 'package:wazeet/ui/widgets/searchable_nationality_dropdown.dart';
 
 // AI-based recommender removed; pricing will be handled by backend service
 
@@ -1188,476 +1187,159 @@ extension on _ActivitiesStepState {
 }
 
 class _ShareholdersStep extends ConsumerWidget {
-  void _showAddShareholderModal(
-    BuildContext context,
-    WidgetRef ref,
-    int index,
-  ) {
-    final data = ref.read(setupProvider);
-    final controller = ref.read(setupProvider.notifier);
-
-    final existingShareholder = index < data.shareholders.length
-        ? data.shareholders[index]
-        : Shareholder(name: '', nationality: '', dateOfBirth: null);
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
-        return _AddShareholderModal(
-          shareholder: existingShareholder,
-          index: index,
-          onSave: (shareholder) {
-            controller.updateShareholder(index, shareholder);
-            Navigator.pop(context);
-          },
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(setupProvider);
+    final controller = ref.read(setupProvider.notifier);
 
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
-            child: ListView(
-              children: [
-                // Display added shareholders
-                if (data.shareholders.isNotEmpty) ...[
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                   const Text(
-                    'Added Shareholders',
+                    'Number of Shareholders',
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: 24,
                       fontWeight: FontWeight.w700,
                       letterSpacing: -0.3,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  ...List.generate(data.shareholders.length, (index) {
-                    final shareholder = data.shareholders[index];
-                    return _ShareholderListItem(
-                      index: index,
-                      shareholder: shareholder,
-                      onTap: () =>
-                          _showAddShareholderModal(context, ref, index),
-                    );
-                  }),
-                  const SizedBox(height: 24),
-                ],
-
-                // Add Shareholder Button
-                Center(
-                  child: ElevatedButton.icon(
-                    onPressed: data.shareholders.length < 10
-                        ? () => _showAddShareholderModal(
-                            context,
-                            ref,
-                            data.shareholders.length,
-                          )
-                        : null,
-                    icon: const Icon(Icons.add_rounded),
-                    label: Text(
-                      data.shareholders.isEmpty
-                          ? 'Add Shareholder'
-                          : 'Add Another Shareholder',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple.shade600,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 18,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 0,
-                    ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Select the number of shareholders for your company',
+                    style: TextStyle(fontSize: 15, color: Colors.grey.shade600),
+                    textAlign: TextAlign.center,
                   ),
-                ),
+                  const SizedBox(height: 48),
 
-                const SizedBox(height: 16),
-
-                if (data.shareholders.length < 10)
-                  Center(
-                    child: Text(
-                      'You can add up to ${10 - data.shareholders.length} more shareholder${10 - data.shareholders.length != 1 ? 's' : ''}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
-                        fontWeight: FontWeight.w500,
-                      ),
+                  // Counter Display
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 24,
                     ),
-                  ),
-
-                const SizedBox(height: 80),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ShareholderListItem extends StatelessWidget {
-  final int index;
-  final Shareholder shareholder;
-  final VoidCallback onTap;
-
-  const _ShareholderListItem({
-    required this.index,
-    required this.shareholder,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.deepPurple.shade50,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Center(
-                  child: Text(
-                    '${index + 1}',
-                    style: TextStyle(
-                      color: Colors.deepPurple.shade700,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      shareholder.name.isNotEmpty
-                          ? shareholder.name
-                          : 'Shareholder ${index + 1}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    if (shareholder.nationality.isNotEmpty)
-                      Text(
-                        shareholder.nationality,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: Colors.grey.shade400,
-                size: 24,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AddShareholderModal extends StatefulWidget {
-  final Shareholder shareholder;
-  final int index;
-  final Function(Shareholder) onSave;
-
-  const _AddShareholderModal({
-    required this.shareholder,
-    required this.index,
-    required this.onSave,
-  });
-
-  @override
-  State<_AddShareholderModal> createState() => _AddShareholderModalState();
-}
-
-class _AddShareholderModalState extends State<_AddShareholderModal> {
-  late TextEditingController _nameController;
-  String? _selectedNationality;
-  DateTime? _selectedDate;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(text: widget.shareholder.name);
-    _selectedNationality = widget.shareholder.nationality.isEmpty
-        ? null
-        : widget.shareholder.nationality;
-    _selectedDate = widget.shareholder.dateOfBirth;
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _selectDate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate ?? DateTime(1990, 1, 1),
-      firstDate: DateTime(1920),
-      lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Colors.deepPurple.shade600,
-              onPrimary: Colors.white,
-              onSurface: Colors.black87,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
-  }
-
-  void _save() {
-    if (_nameController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter a name')));
-      return;
-    }
-    if (_selectedNationality == null || _selectedNationality!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a nationality')),
-      );
-      return;
-    }
-
-    widget.onSave(
-      Shareholder(
-        name: _nameController.text,
-        nationality: _selectedNationality!,
-        dateOfBirth: _selectedDate,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    final modalHeight = mediaQuery.size.height * 0.85;
-
-    return Container(
-      height: modalHeight,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        children: [
-          // Handle bar
-          Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-
-          // Header
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              children: [
-                Text(
-                  widget.shareholder.name.isEmpty
-                      ? 'Add Shareholder'
-                      : 'Edit Shareholder',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.grey.shade100,
-                    foregroundColor: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Form fields
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              children: [
-                // Name Field
-                TextField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Full Name',
-                    hintText: 'Enter full name',
-                    prefixIcon: const Icon(Icons.person_outline),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.deepPurple.shade600,
+                    decoration: BoxDecoration(
+                      color: Colors.deepPurple.shade50,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: Colors.deepPurple.shade100,
                         width: 2,
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Nationality Dropdown
-                SearchableNationalityDropdown(
-                  initialValue: _selectedNationality,
-                  labelText: 'Nationality',
-                  hintText: 'Select nationality',
-                  prefixIcon: const Icon(Icons.flag_outlined),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _selectedNationality = newValue;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Date of Birth Field
-                InkWell(
-                  onTap: _selectDate,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(12),
+                    child: Text(
+                      '${data.shareholdersCount}',
+                      style: TextStyle(
+                        fontSize: 72,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.deepPurple.shade700,
+                        letterSpacing: -2,
+                      ),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.calendar_today_outlined,
-                          color: Colors.grey.shade600,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            _selectedDate != null
-                                ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'
-                                : 'Select Date of Birth',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: _selectedDate != null
-                                  ? Colors.black87
-                                  : Colors.grey.shade600,
+                  ),
+
+                  const SizedBox(height: 48),
+
+                  // Plus and Minus Buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Minus Button
+                      Material(
+                        color: data.shareholdersCount > 1
+                            ? Colors.red.shade50
+                            : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(20),
+                        child: InkWell(
+                          onTap: data.shareholdersCount > 1
+                              ? () {
+                                  controller.setShareholdersCount(
+                                    data.shareholdersCount - 1,
+                                  );
+                                }
+                              : null,
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: data.shareholdersCount > 1
+                                    ? Colors.red.shade200
+                                    : Colors.grey.shade300,
+                                width: 2,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.remove_rounded,
+                              size: 40,
+                              color: data.shareholdersCount > 1
+                                  ? Colors.red.shade600
+                                  : Colors.grey.shade400,
                             ),
                           ),
                         ),
-                        Icon(
-                          Icons.arrow_drop_down,
-                          color: Colors.grey.shade600,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+                      ),
 
-          // Save button
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -5),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _save,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple.shade600,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      const SizedBox(width: 40),
+
+                      // Plus Button
+                      Material(
+                        color: data.shareholdersCount < 10
+                            ? Colors.green.shade50
+                            : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(20),
+                        child: InkWell(
+                          onTap: data.shareholdersCount < 10
+                              ? () {
+                                  controller.setShareholdersCount(
+                                    data.shareholdersCount + 1,
+                                  );
+                                }
+                              : null,
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: data.shareholdersCount < 10
+                                    ? Colors.green.shade200
+                                    : Colors.grey.shade300,
+                                width: 2,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.add_rounded,
+                              size: 40,
+                              color: data.shareholdersCount < 10
+                                  ? Colors.green.shade600
+                                  : Colors.grey.shade400,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  Text(
+                    'Range: 1 - 10 shareholders',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade500,
+                      fontWeight: FontWeight.w500,
                     ),
-                    elevation: 0,
                   ),
-                  child: const Text(
-                    'Save Shareholder',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                ),
+                ],
               ),
             ),
           ),
