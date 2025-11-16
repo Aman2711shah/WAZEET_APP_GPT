@@ -18,20 +18,76 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   late TextEditingController _emailController;
   // Title is now a dropdown selection
   String? _selectedTitle;
-  late TextEditingController _bioController;
   late TextEditingController _phoneController;
-  late TextEditingController _designationController;
-  late TextEditingController _qualificationController;
+  late TextEditingController _companyController;
   String _selectedCountryCode = '+971';
   bool _isUploadingImage = false;
 
   // Preset titles
+  // Expanded common job/role titles (approx 60) for better variety
   static const List<String> _titles = <String>[
     'Founder',
+    'Co-Founder',
     'CEO',
-    'Entrepreneur',
-    'Manager',
+    'President',
+    'Managing Director',
+    'General Manager',
+    'Chief Operating Officer',
+    'COO',
+    'Chief Technology Officer',
+    'CTO',
+    'Chief Marketing Officer',
+    'CMO',
+    'Chief Financial Officer',
+    'CFO',
+    'Chief Product Officer',
+    'CPO',
+    'Chief Strategy Officer',
+    'Chief Revenue Officer',
+    'Vice President',
+    'VP of Engineering',
+    'VP of Product',
+    'VP of Sales',
+    'Director of Engineering',
+    'Director of Product',
+    'Director of Marketing',
+    'Director of Sales',
+    'Product Manager',
+    'Senior Product Manager',
+    'Associate Product Manager',
+    'Project Manager',
+    'Program Manager',
+    'Operations Manager',
+    'Business Development Manager',
+    'Marketing Manager',
+    'Sales Manager',
+    'Finance Manager',
+    'HR Manager',
+    'Recruiter',
+    'Talent Acquisition Specialist',
+    'Software Engineer',
+    'Senior Software Engineer',
+    'Frontend Developer',
+    'Backend Developer',
+    'Full Stack Developer',
+    'Mobile Developer',
+    'Data Scientist',
+    'Data Analyst',
+    'UX Designer',
+    'UI Designer',
+    'UX/UI Designer',
+    'Graphic Designer',
+    'Content Strategist',
+    'Copywriter',
+    'Digital Marketing Specialist',
+    'SEO Specialist',
+    'Social Media Manager',
+    'Customer Success Manager',
+    'Account Manager',
     'Consultant',
+    'Strategy Consultant',
+    'Management Consultant',
+    'Entrepreneur',
     'Freelancer',
   ];
 
@@ -52,7 +108,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     _emailController = TextEditingController(text: profile?.email ?? '');
     // Title selection
     _selectedTitle = _titles.contains(profile?.title) ? profile?.title : null;
-    _bioController = TextEditingController(text: profile?.bio ?? '');
+    // Bio field removed from edit screen (retain existing value silently)
     // Phone & country code: try to infer from saved phone/countryCode
     final savedPhone = profile?.phone ?? '';
     final savedCode = profile?.countryCode;
@@ -76,22 +132,15 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
           .trim();
     }
     _phoneController = TextEditingController(text: phoneWithoutCode);
-    _designationController = TextEditingController(
-      text: profile?.designation ?? '',
-    );
-    _qualificationController = TextEditingController(
-      text: profile?.qualification ?? '',
-    );
+    _companyController = TextEditingController(text: profile?.company ?? '');
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _bioController.dispose();
     _phoneController.dispose();
-    _designationController.dispose();
-    _qualificationController.dispose();
+    _companyController.dispose();
     super.dispose();
   }
 
@@ -102,9 +151,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         type: FileType.image,
         allowMultiple: false,
       );
-
       if (result == null || result.files.isEmpty) return;
-
       final file = result.files.first;
 
       // Validate file size (max 5MB)
@@ -120,37 +167,54 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         return;
       }
 
-      setState(() => _isUploadingImage = true);
+      // Ask user to confirm before uploading
+      if (!mounted) return;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) {
+          return AlertDialog(
+            title: const Text('Use this photo?'),
+            content: file.bytes != null
+                ? Image.memory(file.bytes!, height: 160, fit: BoxFit.cover)
+                : const Text('Preview not available'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      );
+      if (confirmed != true) return; // user cancelled
 
+      setState(() => _isUploadingImage = true);
       final profile = ref.read(userProfileProvider);
       if (profile == null) return;
-
-      // Upload to Firebase Storage
       final fileName =
           '${profile.id}_${DateTime.now().millisecondsSinceEpoch}.${file.extension}';
       final storageRef = FirebaseStorage.instance.ref().child(
         'profile_pictures/${profile.id}/$fileName',
       );
-
-      // Upload file bytes
       if (file.bytes != null) {
         await storageRef.putData(
           file.bytes!,
           SettableMetadata(contentType: 'image/${file.extension}'),
         );
-
-        // Get download URL
         final downloadUrl = await storageRef.getDownloadURL();
-
-        // Update profile with new photo URL
         await ref
             .read(userProfileProvider.notifier)
             .updateProfile(photoUrl: downloadUrl);
-
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Profile picture updated successfully!'),
+              content: Text(
+                'Profile picture updated. Tap Save to confirm other changes.',
+              ),
               backgroundColor: Colors.green,
             ),
           );
@@ -188,17 +252,12 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
       title: _selectedTitle,
-      bio: _bioController.text.trim().isEmpty
-          ? null
-          : _bioController.text.trim(),
+      // Bio not editable here; omit parameter to keep existing value
       phone: fullPhone,
       countryCode: _selectedCountryCode,
-      designation: _designationController.text.trim().isEmpty
+      company: _companyController.text.trim().isEmpty
           ? null
-          : _designationController.text.trim(),
-      qualification: _qualificationController.text.trim().isEmpty
-          ? null
-          : _qualificationController.text.trim(),
+          : _companyController.text.trim(),
     );
 
     if (mounted) {
@@ -340,44 +399,35 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             ),
             const SizedBox(height: 16),
 
-            // Phone with country code dropdown
+            // Phone with country code and number (equal sizing)
             Row(
               children: [
-                // Country dropdown (flat style)
-                Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).inputDecorationTheme.fillColor,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Theme.of(context).dividerColor,
-                      width: 0.8,
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    initialValue: _selectedCountryCode,
+                    decoration: const InputDecoration(
+                      labelText: 'Code',
+                      prefixIcon: Icon(Icons.flag_outlined),
                     ),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedCountryCode,
-                      isDense: true,
-                      onChanged: (v) =>
-                          setState(() => _selectedCountryCode = v ?? '+971'),
-                      items: _countries
-                          .map(
-                            (c) => DropdownMenuItem<String>(
-                              value: c['code'],
-                              child: Row(
-                                children: [
-                                  Text(c['flag']!),
-                                  const SizedBox(width: 6),
-                                  Text(c['code']!),
-                                ],
-                              ),
+                    items: _countries
+                        .map(
+                          (c) => DropdownMenuItem<String>(
+                            value: c['code'],
+                            child: Row(
+                              children: [
+                                Text(c['flag']!),
+                                const SizedBox(width: 6),
+                                Text(c['code']!),
+                              ],
                             ),
-                          )
-                          .toList(),
-                    ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) =>
+                        setState(() => _selectedCountryCode = v ?? '+971'),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 Expanded(
                   child: TextFormField(
                     controller: _phoneController,
@@ -393,37 +443,13 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             ),
             const SizedBox(height: 16),
 
-            // About Me (Bio)
+            // Company Name (replaces designation field)
             TextFormField(
-              controller: _bioController,
+              controller: _companyController,
               decoration: const InputDecoration(
-                labelText: 'About Me',
-                hintText: 'Tell us about yourself...',
-                prefixIcon: Icon(Icons.description_outlined),
-                alignLabelWithHint: true,
-              ),
-              maxLines: 4,
-              maxLength: 500,
-            ),
-
-            const SizedBox(height: 16),
-
-            // Designation (Optional)
-            TextFormField(
-              controller: _designationController,
-              decoration: const InputDecoration(
-                labelText: 'Designation (Optional)',
-                prefixIcon: Icon(Icons.badge_outlined),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Qualification (Optional)
-            TextFormField(
-              controller: _qualificationController,
-              decoration: const InputDecoration(
-                labelText: 'Qualification (Optional)',
-                prefixIcon: Icon(Icons.school_outlined),
+                labelText: 'Company Name',
+                hintText: 'Your company or employer',
+                prefixIcon: Icon(Icons.business_outlined),
               ),
             ),
             const SizedBox(height: 24),
