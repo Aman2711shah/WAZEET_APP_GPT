@@ -400,39 +400,36 @@ List<ActivityData> _filterByKeywords(
 ) {
   final queryLower = query.toLowerCase().trim();
 
-  if (queryLower.isEmpty) {
+  // Only filter if user has typed at least 2 characters
+  if (queryLower.isEmpty || queryLower.length < 2) {
     return activities;
   }
 
+  // Split query into keywords (words separated by spaces)
   final keywords = queryLower
       .split(RegExp(r'\s+'))
-      .where((k) => k.length > 1) // Skip single characters for performance
-      .take(4) // Limit to 4 keywords for performance
+      .where((k) => k.isNotEmpty) // Remove empty strings
       .toList();
 
   if (keywords.isEmpty) {
     return activities;
   }
 
-  // Optimized filter with early exit
+  // Filter activities that match ALL keywords (AND logic)
   final results = <ActivityData>[];
+
   for (final activity in activities) {
     final activityName = activity.name.toLowerCase();
     final activityDesc = activity.description.toLowerCase();
+    final combinedText = '$activityName $activityDesc';
 
-    // Fast path: check if first keyword exists before checking all
-    if (!activityName.contains(keywords[0]) &&
-        !activityDesc.contains(keywords[0])) {
-      continue;
-    }
-
-    // Check remaining keywords
-    var matchesAll = true;
-    for (var i = 0; i < keywords.length; i++) {
-      final keyword = keywords[i];
-      if (!activityName.contains(keyword) && !activityDesc.contains(keyword)) {
+    // Check if ALL keywords are present in the activity (name or description)
+    bool matchesAll = true;
+    for (final keyword in keywords) {
+      // Each keyword must appear in either the name OR description
+      if (!combinedText.contains(keyword)) {
         matchesAll = false;
-        break;
+        break; // Early exit if any keyword doesn't match
       }
     }
 
@@ -442,6 +439,75 @@ List<ActivityData> _filterByKeywords(
   }
 
   return results;
+}
+
+// Helper function to highlight matching keywords in text
+List<TextSpan> _highlightKeywords(String text, String query) {
+  if (query.isEmpty || query.length < 2) {
+    return [TextSpan(text: text)];
+  }
+
+  final keywords = query
+      .toLowerCase()
+      .split(RegExp(r'\s+'))
+      .where((k) => k.isNotEmpty)
+      .toList();
+
+  if (keywords.isEmpty) {
+    return [TextSpan(text: text)];
+  }
+
+  final List<TextSpan> spans = [];
+  String remainingText = text;
+
+  while (remainingText.isNotEmpty) {
+    int earliestMatchIndex = -1;
+    String? matchedKeyword;
+
+    // Find the earliest keyword match in the remaining text
+    for (final keyword in keywords) {
+      final index = remainingText.toLowerCase().indexOf(keyword);
+      if (index != -1 &&
+          (earliestMatchIndex == -1 || index < earliestMatchIndex)) {
+        earliestMatchIndex = index;
+        matchedKeyword = keyword;
+      }
+    }
+
+    if (earliestMatchIndex == -1) {
+      // No more matches, add remaining text
+      spans.add(TextSpan(text: remainingText));
+      break;
+    }
+
+    // Add text before match (if any)
+    if (earliestMatchIndex > 0) {
+      spans.add(TextSpan(text: remainingText.substring(0, earliestMatchIndex)));
+    }
+
+    // Add highlighted match
+    final matchedText = remainingText.substring(
+      earliestMatchIndex,
+      earliestMatchIndex + matchedKeyword!.length,
+    );
+    spans.add(
+      TextSpan(
+        text: matchedText,
+        style: const TextStyle(
+          fontWeight: FontWeight.w700,
+          backgroundColor: Color(0xFFFFEB3B), // Yellow highlight
+          color: Colors.black87,
+        ),
+      ),
+    );
+
+    // Move to text after the match
+    remainingText = remainingText.substring(
+      earliestMatchIndex + matchedKeyword.length,
+    );
+  }
+
+  return spans;
 }
 
 class _ActivitiesStep extends ConsumerStatefulWidget {
@@ -550,7 +616,7 @@ class _ActivitiesStepState extends ConsumerState<_ActivitiesStep> {
                         filled: true,
                         prefixIcon: const Icon(Icons.search),
                         hintText:
-                            'Search with keywords (e.g., "retail sale food")',
+                            'Type 2+ letters to search (e.g., "3D print", "manufacturing")',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -559,14 +625,25 @@ class _ActivitiesStepState extends ConsumerState<_ActivitiesStep> {
                       onChanged: widget.onQueryChanged,
                     ),
                   ),
-                  if (widget.query.isNotEmpty) ...[
+                  if (widget.query.isNotEmpty && widget.query.length >= 2) ...[
                     const SizedBox(height: 8),
                     Text(
-                      'Tip: Use multiple keywords for better results (e.g., "document preparation office")',
+                      'Tip: Use multiple keywords for better results (e.g., "construction building", "3D printing products")',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade600,
                         fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                  if (widget.query.isNotEmpty && widget.query.length < 2) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Type at least 2 characters to search',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.orange.shade700,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -620,250 +697,335 @@ class _ActivitiesStepState extends ConsumerState<_ActivitiesStep> {
             ),
             // Activities list
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                itemCount: filtered.length,
-                itemBuilder: (context, index) {
-                  final activity = filtered[index];
-                  final isSelected = data.businessActivities.contains(
-                    activity.name,
-                  );
-                  final isLimitReached = data.businessActivities.length >= 5;
-                  final isDisabled = isLimitReached && !isSelected;
-                  final isExpanded = _expandedActivityIndex == index;
-
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    elevation: isSelected ? 2 : 0,
-                    color: isDisabled ? Colors.grey.shade100 : Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(
-                        color: isSelected
-                            ? Colors.blue.shade700
-                            : Colors.grey.shade300,
-                        width: isSelected ? 2 : 1,
+              child: filtered.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.search_off,
+                              size: 64,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No activities found',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              widget.query.length < 2
+                                  ? 'Type at least 2 characters to search'
+                                  : 'Try different keywords or check spelling',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            if (widget.query.isNotEmpty &&
+                                widget.query.length >= 2) ...[
+                              const SizedBox(height: 16),
+                              TextButton.icon(
+                                onPressed: () => widget.onQueryChanged(''),
+                                icon: const Icon(Icons.clear),
+                                label: const Text('Clear search'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.deepPurple.shade600,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Main card content (always visible)
-                        InkWell(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(12),
-                            bottom: Radius.circular(12),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final activity = filtered[index];
+                        final isSelected = data.businessActivities.contains(
+                          activity.name,
+                        );
+                        final isLimitReached =
+                            data.businessActivities.length >= 5;
+                        final isDisabled = isLimitReached && !isSelected;
+                        final isExpanded = _expandedActivityIndex == index;
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          elevation: isSelected ? 2 : 0,
+                          color: isDisabled
+                              ? Colors.grey.shade100
+                              : Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: isSelected
+                                  ? Colors.blue.shade700
+                                  : Colors.grey.shade300,
+                              width: isSelected ? 2 : 1,
+                            ),
                           ),
-                          onTap: () {
-                            setState(() {
-                              // Toggle expansion (accordion style - only one open at a time)
-                              _expandedActivityIndex = isExpanded
-                                  ? null
-                                  : index;
-                            });
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Title and description with expand indicator
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Selection checkbox
-                                    GestureDetector(
-                                      onTap: isDisabled
-                                          ? null
-                                          : () {
-                                              controller.toggleActivity(
-                                                activity.name,
-                                              );
-                                            },
-                                      child: Container(
-                                        margin: const EdgeInsets.only(top: 2),
-                                        child: Icon(
-                                          isSelected
-                                              ? Icons.check_circle
-                                              : Icons.radio_button_unchecked,
-                                          color: isDisabled
-                                              ? Colors.grey.shade300
-                                              : (isSelected
-                                                    ? Colors.blue.shade700
-                                                    : Colors.grey.shade400),
-                                          size: 24,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    // Activity title and description
-                                    Expanded(
-                                      child: Column(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Main card content (always visible)
+                              InkWell(
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(12),
+                                  bottom: Radius.circular(12),
+                                ),
+                                onTap: () {
+                                  setState(() {
+                                    // Toggle expansion (accordion style - only one open at a time)
+                                    _expandedActivityIndex = isExpanded
+                                        ? null
+                                        : index;
+                                  });
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // Title and description with expand indicator
+                                      Row(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          Text(
-                                            activity.name,
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w600,
-                                              color: isDisabled
-                                                  ? Colors.grey.shade400
-                                                  : (isSelected
-                                                        ? Colors.blue.shade900
-                                                        : Colors.black87),
+                                          // Selection checkbox
+                                          GestureDetector(
+                                            onTap: isDisabled
+                                                ? null
+                                                : () {
+                                                    controller.toggleActivity(
+                                                      activity.name,
+                                                    );
+                                                  },
+                                            child: Container(
+                                              margin: const EdgeInsets.only(
+                                                top: 2,
+                                              ),
+                                              child: Icon(
+                                                isSelected
+                                                    ? Icons.check_circle
+                                                    : Icons
+                                                          .radio_button_unchecked,
+                                                color: isDisabled
+                                                    ? Colors.grey.shade300
+                                                    : (isSelected
+                                                          ? Colors.blue.shade700
+                                                          : Colors
+                                                                .grey
+                                                                .shade400),
+                                                size: 24,
+                                              ),
                                             ),
                                           ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            activity.description,
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: isDisabled
-                                                  ? Colors.grey.shade400
-                                                  : Colors.grey.shade700,
-                                              height: 1.4,
+                                          const SizedBox(width: 12),
+                                          // Activity title and description
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                RichText(
+                                                  text: TextSpan(
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: isDisabled
+                                                          ? Colors.grey.shade400
+                                                          : (isSelected
+                                                                ? Colors
+                                                                      .blue
+                                                                      .shade900
+                                                                : Colors
+                                                                      .black87),
+                                                    ),
+                                                    children:
+                                                        _highlightKeywords(
+                                                          activity.name,
+                                                          widget.query,
+                                                        ),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 6),
+                                                RichText(
+                                                  text: TextSpan(
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      color: isDisabled
+                                                          ? Colors.grey.shade400
+                                                          : Colors
+                                                                .grey
+                                                                .shade700,
+                                                      height: 1.4,
+                                                    ),
+                                                    children:
+                                                        _highlightKeywords(
+                                                          activity.description,
+                                                          widget.query,
+                                                        ),
+                                                  ),
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ],
                                             ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          // Expand/collapse indicator
+                                          Icon(
+                                            isExpanded
+                                                ? Icons.expand_less
+                                                : Icons.expand_more,
+                                            color: Colors.grey.shade600,
                                           ),
                                         ],
                                       ),
-                                    ),
-                                    // Expand/collapse indicator
-                                    Icon(
-                                      isExpanded
-                                          ? Icons.expand_less
-                                          : Icons.expand_more,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ],
-                            ),
-                          ),
-                        ),
+                              ),
 
-                        // Expanded details (ESR & Documents) - hidden by default
-                        if (isExpanded) ...[
-                          const Divider(height: 1),
-                          Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // ESR Applicability
-                                _TintedSection(
+                              // Expanded details (ESR & Documents) - hidden by default
+                              if (isExpanded) ...[
+                                const Divider(height: 1),
+                                Padding(
+                                  padding: const EdgeInsets.all(16),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Row(
-                                        children: const [
-                                          Text(
-                                            'ESR Applicability',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 15,
+                                      // ESR Applicability
+                                      _TintedSection(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: const [
+                                                Text(
+                                                  'ESR Applicability',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 15,
+                                                  ),
+                                                ),
+                                                SizedBox(width: 6),
+                                                Tooltip(
+                                                  message:
+                                                      'Economic Substance Regulations: certain activities must file annual ESR notifications and reports.',
+                                                  child: Icon(
+                                                    Icons.info_outline,
+                                                    size: 16,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                          ),
-                                          SizedBox(width: 6),
-                                          Tooltip(
-                                            message:
-                                                'Economic Substance Regulations: certain activities must file annual ESR notifications and reports.',
-                                            child: Icon(
-                                              Icons.info_outline,
-                                              size: 16,
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              _esrSummary(activity.name),
+                                              style: TextStyle(
+                                                color: Colors.grey.shade700,
+                                                fontSize: 14,
+                                              ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        _esrSummary(activity.name),
-                                        style: TextStyle(
-                                          color: Colors.grey.shade700,
-                                          fontSize: 14,
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              _esrDetails(activity.name),
+                                              style: TextStyle(
+                                                color: Colors.grey.shade600,
+                                                fontSize: 13,
+                                                height: 1.4,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        _esrDetails(activity.name),
-                                        style: TextStyle(
-                                          color: Colors.grey.shade600,
-                                          fontSize: 13,
-                                          height: 1.4,
+
+                                      const SizedBox(height: 12),
+
+                                      // Additional Documents Required
+                                      _TintedSection(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: const [
+                                                Text(
+                                                  'Additional Documents Required',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 15,
+                                                  ),
+                                                ),
+                                                SizedBox(width: 6),
+                                                Tooltip(
+                                                  message:
+                                                      'Extra supporting documents commonly required by the licensing authority.',
+                                                  child: Icon(
+                                                    Icons.info_outline,
+                                                    size: 16,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Wrap(
+                                              spacing: 8,
+                                              runSpacing: 8,
+                                              children:
+                                                  _documentsFor(
+                                                    activity.name,
+                                                  ).map((doc) {
+                                                    return ActionChip(
+                                                      avatar: const Icon(
+                                                        Icons.description,
+                                                        size: 16,
+                                                      ),
+                                                      label: Text(doc['name']!),
+                                                      onPressed: () =>
+                                                          _showDocInfo(
+                                                            context,
+                                                            doc,
+                                                          ),
+                                                      backgroundColor:
+                                                          Colors.white,
+                                                      side: BorderSide(
+                                                        color: Colors
+                                                            .grey
+                                                            .shade300,
+                                                      ),
+                                                    );
+                                                  }).toList(),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-
-                                const SizedBox(height: 12),
-
-                                // Additional Documents Required
-                                _TintedSection(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: const [
-                                          Text(
-                                            'Additional Documents Required',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 15,
-                                            ),
-                                          ),
-                                          SizedBox(width: 6),
-                                          Tooltip(
-                                            message:
-                                                'Extra supporting documents commonly required by the licensing authority.',
-                                            child: Icon(
-                                              Icons.info_outline,
-                                              size: 16,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Wrap(
-                                        spacing: 8,
-                                        runSpacing: 8,
-                                        children: _documentsFor(activity.name)
-                                            .map((doc) {
-                                              return ActionChip(
-                                                avatar: const Icon(
-                                                  Icons.description,
-                                                  size: 16,
-                                                ),
-                                                label: Text(doc['name']!),
-                                                onPressed: () =>
-                                                    _showDocInfo(context, doc),
-                                                backgroundColor: Colors.white,
-                                                side: BorderSide(
-                                                  color: Colors.grey.shade300,
-                                                ),
-                                              );
-                                            })
-                                            .toList(),
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               ],
-                            ),
+                            ],
                           ),
-                        ],
-                      ],
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         );
@@ -1037,7 +1199,10 @@ extension on _ActivitiesStepState {
 
 class _ShareholdersStep extends ConsumerWidget {
   void _showAddShareholderModal(
-      BuildContext context, WidgetRef ref, int index) {
+    BuildContext context,
+    WidgetRef ref,
+    int index,
+  ) {
     final data = ref.read(setupProvider);
     final controller = ref.read(setupProvider.notifier);
 
@@ -1090,7 +1255,8 @@ class _ShareholdersStep extends ConsumerWidget {
                     return _ShareholderListItem(
                       index: index,
                       shareholder: shareholder,
-                      onTap: () => _showAddShareholderModal(context, ref, index),
+                      onTap: () =>
+                          _showAddShareholderModal(context, ref, index),
                     );
                   }),
                   const SizedBox(height: 24),
@@ -1101,7 +1267,10 @@ class _ShareholdersStep extends ConsumerWidget {
                   child: ElevatedButton.icon(
                     onPressed: data.shareholders.length < 10
                         ? () => _showAddShareholderModal(
-                            context, ref, data.shareholders.length)
+                            context,
+                            ref,
+                            data.shareholders.length,
+                          )
                         : null,
                     icon: const Icon(Icons.add_rounded),
                     label: Text(
@@ -1127,9 +1296,9 @@ class _ShareholdersStep extends ConsumerWidget {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 if (data.shareholders.length < 10)
                   Center(
                     child: Text(
@@ -1141,7 +1310,7 @@ class _ShareholdersStep extends ConsumerWidget {
                       ),
                     ),
                   ),
-                
+
                 const SizedBox(height: 80),
               ],
             ),
@@ -1309,9 +1478,9 @@ class _AddShareholderModalState extends State<_AddShareholderModal> {
 
   void _save() {
     if (_nameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a name')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter a name')));
       return;
     }
     if (_selectedNationality == null || _selectedNationality!.isEmpty) {
@@ -1455,8 +1624,10 @@ class _AddShareholderModalState extends State<_AddShareholderModal> {
                             ),
                           ),
                         ),
-                        Icon(Icons.arrow_drop_down,
-                            color: Colors.grey.shade600),
+                        Icon(
+                          Icons.arrow_drop_down,
+                          color: Colors.grey.shade600,
+                        ),
                       ],
                     ),
                   ),
@@ -1494,10 +1665,7 @@ class _AddShareholderModalState extends State<_AddShareholderModal> {
                   ),
                   child: const Text(
                     'Save Shareholder',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
