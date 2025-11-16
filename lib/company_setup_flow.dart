@@ -415,19 +415,17 @@ List<ActivityData> _filterByKeywords(
     return activities;
   }
 
-  // Filter activities that match ALL keywords (AND logic)
+  // Filter activities that match ALL keywords (AND logic) in the NAME only
   final results = <ActivityData>[];
 
   for (final activity in activities) {
     final activityName = activity.name.toLowerCase();
-    final activityDesc = activity.description.toLowerCase();
-    final combinedText = '$activityName $activityDesc';
 
-    // Check if ALL keywords are present in the activity (name or description)
+    // Check if ALL keywords are present in the activity NAME only
     bool matchesAll = true;
     for (final keyword in keywords) {
-      // Each keyword must appear in either the name OR description
-      if (!combinedText.contains(keyword)) {
+      // Each keyword must appear in the activity name
+      if (!activityName.contains(keyword)) {
         matchesAll = false;
         break; // Early exit if any keyword doesn't match
       }
@@ -863,22 +861,14 @@ class _ActivitiesStepState extends ConsumerState<_ActivitiesStep> {
                                                   ),
                                                 ),
                                                 const SizedBox(height: 6),
-                                                RichText(
-                                                  text: TextSpan(
-                                                    style: TextStyle(
-                                                      fontSize: 14,
-                                                      color: isDisabled
-                                                          ? Colors.grey.shade400
-                                                          : Colors
-                                                                .grey
-                                                                .shade700,
-                                                      height: 1.4,
-                                                    ),
-                                                    children:
-                                                        _highlightKeywords(
-                                                          activity.description,
-                                                          widget.query,
-                                                        ),
+                                                Text(
+                                                  activity.description,
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: isDisabled
+                                                        ? Colors.grey.shade400
+                                                        : Colors.grey.shade700,
+                                                    height: 1.4,
                                                   ),
                                                   maxLines: 2,
                                                   overflow:
