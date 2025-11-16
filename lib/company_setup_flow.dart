@@ -1749,7 +1749,7 @@ class _VisaStep extends ConsumerWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
-                    'Total Visa Slots',
+                    'Total Visa Quota Approved',
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
@@ -2627,27 +2627,32 @@ class _RecommenderStepState extends ConsumerState<_RecommenderStep> {
                   ),
                   const SizedBox(height: 12),
                   _buildInfoRow(
-                    'Activities',
+                    'General Trading',
                     data.businessActivities.join(', '),
                   ),
-                  _buildInfoRow('Shareholders', '${data.shareholdersCount}'),
                   _buildInfoRow(
-                    'Employment Visas',
+                    'Number of Shareholders',
+                    '${data.shareholdersCount}',
+                  ),
+                  _buildInfoRow(
+                    'Employee Visa Allocation',
                     '${data.employmentVisaCount}',
                   ),
-                  _buildInfoRow('Investor Visas', '${data.investorVisaCount}'),
-                  _buildInfoRow('Total Visas', '${data.visaCount}'),
                   _buildInfoRow(
-                    'Visa Mix',
+                    'Investor / Partner Visa Allocation',
+                    '${data.investorVisaCount}',
+                  ),
+                  _buildInfoRow(
+                    'Total Visa Quota Approved',
+                    '${data.visaCount}',
+                  ),
+                  _buildInfoRow(
+                    'Visa Category Distribution',
                     data.visaType.isEmpty ? '-' : data.visaType,
                   ),
+                  _buildInfoRow('Selected Emirate', data.emirate),
                   _buildInfoRow(
-                    'License Period',
-                    '${data.licenseTenureYears} year(s)',
-                  ),
-                  _buildInfoRow('Emirate', data.emirate),
-                  _buildInfoRow(
-                    'Office Space',
+                    'Workspace Type',
                     data.officeSpaceType.isEmpty ? '-' : data.officeSpaceType,
                   ),
                   _buildInfoRow(
@@ -3200,33 +3205,35 @@ class _SummaryStepState extends ConsumerState<_SummaryStep> {
           ),
           const SizedBox(height: 12),
           _SummaryTile(
-            title: 'Activities',
+            title: 'General Trading',
             value: data.businessActivities.join(', '),
           ),
           _SummaryTile(
-            title: 'Shareholders',
+            title: 'Number of Shareholders',
             value: '${data.shareholdersCount}',
           ),
           _SummaryTile(
-            title: 'Employment Visas',
+            title: 'Employee Visa Allocation',
             value: '${data.employmentVisaCount}',
           ),
           _SummaryTile(
-            title: 'Investor Visas',
+            title: 'Investor / Partner Visa Allocation',
             value: '${data.investorVisaCount}',
           ),
-          _SummaryTile(title: 'Total Visa Slots', value: '${data.visaCount}'),
           _SummaryTile(
-            title: 'Visa Mix',
+            title: 'Total Visa Quota Approved',
+            value: '${data.visaCount}',
+          ),
+          _SummaryTile(
+            title: 'Visa Category Distribution',
             value: data.visaType.isEmpty ? '-' : data.visaType,
           ),
-          _SummaryTile(title: 'License Tenure', value: 'Removed from flow'),
           _SummaryTile(
-            title: 'Emirate',
+            title: 'Selected Emirate',
             value: data.emirate.isEmpty ? '-' : data.emirate,
           ),
           _SummaryTile(
-            title: 'Office Space',
+            title: 'Workspace Type',
             value: data.officeSpaceType.isEmpty ? '-' : data.officeSpaceType,
           ),
           _SummaryTile(
