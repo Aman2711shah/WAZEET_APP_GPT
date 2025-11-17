@@ -72,17 +72,6 @@ class PackageRecommendationsPage extends StatelessWidget {
   Widget _buildPackageList() {
     return Column(
       children: [
-        // 🔍 DEBUG: Show package count at the very top
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(6),
-          color: Colors.yellow.shade100,
-          child: Text(
-            '🔍 DEBUG: Total packages received: ${packages.length}',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-          ),
-        ),
         // Header with summary
         Container(
           width: double.infinity,

@@ -1,10 +1,12 @@
 #!/usr/bin/env dart
+
 // Script to merge multiple business activity JSON files into one comprehensive list
 import 'dart:io';
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 void main() async {
-  print('🔄 Merging business activity JSON files...\n');
+  debugPrint('🔄 Merging business activity JSON files...\n');
 
   final inputFiles = [
     '/Users/amanshah/Downloads/excel-to-json-5.json',
@@ -21,26 +23,28 @@ void main() async {
   for (final filePath in inputFiles) {
     final file = File(filePath);
     if (!file.existsSync()) {
-      print('⚠️  File not found: $filePath');
+      debugPrint('⚠️  File not found: $filePath');
       continue;
     }
 
     try {
       final content = await file.readAsString();
       final data = jsonDecode(content) as List;
-      
-      print('📂 Processing ${filePath.split('/').last}: ${data.length} activities');
+
+      debugPrint(
+        '📂 Processing ${filePath.split('/').last}: ${data.length} activities',
+      );
 
       for (final item in data) {
         if (item is! Map<String, dynamic>) continue;
-        
+
         final code = item['Code']?.toString() ?? '';
         final activityName = item['Activity Name']?.toString() ?? '';
-        
+
         // Skip if no activity name or duplicate code
         if (activityName.isEmpty) continue;
         if (code.isNotEmpty && seenCodes.contains(code)) continue;
-        
+
         if (code.isNotEmpty) {
           seenCodes.add(code);
         }
@@ -63,7 +67,7 @@ void main() async {
         allActivities.add(activity);
       }
     } catch (e) {
-      print('❌ Error processing $filePath: $e');
+      debugPrint('❌ Error processing $filePath: $e');
     }
   }
 
@@ -80,20 +84,20 @@ void main() async {
     JsonEncoder.withIndent('  ').convert(allActivities),
   );
 
-  print('\n✅ Merged ${allActivities.length} unique activities');
-  print('📝 Output: $outputPath');
-  
+  debugPrint('\n✅ Merged ${allActivities.length} unique activities');
+  debugPrint('📝 Output: $outputPath');
+
   // Print category summary
   final categories = <String, int>{};
   for (final activity in allActivities) {
     final cat = activity['category']?.toString() ?? 'Unknown';
     categories[cat] = (categories[cat] ?? 0) + 1;
   }
-  
-  print('\n📊 Activities by category:');
+
+  debugPrint('\n📊 Activities by category:');
   final sorted = categories.entries.toList()
     ..sort((a, b) => b.value.compareTo(a.value));
   for (final entry in sorted) {
-    print('   ${entry.key}: ${entry.value}');
+    debugPrint('   ${entry.key}: ${entry.value}');
   }
 }
