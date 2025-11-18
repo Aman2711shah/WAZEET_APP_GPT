@@ -1,5 +1,6 @@
 import admin, { firestore, storageBucket } from '../firebase.js';
 import { v4 as uuidv4 } from 'uuid';
+import { generateRequestId } from '../utils/requestId.js';
 import path from 'node:path';
 import type { ServiceApplicationPayload, SavedDocumentInfo } from '../types/serviceApplication.js';
 import type { Express } from 'express';
@@ -37,9 +38,10 @@ export async function saveServiceApplicationToFirebase(
     payload: ServiceApplicationPayload,
     files: MulterFile[]
 ): Promise<{ firestoreDocId: string; documents: SavedDocumentInfo[]; applicationId: string }> {
+    // Prefer incoming applicationId; otherwise generate standardized request ID
     const appId = payload.applicationId && payload.applicationId.trim() !== ''
         ? payload.applicationId.trim()
-        : uuidv4();
+        : generateRequestId();
 
     const now = new Date();
     const uploadedDocs: SavedDocumentInfo[] = [];

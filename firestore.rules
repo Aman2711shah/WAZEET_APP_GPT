@@ -13,12 +13,26 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == uid;
     }
     
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super_admin'];
+    }
+    
+    // Helper function to check if user is super admin
+    function isSuperAdmin() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+    }
+    
     // Public read for freezones catalog
     // Used by FreeZoneService and FreezoneBrowserPage for browsing free zones
     match /freezones/{pkgId} {
       allow read: if true;
+      allow write: if isAdmin(); // Only admins can modify freezones
       match /promos/{promoId} {
         allow read: if true;
+        allow write: if isAdmin();
       }
     }
     
@@ -26,12 +40,23 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if isAuthenticated() && (
         resource.data.isDiscoverable == true || 
-        isOwner(uid)
+        isOwner(uid) ||
+        isAdmin() // Admins can read all profiles
       );
       allow create: if isOwner(uid);
-      allow update: if isOwner(uid) && (
+      allow update: if (isOwner(uid) && (
         !('preferences' in request.resource.data) || 
         request.resource.data.preferences is map
+      ) && 
+        // Prevent users from self-promoting to admin
+        (!('role' in request.resource.data) || request.resource.data.role == resource.data.role)
+      ) || (
+        // Allow admins to update user roles
+        isAdmin() && 
+        (!('role' in request.resource.data) || 
+          (request.resource.data.role in ['user', 'moderator', 'admin']) ||
+          (isSuperAdmin() && request.resource.data.role == 'super_admin')
+        )
       );
       allow delete: if false; // Prevent direct deletion - use Cloud Function
       
@@ -91,15 +116,30 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super_admin'];
     }
     
-    // Service requests - users can only read their own, admins can read all
-    match /service_requests/{requestId} {
-      allow read: if isAuthenticated() && (
-        isAdmin() || 
-        resource.data.userId == request.auth.uid
+    // Service requests - RBAC & schema invariants
+    function isServiceOwner() {
+      return isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+    function hasStandardTier() { return request.resource.data.tier == 'standard'; }
+    function hasCustomTier() { return request.resource.data.tier == 'custom'; }
+    function isValidServiceRequest() {
+      // Exactly one branch populated based on tier
+      return isServiceOwner() && (
+        (hasStandardTier() && ('packageDetails' in request.resource.data) && !('companySetupData' in request.resource.data)) ||
+        (hasCustomTier() && ('companySetupData' in request.resource.data) && !('packageDetails' in request.resource.data))
       );
-      allow create: if isAuthenticated();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+    }
+    match /service_requests/{requestId} {
+      // Creation must satisfy owner + tier branch exclusivity
+      allow create: if isValidServiceRequest();
+      // Get single doc if owner or admin
+      allow get: if isAuthenticated() && (isAdmin() || resource.data.userId == request.auth.uid);
+      // Listing collection restricted to admins (prevents enumeration of user submissions)
+      allow list: if isAuthenticated() && isAdmin();
+      // Updates restricted to admins (users cannot alter submitted data)
+      allow update: if isAuthenticated() && isAdmin();
+      // Direct deletes disabled; retention/anonymization handled by scheduled functions
+      allow delete: if false;
     }
     
     // Freezone packages - read by all, write by admin
@@ -158,6 +198,13 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create, update: if isAuthenticated() && request.auth.uid == uid;
       allow delete: if false;
+    }
+    
+    // Admin audit log - only admins can read, system can write
+    match /admin_audit_log/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated(); // RoleService creates entries
+      allow update, delete: if false; // Immutable log
     }
   }
 }
