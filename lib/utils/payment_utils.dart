@@ -65,8 +65,24 @@ Future<void> payForApplication(
       // Don't block payment flow if HubSpot sync fails; it can be retried later
       debugPrint('HubSpot manual sync failed: $e');
     }
+  } on FirebaseFunctionsException catch (e) {
+    // Map well-known errors to friendlier messages for the UI layer
+    String msg;
+    switch (e.code) {
+      case 'unauthenticated':
+        msg = 'Please sign in to continue with payment.';
+        break;
+      case 'failed-precondition':
+        msg = 'Payment is temporarily unavailable (configuration). Please try again later.';
+        break;
+      case 'invalid-argument':
+        msg = 'Invalid payment amount. Please contact support if this persists.';
+        break;
+      default:
+        msg = e.message ?? 'Payment failed. Please try again.';
+    }
+    throw Exception('Payment initialization failed: $msg');
   } catch (e) {
-    // Handle error (e.g., user cancellation)
     throw Exception('Payment initialization failed: $e');
   }
 }

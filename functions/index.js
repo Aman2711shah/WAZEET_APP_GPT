@@ -1,3 +1,4 @@
+require('dotenv').config();
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const Stripe = require("stripe");
@@ -37,10 +38,20 @@ exports.createPaymentIntent = functions
                     'Payment configuration incomplete'
                 );
             }
-            const stripe = new Stripe(stripeSecret);
+            const stripe = new Stripe(stripeSecret, {
+                // Lock a stable API version if configured, else default
+                apiVersion: process.env.STRIPE_API_VERSION || null,
+            });
 
             // Convert AED to fils (100 fils = 1 AED)
-            const amountAED = Math.round(Number(data.amount) * 100);
+            const rawAmount = Number(data.amount);
+            if (!isFinite(rawAmount)) {
+                throw new functions.https.HttpsError(
+                    'invalid-argument',
+                    'Amount must be a number'
+                );
+            }
+            const amountAED = Math.round(rawAmount * 100);
             const applicationId = data.applicationId || '';
             const tier = (data.tier || '').toString().toLowerCase();
 
@@ -73,7 +84,8 @@ exports.createPaymentIntent = functions
                 });
                 throw new functions.https.HttpsError(
                     'internal',
-                    'Stripe payment initialization failed'
+                    'Unable to create payment intent',
+                    { stripeError: { message: piError.message, type: piError.type, code: piError.code } }
                 );
             }
 
@@ -91,7 +103,7 @@ exports.createPaymentIntent = functions
             console.error('Unhandled payment creation error:', error);
             throw new functions.https.HttpsError(
                 'internal',
-                'Failed to create payment intent'
+                'Unable to create payment intent'
             );
         }
     });
