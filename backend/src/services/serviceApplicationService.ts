@@ -11,6 +11,7 @@ export type MulterFile = {
     buffer: Buffer;
     mimetype: string;
     size: number;
+    documentType?: string | null; // optional explicit type from frontend
 };
 
 function sanitizeFilename(name: string): string {
@@ -67,7 +68,8 @@ export async function saveServiceApplicationToFirebase(
         });
 
         uploadedDocs.push({
-            documentType: inferDocumentType(file.originalname),
+            // Prefer explicit documentType from frontend; fallback to inference
+            documentType: file.documentType || inferDocumentType(file.originalname),
             originalName: file.originalname,
             storagePath,
             downloadURL: signedUrl,
