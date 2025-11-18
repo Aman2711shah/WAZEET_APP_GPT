@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 import '../../models/comment.dart';
 import '../../models/post.dart';
@@ -169,15 +170,26 @@ class CommunityFeedService {
   ) async {
     if (files.isEmpty) return [];
 
-    final List<PostMedia> media = [];
-    for (final file in files) {
-      final path = 'posts/$postId/${_randomId()}${_extensionFor(file)}';
+    final storage = _storage ?? FirebaseStorage.instance;
+
+    // PERFORMANCE FIX: Compress all images first (can run in parallel)
+    final compressionFutures = files.map((file) async {
       final bytes = file.bytes ?? await File(file.path!).readAsBytes();
 
+      // Compress image (max 1200px, 82% quality -> ~300-600KB)
+      final compressedBytes = await FlutterImageCompress.compressWithList(
+        bytes,
+        minWidth: 1200,
+        minHeight: 1200,
+        quality: 82,
+        format: CompressFormat.jpeg,
+      );
+
+      // Get dimensions from compressed image (faster since it's smaller)
       int? width;
       int? height;
       try {
-        final descriptor = await ui.instantiateImageCodec(bytes);
+        final descriptor = await ui.instantiateImageCodec(compressedBytes);
         final frame = await descriptor.getNextFrame();
         width = frame.image.width;
         height = frame.image.height;
@@ -185,32 +197,46 @@ class CommunityFeedService {
         // Ignore dimension failures
       }
 
+      return {'bytes': compressedBytes, 'width': width, 'height': height};
+    }).toList();
+
+    final compressed = await Future.wait(compressionFutures);
+
+    // PERFORMANCE FIX: Upload all images in parallel
+    final uploadFutures = compressed.asMap().entries.map((entry) async {
+      final data = entry.value;
+      final bytes = data['bytes'] as Uint8List;
+      final width = data['width'] as int?;
+      final height = data['height'] as int?;
+
+      final path = 'posts/$postId/${_randomId()}.jpg';
       final metadata = SettableMetadata(
-        contentType: file.extension == 'png' ? 'image/png' : 'image/jpeg',
+        contentType: 'image/jpeg',
         customMetadata: {
           'postId': postId,
           'ownerId': _auth.currentUser?.uid ?? '',
           'type': 'image',
-          'mime': file.extension == 'png' ? 'image/png' : 'image/jpeg',
+          'mime': 'image/jpeg',
           if (width != null) 'width': width.toString(),
           if (height != null) 'height': height.toString(),
         },
       );
 
-      final storage = _storage ?? FirebaseStorage.instance;
       await storage.ref(path).putData(bytes, metadata);
       final url = await storage.ref(path).getDownloadURL();
-      media.add(
-        PostMedia(
-          type: 'image',
-          path: path,
-          mime: metadata.contentType ?? 'image/jpeg',
-          url: url,
-          width: width,
-          height: height,
-        ),
+
+      return PostMedia(
+        type: 'image',
+        path: path,
+        mime: 'image/jpeg',
+        url: url,
+        width: width,
+        height: height,
       );
-    }
+    }).toList();
+
+    // Wait for all uploads in parallel (not sequential!)
+    final media = await Future.wait(uploadFutures);
     return media;
   }
 
@@ -311,12 +337,6 @@ class CommunityFeedService {
     }
 
     await seedDoc.set({'seededAt': FieldValue.serverTimestamp()});
-  }
-
-  String _extensionFor(PlatformFile file) {
-    final ext = file.extension;
-    if (ext == null || ext.isEmpty) return '.jpg';
-    return '.$ext';
   }
 
   String _randomId() {

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart' as p;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../theme/theme_controller.dart';
 
-class AppearanceSettingsPage extends StatelessWidget {
+class AppearanceSettingsPage extends ConsumerWidget {
   const AppearanceSettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final controller = context.watch<ThemeController>();
-    final selectedTheme = controller.themeMode;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedTheme = ref.watch(themeControllerProvider);
+    final controller = ref.read(themeControllerProvider.notifier);
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(

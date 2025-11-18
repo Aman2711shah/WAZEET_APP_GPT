@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:wazeet/utils/industry_loader.dart';
+import 'package:wazeet/ui/pages/applications_page.dart';
 // Old AI-based services removed from this flow
 import 'package:wazeet/services/freezone_service.dart';
 import 'package:wazeet/models/freezone_package_recommendation.dart';
@@ -105,8 +108,11 @@ class CompanySetupData {
   }
 }
 
-class CompanySetupController extends StateNotifier<CompanySetupData> {
-  CompanySetupController() : super(CompanySetupData());
+class CompanySetupController extends Notifier<CompanySetupData> {
+  @override
+  CompanySetupData build() {
+    return CompanySetupData();
+  }
 
   void toggleActivity(String activity) {
     final activities = List<String>.from(state.businessActivities);
@@ -220,8 +226,8 @@ class CompanySetupController extends StateNotifier<CompanySetupData> {
 }
 
 final setupProvider =
-    StateNotifierProvider<CompanySetupController, CompanySetupData>(
-      (ref) => CompanySetupController(),
+    NotifierProvider<CompanySetupController, CompanySetupData>(
+      CompanySetupController.new,
     );
 
 // Entity type options
@@ -2809,6 +2815,242 @@ class _SummaryStepState extends ConsumerState<_SummaryStep> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  /// Submit application for custom quote (without selecting a package)
+  Future<void> _submitCustomQuote() async {
+    final data = ref.read(setupProvider);
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please sign in to submit an application'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Validate required fields
+    if (data.officeSpaceType.isEmpty || data.jurisdictionType.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please complete all required fields (Office Type and Jurisdiction)',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Request Custom Quote'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Your business requirements:',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _buildQuoteDetailRow(
+              'Activities',
+              data.businessActivities.length.toString(),
+            ),
+            _buildQuoteDetailRow(
+              'Shareholders',
+              data.shareholdersCount.toString(),
+            ),
+            _buildQuoteDetailRow('Visas', data.visaCount.toString()),
+            _buildQuoteDetailRow(
+              'Emirate',
+              data.emirate.isEmpty ? '-' : data.emirate,
+            ),
+            _buildQuoteDetailRow('Office Type', data.officeSpaceType),
+            _buildQuoteDetailRow('Jurisdiction', data.jurisdictionType),
+            const SizedBox(height: 12),
+            Text(
+              'Our team will review your requirements and provide a customized quote within 24 hours.',
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Submit Request'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Create service request in Firestore
+      final requestRef = await FirebaseFirestore.instance
+          .collection('service_requests')
+          .add({
+            'serviceName': 'Company Formation - Custom Quote',
+            'serviceType': 'Custom Package',
+            'tier': 'custom',
+            'userId': user.uid,
+            'userEmail': user.email ?? '',
+            'userName': user.displayName ?? '',
+            'status': 'pending',
+            'createdAt': FieldValue.serverTimestamp(),
+            'companySetupData': {
+              'businessActivities': data.businessActivities,
+              'shareholdersCount': data.shareholdersCount,
+              'shareholders': data.shareholders
+                  .map(
+                    (s) => {
+                      'name': s.name,
+                      'nationality': s.nationality,
+                      'dateOfBirth': s.dateOfBirth?.toIso8601String(),
+                    },
+                  )
+                  .toList(),
+              'totalVisas': data.visaCount,
+              'employmentVisas': data.employmentVisaCount,
+              'investorVisas': data.investorVisaCount,
+              'visaType': data.visaType,
+              'emirate': data.emirate,
+              'officeSpaceType': data.officeSpaceType,
+              'jurisdictionType': data.jurisdictionType,
+            },
+            'documents': {},
+            'details': 'Custom quote request via company setup flow',
+          });
+
+      if (!mounted) return;
+
+      setState(() => _isLoading = false);
+
+      // Show success and navigate
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          icon: const Icon(Icons.check_circle, color: Colors.green, size: 64),
+          title: const Text('Request Submitted!'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Your custom quote request has been submitted successfully.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey.shade700),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Request ID',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      requestRef.id,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Our team will review your requirements and send you a customized quote within 24 hours.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Navigate back to home
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              },
+              child: const Text('Close'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Navigate to applications page
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        ApplicationsPage(initialId: requestRef.id),
+                  ),
+                );
+              },
+              child: const Text('Track Request'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Failed to submit request: ${e.toString()}';
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_errorMessage!), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Widget _buildQuoteDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+          ),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Navigate to package recommendations screen
   /// Calls FreeZoneService to get matching packages based on user selections
   Future<void> _showRecommendations() async {
@@ -2953,15 +3195,30 @@ class _SummaryStepState extends ConsumerState<_SummaryStep> {
               ),
             )
           else
-            ElevatedButton(
-              onPressed: _showRecommendations,
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            Column(
+              children: [
+                ElevatedButton(
+                  onPressed: _showRecommendations,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('View Package Recommendations'),
                 ),
-              ),
-              child: const Text('View Package Recommendations'),
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: _submitCustomQuote,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Request Custom Quote'),
+                ),
+              ],
             ),
           const SizedBox(height: 8),
           Text(

@@ -1,11 +1,15 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 class AppConfig {
-  // OpenAI API Configuration
-  // Loaded from .env file for security
-  // The .env file is in .gitignore to prevent accidentally committing API keys
-  static String get openAiApiKey => dotenv.env['OPENAI_API_KEY'] ?? '';
+  // Backend proxy base URL for AI requests.
+  // Set at build/run time using --dart-define=BACKEND_BASE_URL=...
+  static const String backendBaseUrl = String.fromEnvironment(
+    'BACKEND_BASE_URL',
+    defaultValue:
+        'https://us-central1-business-setup-application.cloudfunctions.net',
+  );
 
-  // Check if API key is configured
-  static bool get hasOpenAiKey => openAiApiKey.isNotEmpty;
+  // Optional: customize chat path if your backend uses a different route
+  static const String backendChatPath = String.fromEnvironment(
+    'BACKEND_CHAT_PATH',
+    defaultValue: '/chatAI',
+  );
 }

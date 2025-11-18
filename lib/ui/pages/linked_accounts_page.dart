@@ -120,9 +120,9 @@ class _LinkedAccountsPageState extends ConsumerState<LinkedAccountsPage> {
                             ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
-                            SimpleIcons.linkedin,
-                            color: Color(0xFF0077B5),
+                          child: Icon(
+                            Icons.link,
+                            color: const Color(0xFF0077B5),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -166,7 +166,7 @@ class _LinkedAccountsPageState extends ConsumerState<LinkedAccountsPage> {
                             color: Colors.black.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(SimpleIcons.x, color: Colors.black),
+                          child: Icon(SimpleIcons.x, color: Colors.black),
                         ),
                         const SizedBox(width: 12),
                         const Text(
@@ -211,9 +211,9 @@ class _LinkedAccountsPageState extends ConsumerState<LinkedAccountsPage> {
                             ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             SimpleIcons.instagram,
-                            color: Color(0xFFE4405F),
+                            color: const Color(0xFFE4405F),
                           ),
                         ),
                         const SizedBox(width: 12),

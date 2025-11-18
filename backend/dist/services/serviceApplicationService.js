@@ -1,5 +1,5 @@
 import admin, { firestore, storageBucket } from '../firebase.js';
-import { v4 as uuidv4 } from 'uuid';
+import { generateRequestId } from '../utils/requestId.js';
 import path from 'node:path';
 import 'multer';
 function sanitizeFilename(name) {
@@ -24,9 +24,10 @@ function inferDocumentType(originalName) {
     return null;
 }
 export async function saveServiceApplicationToFirebase(payload, files) {
+    // Prefer incoming applicationId; otherwise generate standardized request ID
     const appId = payload.applicationId && payload.applicationId.trim() !== ''
         ? payload.applicationId.trim()
-        : uuidv4();
+        : generateRequestId();
     const now = new Date();
     const uploadedDocs = [];
     // Upload files (if any) to Firebase Storage and collect metadata

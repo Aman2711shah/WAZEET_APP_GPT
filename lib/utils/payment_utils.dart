@@ -73,10 +73,12 @@ Future<void> payForApplication(
         msg = 'Please sign in to continue with payment.';
         break;
       case 'failed-precondition':
-        msg = 'Payment is temporarily unavailable (configuration). Please try again later.';
+        msg =
+            'Payment is temporarily unavailable (configuration). Please try again later.';
         break;
       case 'invalid-argument':
-        msg = 'Invalid payment amount. Please contact support if this persists.';
+        msg =
+            'Invalid payment amount. Please contact support if this persists.';
         break;
       default:
         msg = e.message ?? 'Payment failed. Please try again.';

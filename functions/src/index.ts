@@ -14,6 +14,7 @@ admin.initializeApp();
 import { findBestPackages } from "./quotes";
 import { FinderInput, FreezonePackage } from "./types";
 import { discoverEventsWithOpenAI, validateEvent } from "./event-discovery";
+export { chatAI } from "./chatAI";
 // AI Tax Explain function
 export { aiTaxExplain } from "./aiTaxExplain";
 

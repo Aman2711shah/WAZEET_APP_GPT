@@ -14,13 +14,15 @@ class ChatMessage {
 
 /// Conversation state provider
 final conversationProvider =
-    StateNotifierProvider<ConversationNotifier, List<ChatMessage>>((ref) {
-      return ConversationNotifier();
-    });
+    NotifierProvider<ConversationNotifier, List<ChatMessage>>(
+      ConversationNotifier.new,
+    );
 
-class ConversationNotifier extends StateNotifier<List<ChatMessage>> {
-  ConversationNotifier() : super([]) {
+class ConversationNotifier extends Notifier<List<ChatMessage>> {
+  @override
+  List<ChatMessage> build() {
     _initializeConversation();
+    return [];
   }
 
   void _initializeConversation() {
@@ -94,7 +96,7 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
       _isExpanded = !_isExpanded;
     });
     // Broadcast expanded state for other overlays (e.g., human support button)
-    ref.read(aiChatExpandedProvider.notifier).state = _isExpanded;
+    ref.read(aiChatExpandedProvider.notifier).set(_isExpanded);
     if (_isExpanded) {
       _animationController.forward();
       _scrollToBottom();
@@ -107,7 +109,7 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
     setState(() {
       _isExpanded = false;
     });
-    ref.read(aiChatExpandedProvider.notifier).state = false;
+    ref.read(aiChatExpandedProvider.notifier).set(false);
     _animationController.reverse();
   }
 
@@ -456,57 +458,68 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
             ),
           ),
 
-          // Input area
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
+          // Input area with keyboard-aware padding
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
               ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: 'Type your message...',
-                      hintStyle: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[500],
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                    ),
-                    onSubmitted: (_) => _sendMessage(),
-                    textInputAction: TextInputAction.send,
-                    style: const TextStyle(fontSize: 14),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.deepOrange, Colors.orange[700]!],
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _messageController,
+                        decoration: InputDecoration(
+                          hintText: 'Type your message...',
+                          hintStyle: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                        ),
+                        onSubmitted: (_) => _sendMessage(),
+                        textInputAction: TextInputAction.send,
+                        style: const TextStyle(fontSize: 14),
+                      ),
                     ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.send, color: Colors.white, size: 20),
-                    onPressed: _isTyping ? null : _sendMessage,
-                  ),
+                    const SizedBox(width: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.deepOrange, Colors.orange[700]!],
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.send,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        onPressed: _isTyping ? null : _sendMessage,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ],
@@ -648,4 +661,14 @@ class _FloatingAIChatbotState extends ConsumerState<FloatingAIChatbot>
 }
 
 /// Global provider exposing the AI chat expanded state so other widgets can react
-final aiChatExpandedProvider = StateProvider<bool>((_) => false);
+class AiChatExpandedNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void toggle() => state = !state;
+  void set(bool value) => state = value;
+}
+
+final aiChatExpandedProvider = NotifierProvider<AiChatExpandedNotifier, bool>(
+  AiChatExpandedNotifier.new,
+);

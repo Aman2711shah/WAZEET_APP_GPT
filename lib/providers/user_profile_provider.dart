@@ -6,19 +6,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_profile.dart';
 
 /// Provider for the current user profile
-final userProfileProvider =
-    StateNotifierProvider<UserProfileNotifier, UserProfile?>((ref) {
-      return UserProfileNotifier();
-    });
+final userProfileProvider = NotifierProvider<UserProfileNotifier, UserProfile?>(
+  UserProfileNotifier.new,
+);
 
 /// Notifier to manage user profile state
-class UserProfileNotifier extends StateNotifier<UserProfile?> {
-  UserProfileNotifier() : super(null) {
-    _loadProfile();
-  }
-
+class UserProfileNotifier extends Notifier<UserProfile?> {
   final _firestore = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
+
+  @override
+  UserProfile? build() {
+    _loadProfile();
+    return null;
+  }
 
   /// Load user profile from Firestore or create default
   Future<void> _loadProfile() async {

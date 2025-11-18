@@ -2,8 +2,9 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 class DocumentUploadPage extends StatefulWidget {
   final String applicationId;
@@ -37,8 +38,28 @@ class _DocumentUploadPageState extends State<DocumentUploadPage> {
         'applications/${widget.applicationId}/$name',
       );
 
+      // PERFORMANCE FIX: Compress if image
+      Uint8List? uploadBytes;
+      final extension = file.extension?.toLowerCase();
+      if (extension == 'jpg' || extension == 'jpeg' || extension == 'png') {
+        final rawBytes = kIsWeb ? file.bytes! : await File(path!).readAsBytes();
+        uploadBytes = await FlutterImageCompress.compressWithList(
+          rawBytes,
+          minWidth: 1600,
+          minHeight: 1600,
+          quality: 85,
+          format: CompressFormat.jpeg,
+        );
+      }
+
       UploadTask uploadTask;
-      if (kIsWeb) {
+      if (uploadBytes != null) {
+        // Use compressed bytes for images
+        uploadTask = ref.putData(
+          uploadBytes,
+          SettableMetadata(contentType: 'image/jpeg'),
+        );
+      } else if (kIsWeb) {
         // Web upload using bytes
         uploadTask = ref.putData(file.bytes!);
       } else {
@@ -63,7 +84,7 @@ class _DocumentUploadPageState extends State<DocumentUploadPage> {
           .add({
             'name': name,
             'url': url,
-            'size': file.size,
+            'size': uploadBytes?.length ?? file.size,
             'mime': file.extension ?? '',
             'status': 'uploaded',
             'uploaded_at': FieldValue.serverTimestamp(),

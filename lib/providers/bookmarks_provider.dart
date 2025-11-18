@@ -4,20 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Persist and expose bookmarked Free Zone IDs using SharedPreferences.
-final bookmarksProvider = StateNotifierProvider<BookmarksNotifier, Set<String>>(
-  (ref) {
-    final notifier = BookmarksNotifier();
-    // Fire and forget initial load
-    // ignore: discarded_futures
-    notifier.load();
-    return notifier;
-  },
+final bookmarksProvider = NotifierProvider<BookmarksNotifier, Set<String>>(
+  BookmarksNotifier.new,
 );
 
-class BookmarksNotifier extends StateNotifier<Set<String>> {
+class BookmarksNotifier extends Notifier<Set<String>> {
   static const _prefsKey = 'bookmarked_freezones';
 
-  BookmarksNotifier() : super(<String>{});
+  @override
+  Set<String> build() {
+    // Start with empty set, load asynchronously
+    load();
+    return <String>{};
+  }
 
   Future<void> load() async {
     try {

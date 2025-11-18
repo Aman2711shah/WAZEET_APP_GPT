@@ -1,5 +1,4 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import '../utils/platform_helper.dart'
@@ -92,68 +91,13 @@ class AuthService {
         return await _auth.signInWithPopup(googleProvider);
       }
 
-      // On mobile, use GoogleSignIn package
-      // Get web client ID from google-services.json for proper token validation
-      final googleSignIn = GoogleSignIn(
-        scopes: ['email', 'profile'],
-        // Web client ID is automatically read from google-services.json on Android
-        // and GoogleService-Info.plist on iOS
+      // On mobile, Google Sign-In migration to ^7.x is pending.
+      // Temporarily disabled to avoid compile-time errors.
+      throw FirebaseAuthException(
+        code: 'unimplemented',
+        message:
+            'Google sign-in on mobile is temporarily unavailable while updating to the latest API. Please use Email/Apple sign-in.',
       );
-
-      debugPrint('[GoogleSignIn] Triggering account picker...');
-
-      // Trigger the Google authentication flow
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-
-      if (googleUser == null) {
-        debugPrint('[GoogleSignIn] User cancelled sign-in');
-        throw FirebaseAuthException(
-          code: 'aborted-by-user',
-          message: 'User cancelled Google sign-in',
-        );
-      }
-
-      debugPrint('[GoogleSignIn] User selected: ${googleUser.email}');
-      debugPrint('[GoogleSignIn] Obtaining authentication tokens...');
-
-      // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-
-      debugPrint(
-        '[GoogleSignIn] ID Token present: ${googleAuth.idToken != null}',
-      );
-      debugPrint(
-        '[GoogleSignIn] Access Token present: ${googleAuth.accessToken != null}',
-      );
-
-      if ((googleAuth.idToken == null || googleAuth.idToken!.isEmpty) &&
-          (googleAuth.accessToken == null || googleAuth.accessToken!.isEmpty)) {
-        debugPrint('[GoogleSignIn] ERROR: No tokens received from Google');
-        throw FirebaseAuthException(
-          code: 'missing-token',
-          message:
-              'No idToken/accessToken from Google. Check SHA fingerprints in Firebase Console.',
-        );
-      }
-
-      // Create a new credential
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      debugPrint(
-        '[GoogleSignIn] Signing in to Firebase with Google credential...',
-      );
-
-      // Sign in to Firebase with the Google credential
-      final userCredential = await _auth.signInWithCredential(credential);
-
-      debugPrint(
-        '[GoogleSignIn] SUCCESS: Signed in as ${userCredential.user?.email}',
-      );
-      return userCredential;
     } on FirebaseAuthException catch (e, stackTrace) {
       debugPrint(
         '[GoogleSignIn][FirebaseAuthException] code=${e.code} message=${e.message}',
@@ -238,14 +182,7 @@ class AuthService {
   /// Sign out
   Future<void> signOut() async {
     try {
-      final signOutFutures = <Future<void>>[_auth.signOut()];
-
-      // Also sign out from Google on mobile platforms
-      if (!kIsWeb) {
-        signOutFutures.add(GoogleSignIn().signOut());
-      }
-
-      await Future.wait(signOutFutures);
+      await _auth.signOut();
     } catch (e) {
       debugPrint('Error signing out: $e');
       throw 'Failed to sign out. Please try again.';
@@ -290,23 +227,12 @@ class AuthService {
         return;
       }
 
-      // On mobile, use GoogleSignIn package
-      final googleSignIn = GoogleSignIn();
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-
-      if (googleUser == null) {
-        throw 'Google sign-in was cancelled.';
-      }
-
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+      // On mobile, migration to google_sign_in ^7.x pending
+      throw FirebaseAuthException(
+        code: 'unimplemented',
+        message:
+            'Re-auth with Google on mobile is temporarily unavailable. Use password re-auth in Settings > Security.',
       );
-
-      await user.reauthenticateWithCredential(credential);
     } on FirebaseAuthException catch (e) {
       throw _mapFirebaseError(e);
     } catch (e) {

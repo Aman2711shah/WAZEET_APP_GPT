@@ -8,13 +8,13 @@ class SearchableNationalityDropdown extends StatefulWidget {
   final Widget? prefixIcon;
 
   const SearchableNationalityDropdown({
-    Key? key,
+    super.key,
     this.initialValue,
     required this.onChanged,
     this.labelText = 'Nationality',
     this.hintText = 'Select nationality',
     this.prefixIcon,
-  }) : super(key: key);
+  });
 
   @override
   State<SearchableNationalityDropdown> createState() =>
@@ -23,190 +23,62 @@ class SearchableNationalityDropdown extends StatefulWidget {
 
 class _SearchableNationalityDropdownState
     extends State<SearchableNationalityDropdown> {
-  static const List<String> _allNationalities = [
-    'Afghan',
-    'Albanian',
-    'Algerian',
-    'American',
-    'Andorran',
-    'Angolan',
-    'Argentine',
-    'Armenian',
-    'Australian',
-    'Austrian',
-    'Azerbaijani',
-    'Bahraini',
-    'Bangladeshi',
-    'Barbadian',
-    'Belarusian',
-    'Belgian',
-    'Belizean',
-    'Beninese',
-    'Bhutanese',
-    'Bolivian',
-    'Bosnian',
-    'Brazilian',
-    'British',
-    'Bruneian',
-    'Bulgarian',
-    'Burkinabe',
-    'Burundian',
-    'Cambodian',
-    'Cameroonian',
-    'Canadian',
-    'Cape Verdean',
-    'Central African',
-    'Chadian',
-    'Chilean',
-    'Chinese',
-    'Colombian',
-    'Comoran',
-    'Congolese',
-    'Costa Rican',
-    'Croatian',
-    'Cuban',
-    'Cypriot',
-    'Czech',
-    'Danish',
-    'Djiboutian',
-    'Dominican',
-    'Dutch',
-    'East Timorese',
-    'Ecuadorean',
-    'Egyptian',
-    'Emirati',
-    'English',
-    'Equatorial Guinean',
-    'Eritrean',
-    'Estonian',
-    'Ethiopian',
-    'Fijian',
-    'Filipino',
-    'Finnish',
-    'French',
-    'Gabonese',
-    'Gambian',
-    'Georgian',
-    'German',
-    'Ghanaian',
-    'Greek',
-    'Grenadian',
-    'Guatemalan',
-    'Guinean',
-    'Guyanese',
-    'Haitian',
-    'Honduran',
-    'Hungarian',
-    'Icelandic',
-    'Indian',
-    'Indonesian',
-    'Iranian',
-    'Iraqi',
-    'Irish',
-    'Israeli',
-    'Italian',
-    'Ivorian',
-    'Jamaican',
-    'Japanese',
-    'Jordanian',
-    'Kazakhstani',
-    'Kenyan',
-    'Kuwaiti',
-    'Kyrgyz',
-    'Laotian',
-    'Latvian',
-    'Lebanese',
-    'Liberian',
-    'Libyan',
-    'Liechtensteiner',
-    'Lithuanian',
-    'Luxembourger',
-    'Macedonian',
-    'Malagasy',
-    'Malawian',
-    'Malaysian',
-    'Maldivian',
-    'Malian',
-    'Maltese',
-    'Marshallese',
-    'Mauritanian',
-    'Mauritian',
-    'Mexican',
-    'Micronesian',
-    'Moldovan',
-    'Monacan',
-    'Mongolian',
-    'Moroccan',
-    'Mozambican',
-    'Namibian',
-    'Nauruan',
-    'Nepalese',
-    'New Zealander',
-    'Nicaraguan',
-    'Nigerian',
-    'Nigerien',
-    'North Korean',
-    'Norwegian',
-    'Omani',
-    'Pakistani',
-    'Palauan',
-    'Palestinian',
-    'Panamanian',
-    'Papua New Guinean',
-    'Paraguayan',
-    'Peruvian',
-    'Polish',
-    'Portuguese',
-    'Qatari',
-    'Romanian',
-    'Russian',
-    'Rwandan',
-    'Saint Lucian',
-    'Salvadoran',
-    'Samoan',
-    'Saudi',
-    'Scottish',
-    'Senegalese',
-    'Serbian',
-    'Seychellois',
-    'Sierra Leonean',
-    'Singaporean',
-    'Slovak',
-    'Slovenian',
-    'Solomon Islander',
-    'Somali',
-    'South African',
-    'South Korean',
-    'Spanish',
-    'Sri Lankan',
-    'Sudanese',
-    'Surinamer',
-    'Swazi',
-    'Swedish',
-    'Swiss',
-    'Syrian',
-    'Taiwanese',
-    'Tajik',
-    'Tanzanian',
-    'Thai',
-    'Togolese',
-    'Tongan',
-    'Trinidadian',
-    'Tunisian',
-    'Turkish',
-    'Turkmen',
-    'Tuvaluan',
-    'Ugandan',
-    'Ukrainian',
-    'Uruguayan',
-    'Uzbek',
-    'Venezuelan',
-    'Vietnamese',
-    'Welsh',
-    'Yemeni',
-    'Zambian',
-    'Zimbabwean',
+  // Minimal country dataset with ISO codes for flag emojis.
+  // Add more as needed.
+  static const List<Map<String, String>> _countries = [
+    {'name': 'United Arab Emirates', 'code': 'AE'},
+    {'name': 'India', 'code': 'IN'},
+    {'name': 'United States', 'code': 'US'},
+    {'name': 'United Kingdom', 'code': 'GB'},
+    {'name': 'Canada', 'code': 'CA'},
+    {'name': 'Saudi Arabia', 'code': 'SA'},
+    {'name': 'Qatar', 'code': 'QA'},
+    {'name': 'Oman', 'code': 'OM'},
+    {'name': 'Kuwait', 'code': 'KW'},
+    {'name': 'Bahrain', 'code': 'BH'},
+    {'name': 'Pakistan', 'code': 'PK'},
+    {'name': 'Bangladesh', 'code': 'BD'},
+    {'name': 'Philippines', 'code': 'PH'},
+    {'name': 'Egypt', 'code': 'EG'},
+    {'name': 'Jordan', 'code': 'JO'},
+    {'name': 'Lebanon', 'code': 'LB'},
+    {'name': 'South Africa', 'code': 'ZA'},
+    {'name': 'Nigeria', 'code': 'NG'},
+    {'name': 'Kenya', 'code': 'KE'},
+    {'name': 'Ghana', 'code': 'GH'},
+    {'name': 'Sri Lanka', 'code': 'LK'},
+    {'name': 'Nepal', 'code': 'NP'},
+    {'name': 'China', 'code': 'CN'},
+    {'name': 'Singapore', 'code': 'SG'},
+    {'name': 'Malaysia', 'code': 'MY'},
+    {'name': 'Indonesia', 'code': 'ID'},
+    {'name': 'Australia', 'code': 'AU'},
+    {'name': 'New Zealand', 'code': 'NZ'},
+    {'name': 'Turkey', 'code': 'TR'},
+    {'name': 'France', 'code': 'FR'},
+    {'name': 'Germany', 'code': 'DE'},
+    {'name': 'Italy', 'code': 'IT'},
+    {'name': 'Spain', 'code': 'ES'},
+    {'name': 'Netherlands', 'code': 'NL'},
+    {'name': 'Switzerland', 'code': 'CH'},
+    {'name': 'Brazil', 'code': 'BR'},
+    {'name': 'Argentina', 'code': 'AR'},
+    {'name': 'Mexico', 'code': 'MX'},
+    {'name': 'Russia', 'code': 'RU'},
+    {'name': 'Ukraine', 'code': 'UA'},
+    {'name': 'Japan', 'code': 'JP'},
+    {'name': 'South Korea', 'code': 'KR'},
+    {'name': 'Thailand', 'code': 'TH'},
+    {'name': 'Vietnam', 'code': 'VN'},
+    {'name': 'Morocco', 'code': 'MA'},
+    {'name': 'Tunisia', 'code': 'TN'},
+    {'name': 'Algeria', 'code': 'DZ'},
+    {'name': 'Ethiopia', 'code': 'ET'},
+    {'name': 'Uganda', 'code': 'UG'},
+    {'name': 'Tanzania', 'code': 'TZ'},
   ];
+
+  // Note: We rely on SVG flags via the country_flags package for consistent rendering on web.
 
   void _showSearchableDropdown() {
     showModalBottomSheet(
@@ -215,7 +87,7 @@ class _SearchableNationalityDropdownState
       backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
         return _SearchableDropdownModal(
-          allNationalities: _allNationalities,
+          countries: _countries,
           initialValue: widget.initialValue,
           onSelected: (String value) {
             widget.onChanged(value);
@@ -261,12 +133,12 @@ class _SearchableNationalityDropdownState
 }
 
 class _SearchableDropdownModal extends StatefulWidget {
-  final List<String> allNationalities;
+  final List<Map<String, String>> countries;
   final String? initialValue;
   final ValueChanged<String> onSelected;
 
   const _SearchableDropdownModal({
-    required this.allNationalities,
+    required this.countries,
     this.initialValue,
     required this.onSelected,
   });
@@ -278,8 +150,20 @@ class _SearchableDropdownModal extends StatefulWidget {
 
 class _SearchableDropdownModalState extends State<_SearchableDropdownModal>
     with SingleTickerProviderStateMixin {
+  // Convert ISO country code (e.g., "AE") to flag emoji.
+  // Falls back to a generic flag if conversion fails.
+  String _flagEmoji(String code) {
+    if (code.length != 2) return '🏳️';
+    final upper = code.toUpperCase();
+    final int base = 0x1F1E6; // Regional Indicator Symbol Letter A
+    final int aCode = 'A'.codeUnitAt(0);
+    final int first = base + (upper.codeUnitAt(0) - aCode);
+    final int second = base + (upper.codeUnitAt(1) - aCode);
+    return String.fromCharCode(first) + String.fromCharCode(second);
+  }
+
   late TextEditingController _searchController;
-  late List<String> _filteredNationalities;
+  late List<Map<String, String>> _filteredCountries;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -288,7 +172,7 @@ class _SearchableDropdownModalState extends State<_SearchableDropdownModal>
   void initState() {
     super.initState();
     _searchController = TextEditingController();
-    _filteredNationalities = widget.allNationalities;
+    _filteredCountries = widget.countries;
 
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -321,12 +205,11 @@ class _SearchableDropdownModalState extends State<_SearchableDropdownModal>
   void _filterNationalities(String query) {
     setState(() {
       if (query.isEmpty) {
-        _filteredNationalities = widget.allNationalities;
+        _filteredCountries = widget.countries;
       } else {
-        _filteredNationalities = widget.allNationalities
+        _filteredCountries = widget.countries
             .where(
-              (nationality) =>
-                  nationality.toLowerCase().contains(query.toLowerCase()),
+              (c) => c['name']!.toLowerCase().contains(query.toLowerCase()),
             )
             .toList();
       }
@@ -444,7 +327,7 @@ class _SearchableDropdownModalState extends State<_SearchableDropdownModal>
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      '${_filteredNationalities.length} results',
+                      '${_filteredCountries.length} results',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey.shade600,
@@ -458,7 +341,7 @@ class _SearchableDropdownModalState extends State<_SearchableDropdownModal>
 
               // List
               Expanded(
-                child: _filteredNationalities.isEmpty
+                child: _filteredCountries.isEmpty
                     ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -490,15 +373,66 @@ class _SearchableDropdownModalState extends State<_SearchableDropdownModal>
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 8),
-                        itemCount: _filteredNationalities.length,
+                        itemCount: _filteredCountries.length + 1,
                         itemBuilder: (context, index) {
-                          final nationality = _filteredNationalities[index];
-                          final isSelected = nationality == widget.initialValue;
+                          // Last item is the "Other" option
+                          if (index == _filteredCountries.length) {
+                            final isSelected = widget.initialValue == 'Other';
+                            return Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () => _selectNationality('Other'),
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 16,
+                                  ),
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? Colors.deepPurple.shade50
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.more_horiz,
+                                        color: Colors.grey,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      const Expanded(
+                                        child: Text(
+                                          'Other',
+                                          style: TextStyle(fontSize: 16),
+                                        ),
+                                      ),
+                                      if (isSelected)
+                                        Icon(
+                                          Icons.check_circle,
+                                          color: Colors.deepPurple.shade600,
+                                          size: 24,
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+
+                          final country = _filteredCountries[index];
+                          final name = country['name']!;
+                          final code = country['code']!;
+                          final isSelected = name == widget.initialValue;
 
                           return Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              onTap: () => _selectNationality(nationality),
+                              onTap: () => _selectNationality(name),
                               borderRadius: BorderRadius.circular(12),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
@@ -517,9 +451,14 @@ class _SearchableDropdownModalState extends State<_SearchableDropdownModal>
                                 ),
                                 child: Row(
                                   children: [
+                                    Text(
+                                      _flagEmoji(code),
+                                      style: const TextStyle(fontSize: 20),
+                                    ),
+                                    const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        nationality,
+                                        name,
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: isSelected

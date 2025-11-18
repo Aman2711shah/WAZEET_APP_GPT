@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:flutter/foundation.dart' show Uint8List;
 import '../../providers/user_profile_provider.dart';
+import '../../utils/error_handler.dart';
 import '../theme.dart';
 
 class EditProfilePage extends ConsumerStatefulWidget {
@@ -22,6 +25,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   late TextEditingController _companyController;
   String _selectedCountryCode = '+971';
   bool _isUploadingImage = false;
+  double _uploadProgress = 0.0;
 
   // Preset titles
   // Expanded common job/role titles (approx 60) for better variety
@@ -155,12 +159,12 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       if (result == null || result.files.isEmpty) return;
       final file = result.files.first;
 
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
+      // Validate file size BEFORE compression (max 20MB raw)
+      if (file.size > 20 * 1024 * 1024) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Image size must be less than 5MB'),
+              content: Text('Image size must be less than 20MB'),
               backgroundColor: Colors.red,
             ),
           );
@@ -193,49 +197,82 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       );
       if (confirmed != true) return; // user cancelled
 
-      setState(() => _isUploadingImage = true);
+      setState(() {
+        _isUploadingImage = true;
+        _uploadProgress = 0.0;
+      });
+
       final profile = ref.read(userProfileProvider);
       if (profile == null) return;
-      final ext = (file.extension?.isNotEmpty == true)
-          ? file.extension!
-          : 'jpeg';
+
+      // PERFORMANCE FIX: Compress image before upload
+      Uint8List? compressedBytes;
+      if (file.bytes != null) {
+        setState(() => _uploadProgress = 0.1); // Show "compressing" feedback
+
+        // Compress to max 800px width, 85% quality -> typically 200-500KB
+        compressedBytes = await FlutterImageCompress.compressWithList(
+          file.bytes!,
+          minWidth: 800,
+          minHeight: 800,
+          quality: 85,
+          format: CompressFormat.jpeg,
+        );
+      }
+
+      if (compressedBytes == null || compressedBytes.isEmpty) {
+        throw Exception('Image compression failed');
+      }
+
       final fileName =
-          '${profile.id}_${DateTime.now().millisecondsSinceEpoch}.$ext';
+          '${profile.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final storageRef = FirebaseStorage.instance.ref().child(
         'profile_pictures/${profile.id}/$fileName',
       );
-      if (file.bytes != null) {
-        await storageRef.putData(
-          file.bytes!,
-          SettableMetadata(contentType: 'image/$ext'),
-        );
-        final downloadUrl = await storageRef.getDownloadURL();
-        await ref
-            .read(userProfileProvider.notifier)
-            .updateProfile(photoUrl: downloadUrl);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Profile picture updated. Tap Save to confirm other changes.',
-              ),
-              backgroundColor: Colors.green,
-            ),
-          );
+
+      // PERFORMANCE FIX: Track upload progress
+      final uploadTask = storageRef.putData(
+        compressedBytes,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+
+      uploadTask.snapshotEvents.listen((snapshot) {
+        if (mounted && snapshot.totalBytes > 0) {
+          setState(() {
+            _uploadProgress =
+                0.1 + (snapshot.bytesTransferred / snapshot.totalBytes) * 0.9;
+          });
         }
+      });
+
+      await uploadTask;
+      final downloadUrl = await storageRef.getDownloadURL();
+
+      await ref
+          .read(userProfileProvider.notifier)
+          .updateProfile(photoUrl: downloadUrl);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Profile picture updated successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to upload image: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
+        ErrorHandler.showErrorSnackBar(
+          context,
+          e,
+          duration: const Duration(seconds: 6),
         );
       }
     } finally {
       if (mounted) {
-        setState(() => _isUploadingImage = false);
+        setState(() {
+          _isUploadingImage = false;
+          _uploadProgress = 0.0;
+        });
       }
     }
   }
@@ -316,9 +353,29 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     Positioned.fill(
                       child: CircleAvatar(
                         radius: 50,
-                        backgroundColor: Colors.black54,
-                        child: const CircularProgressIndicator(
-                          color: Colors.white,
+                        backgroundColor: Colors.black87,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircularProgressIndicator(
+                              value: _uploadProgress > 0
+                                  ? _uploadProgress
+                                  : null,
+                              color: Colors.white,
+                              strokeWidth: 3,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _uploadProgress > 0
+                                  ? '${(_uploadProgress * 100).toInt()}%'
+                                  : 'Compressing...',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

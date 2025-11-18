@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../services/openai_chat_service.dart';
+import '../../services/remote_ai_client.dart';
 import '../theme.dart';
 
 /// Chat message model
@@ -27,7 +27,7 @@ class AIBusinessChatPage extends ConsumerStatefulWidget {
 }
 
 class _AIBusinessChatPageState extends ConsumerState<AIBusinessChatPage> {
-  final _chatService = OpenAIChatService();
+  final _aiClient = RemoteAIClient();
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
@@ -78,6 +78,12 @@ class _AIBusinessChatPageState extends ConsumerState<AIBusinessChatPage> {
         .toList();
 
     try {
+      // Build full message list including the new user message
+      final messages = [
+        ...history,
+        {'role': 'user', 'content': text},
+      ];
+
       // Add empty AI message for streaming
       setState(() {
         _messages.add(
@@ -85,13 +91,9 @@ class _AIBusinessChatPageState extends ConsumerState<AIBusinessChatPage> {
         );
       });
 
-      // Stream the response
-      await for (var chunk in _chatService.sendMessageStream(
-        text,
-        conversationHistory: history.sublist(
-          0,
-          history.length - 1,
-        ), // Exclude the last user message since it's sent separately
+      // Stream the response from backend (SSE if supported, else one chunk)
+      await for (final chunk in _aiClient.sendChatStream(
+        messages.cast<Map<String, dynamic>>(),
       )) {
         setState(() {
           _messages.last = ChatMessage(
@@ -120,7 +122,7 @@ class _AIBusinessChatPageState extends ConsumerState<AIBusinessChatPage> {
         _messages.add(
           ChatMessage(
             content:
-                "I apologize, but I encountered an error: ${e.toString()}\n\nPlease make sure your OpenAI API key is configured in the .env file.",
+                'I\'m having trouble reaching the AI service right now. Please try again in a moment.',
             isUser: false,
           ),
         );
@@ -255,9 +257,14 @@ class _AIBusinessChatPageState extends ConsumerState<AIBusinessChatPage> {
             ),
           ),
 
-          // Input area
+          // Input area with keyboard-aware padding
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+            ),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [

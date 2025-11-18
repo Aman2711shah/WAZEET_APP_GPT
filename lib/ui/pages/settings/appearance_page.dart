@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart' as p;
-import '../../../theme/theme_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../providers/theme_provider.dart';
 
-class AppearancePage extends StatelessWidget {
+class AppearancePage extends ConsumerWidget {
   const AppearancePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final controller = context.watch<ThemeController>();
-    final selectedTheme = controller.themeMode;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedTheme = ref.watch(themeModeProvider);
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -33,7 +32,9 @@ class AppearancePage extends StatelessWidget {
           RadioGroup<ThemeMode>(
             groupValue: selectedTheme,
             onChanged: (value) {
-              if (value != null) controller.setThemeMode(value);
+              if (value != null) {
+                ref.read(themeModeProvider.notifier).setThemeMode(value);
+              }
             },
             child: Column(
               children: [

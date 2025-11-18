@@ -1,13 +1,11 @@
 import 'package:flutter/foundation.dart';
-
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../config/app_config.dart';
+import 'remote_ai_client.dart';
 
 /// AI Business Expert service for interactive business consultation
 /// Maintains conversation context and guides users through setup decisions
 class AIBusinessExpertService {
-  static const String _apiUrl = 'https://api.openai.com/v1/chat/completions';
+  // No direct OpenAI calls in client; use backend proxy
+  static final RemoteAIClient _client = RemoteAIClient();
   static const String _systemPrompt = '''
 You are an expert UAE business setup consultant with deep knowledge of freezones, mainland licenses, and business structures.
 
@@ -96,10 +94,6 @@ BUDGET: [low/medium/high]
     required List<Map<String, String>> conversationHistory,
   }) async {
     try {
-      if (!AppConfig.hasOpenAiKey) {
-        return _getFallbackResponse(conversationHistory.length);
-      }
-
       // Trim conversation history to prevent context overflow
       final trimmedHistory = _trimConversationHistory(conversationHistory);
 
@@ -116,46 +110,15 @@ BUDGET: [low/medium/high]
         {'role': 'user', 'content': userMessage},
       ];
 
-      final response = await http.post(
-        Uri.parse(_apiUrl),
-        headers: {
-          'Authorization': 'Bearer ${AppConfig.openAiApiKey}',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'model': 'gpt-4o-mini',
-          'messages': messages,
-          'temperature': 0.7,
-          'max_tokens': 500,
-        }),
+      final text = await _client.sendChat(
+        messages.cast<Map<String, dynamic>>(),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['choices'][0]['message']['content'];
-      } else {
-        debugPrint('API Error: ${response.statusCode} - ${response.body}');
-
-        // Handle specific error cases
-        if (response.statusCode == 400) {
-          final errorBody = jsonDecode(response.body);
-          if (errorBody['error']?['message']?.contains('maximum context') ==
-              true) {
-            debugPrint(
-              'Context length exceeded even after trimming. Reducing further...',
-            );
-            // Retry with even more aggressive trimming
-            return sendMessage(
-              userMessage: userMessage,
-              conversationHistory: conversationHistory.length > 4
-                  ? conversationHistory.sublist(conversationHistory.length - 4)
-                  : conversationHistory,
-            );
-          }
-        }
-
+      if (text.trim().isEmpty) {
         return _getFallbackResponse(conversationHistory.length);
       }
+
+      return text;
     } catch (e) {
       debugPrint('Error in AI Business Expert: $e');
       return _getFallbackResponse(conversationHistory.length);

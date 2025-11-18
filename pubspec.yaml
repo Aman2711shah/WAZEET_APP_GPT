@@ -71,7 +71,6 @@ dependencies:
   shared_preferences: ^2.3.2
   simple_icons: ^14.6.1
   flutter_svg: ^2.0.10+1
-  provider: ^6.1.2
   google_fonts: ^6.2.1
   reactive_forms: ^18.1.1
   

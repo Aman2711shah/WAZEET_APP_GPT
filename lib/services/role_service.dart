@@ -3,16 +3,85 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:wazeet/constants/admin_whitelist.dart';
+/// User role types
+enum UserRoleType {
+  user,
+  moderator,
+  admin,
+  superAdmin;
+
+  /// Check if this role has admin privileges
+  bool get isAdmin => this == admin || this == superAdmin;
+
+  /// Check if this role can manage other admins
+  bool get canManageAdmins => this == superAdmin;
+
+  /// Convert from string
+  static UserRoleType fromString(String? role) {
+    switch (role?.toLowerCase()) {
+      case 'super_admin':
+      case 'superadmin':
+        return UserRoleType.superAdmin;
+      case 'admin':
+        return UserRoleType.admin;
+      case 'moderator':
+        return UserRoleType.moderator;
+      default:
+        return UserRoleType.user;
+    }
+  }
+
+  /// Convert to string for storage
+  String toStorageString() {
+    switch (this) {
+      case UserRoleType.superAdmin:
+        return 'super_admin';
+      case UserRoleType.admin:
+        return 'admin';
+      case UserRoleType.moderator:
+        return 'moderator';
+      case UserRoleType.user:
+        return 'user';
+    }
+  }
+}
 
 /// User role information
 class UserRole {
-  final bool isAdmin;
-  final String? role;
+  final UserRoleType roleType;
+  final DateTime? roleAssignedAt;
+  final String? assignedBy;
 
-  const UserRole({this.isAdmin = false, this.role});
+  const UserRole({
+    this.roleType = UserRoleType.user,
+    this.roleAssignedAt,
+    this.assignedBy,
+  });
 
-  bool get canAccessAdmin => isAdmin;
+  bool get isAdmin => roleType.isAdmin;
+  bool get canAccessAdmin => roleType.isAdmin;
+  bool get canManageAdmins => roleType.canManageAdmins;
+  String get role => roleType.toStorageString();
+
+  factory UserRole.fromFirestore(Map<String, dynamic>? data) {
+    if (data == null) return const UserRole();
+
+    return UserRole(
+      roleType: UserRoleType.fromString(data['role'] as String?),
+      roleAssignedAt: (data['roleAssignedAt'] as Timestamp?)?.toDate(),
+      assignedBy: data['roleAssignedBy'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'role': roleType.toStorageString(),
+      'roleAssignedAt': roleAssignedAt != null
+          ? Timestamp.fromDate(roleAssignedAt!)
+          : FieldValue.serverTimestamp(),
+      'roleAssignedBy': assignedBy,
+    };
+  }
 }
 
 /// Service to manage user roles and permissions
@@ -36,7 +105,6 @@ class RoleService {
         _firestoreSubscription?.cancel();
         return;
       }
-      final bool emailOverrideAdmin = isHardcodedAdminEmail(user.email);
 
       // Listen to Firestore role changes
       _firestoreSubscription?.cancel();
@@ -49,31 +117,51 @@ class RoleService {
             final idTokenResult = await user.getIdTokenResult(true);
             final customRole = idTokenResult.claims?['role'] as String?;
 
-            // Get Firestore role
-            final firestoreRole = doc.data()?['role'] as String?;
+            // Get Firestore role (primary source)
+            final firestoreData = doc.data();
+            final firestoreRole = firestoreData?['role'] as String?;
 
-            // Check if user is admin from either source
-            final isAdmin =
-                emailOverrideAdmin ||
-                (customRole != null &&
-                    (customRole == 'admin' || customRole == 'super_admin')) ||
-                (firestoreRole != null &&
-                    (firestoreRole == 'admin' ||
-                        firestoreRole == 'super_admin'));
+            // Priority: Firestore > Custom Claims > Default User
+            final roleType = UserRoleType.fromString(
+              firestoreRole ?? customRole,
+            );
 
             _roleController?.add(
               UserRole(
-                isAdmin: isAdmin,
-                role:
-                    customRole ??
-                    firestoreRole ??
-                    (emailOverrideAdmin ? 'admin' : null),
+                roleType: roleType,
+                roleAssignedAt: (firestoreData?['roleAssignedAt'] as Timestamp?)
+                    ?.toDate(),
+                assignedBy: firestoreData?['roleAssignedBy'] as String?,
               ),
             );
           });
     });
 
     return _roleController!.stream;
+  }
+
+  /// Get current user role (one-time check)
+  Future<UserRole> getCurrentUserRole() async {
+    final user = _auth.currentUser;
+    if (user == null) return const UserRole();
+
+    try {
+      // Check Firestore first (primary source)
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+      final data = doc.data();
+
+      if (data != null && data['role'] != null) {
+        return UserRole.fromFirestore(data);
+      }
+
+      // Fallback to custom claims
+      final idTokenResult = await user.getIdTokenResult(true);
+      final customRole = idTokenResult.claims?['role'] as String?;
+
+      return UserRole(roleType: UserRoleType.fromString(customRole));
+    } catch (e) {
+      return const UserRole();
+    }
   }
 
   /// Refresh the user's ID token to get latest custom claims
@@ -86,30 +174,96 @@ class RoleService {
 
   /// Check if user can access admin features
   Future<bool> canAccessAdmin() async {
-    final user = _auth.currentUser;
-    if (user == null) return false;
+    final role = await getCurrentUserRole();
+    return role.isAdmin;
+  }
 
-    if (isHardcodedAdminEmail(user.email)) {
-      return true;
+  /// Set user role (admin only)
+  /// Returns error message if operation fails, null on success
+  Future<String?> setUserRole({
+    required String userId,
+    required UserRoleType newRole,
+  }) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      return 'You must be signed in to perform this action';
     }
 
-    // Check custom claims
-    final idTokenResult = await user.getIdTokenResult(true);
-    final customRole = idTokenResult.claims?['role'] as String?;
-    if (customRole != null &&
-        (customRole == 'admin' || customRole == 'super_admin')) {
-      return true;
+    // Check if current user has permission
+    final currentUserRole = await getCurrentUserRole();
+    if (!currentUserRole.canManageAdmins && newRole.isAdmin) {
+      return 'Only super admins can assign admin roles';
     }
 
-    // Check Firestore
-    final doc = await _firestore.collection('users').doc(user.uid).get();
-    final firestoreRole = doc.data()?['role'] as String?;
-    if (firestoreRole != null &&
-        (firestoreRole == 'admin' || firestoreRole == 'super_admin')) {
-      return true;
+    if (!currentUserRole.isAdmin) {
+      return 'You do not have permission to modify user roles';
     }
 
-    return false;
+    try {
+      // Update Firestore
+      await _firestore.collection('users').doc(userId).set({
+        'role': newRole.toStorageString(),
+        'roleAssignedAt': FieldValue.serverTimestamp(),
+        'roleAssignedBy': currentUser.uid,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      // Log the action
+      await _logAdminAction(
+        action: 'role_changed',
+        targetUserId: userId,
+        details: {'newRole': newRole.toStorageString()},
+      );
+
+      return null; // Success
+    } catch (e) {
+      return 'Failed to update role: ${e.toString()}';
+    }
+  }
+
+  /// Remove admin privileges from a user
+  Future<String?> revokeAdminAccess(String userId) async {
+    return setUserRole(userId: userId, newRole: UserRoleType.user);
+  }
+
+  /// Get all admins (for management UI)
+  Future<List<Map<String, dynamic>>> getAllAdmins() async {
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .where('role', whereIn: ['admin', 'super_admin'])
+          .orderBy('roleAssignedAt', descending: true)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => {'userId': doc.id, ...doc.data()})
+          .toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Log admin actions for audit trail
+  Future<void> _logAdminAction({
+    required String action,
+    required String targetUserId,
+    Map<String, dynamic>? details,
+  }) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) return;
+
+    try {
+      await _firestore.collection('admin_audit_log').add({
+        'action': action,
+        'performedBy': currentUser.uid,
+        'performedByEmail': currentUser.email,
+        'targetUserId': targetUserId,
+        'details': details ?? {},
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      // Silent fail - logging shouldn't break the main operation
+    }
   }
 
   /// Dispose resources

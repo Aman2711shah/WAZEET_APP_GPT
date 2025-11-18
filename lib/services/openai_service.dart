@@ -1,11 +1,9 @@
 import 'package:flutter/foundation.dart';
-
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:wazeet/config/app_config.dart';
+import 'remote_ai_client.dart';
 
 class OpenAIService {
-  static const String _apiUrl = 'https://api.openai.com/v1/chat/completions';
+  // Proxy via backend only
+  static final RemoteAIClient _client = RemoteAIClient();
 
   /// Get AI-powered free zone recommendations based on business setup details
   static Future<String> getFreezoneRecommendations({
@@ -26,47 +24,25 @@ class OpenAIService {
         emirate: emirate,
       );
 
-      // Check if API key is configured
-      if (!AppConfig.hasOpenAiKey) {
-        debugPrint(
-          'OpenAI API key not configured, using fallback recommendations',
-        );
+      final messages = [
+        {
+          'role': 'system',
+          'content':
+              'You are a UAE business setup expert specializing in free zone recommendations. Provide detailed, accurate, and cost-optimized recommendations for entrepreneurs looking to establish their business in UAE free zones. Focus on pricing, benefits, and suitability based on their specific requirements.',
+        },
+        {'role': 'user', 'content': prompt},
+      ];
+
+      final recommendation = await _client.sendChat(
+        messages.cast<Map<String, dynamic>>(),
+      );
+      if (recommendation.trim().isEmpty) {
         return _getFallbackRecommendation(
           businessActivities: businessActivities,
           emirate: emirate,
         );
       }
-
-      final response = await http.post(
-        Uri.parse(_apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${AppConfig.openAiApiKey}',
-        },
-        body: jsonEncode({
-          'model': 'gpt-4',
-          'messages': [
-            {
-              'role': 'system',
-              'content':
-                  'You are a UAE business setup expert specializing in free zone recommendations. Provide detailed, accurate, and cost-optimized recommendations for entrepreneurs looking to establish their business in UAE free zones. Focus on pricing, benefits, and suitability based on their specific requirements.',
-            },
-            {'role': 'user', 'content': prompt},
-          ],
-          'temperature': 0.7,
-          'max_tokens': 1500,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final recommendation = data['choices'][0]['message']['content'];
-        return recommendation;
-      } else {
-        throw Exception(
-          'Failed to get recommendations: ${response.statusCode}',
-        );
-      }
+      return recommendation;
     } catch (e) {
       debugPrint('Error getting AI recommendations: $e');
       return _getFallbackRecommendation(

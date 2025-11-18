@@ -1,0 +1,184 @@
+name: Monthly Dependency Audit
+
+on:
+  # Run on the 1st of every month at 9:00 AM UTC
+  schedule:
+    - cron: '0 9 1 * *'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  dependency-audit:
+    name: Check for Outdated Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.9.2'
+          channel: 'stable'
+          cache: true
+
+      - name: Get Dependencies
+        run: flutter pub get
+
+      - name: Check for Outdated Packages
+        id: outdated
+        run: |
+          echo "Running dependency audit..."
+          flutter pub outdated --json > outdated.json || true
+          
+          # Parse and format results
+          if [ -s outdated.json ]; then
+            echo "has_updates=true" >> $GITHUB_OUTPUT
+            
+            # Generate summary
+            echo "## 📦 Dependency Audit Results" > summary.md
+            echo "" >> summary.md
+            echo "**Audit Date:** $(date +'%Y-%m-%d %H:%M UTC')" >> summary.md
+            echo "" >> summary.md
+            
+            # Extract major updates
+            flutter pub outdated --mode=null-safety | tee outdated.txt
+            
+            if grep -q "dependencies are all up to date" outdated.txt; then
+              echo "has_updates=false" >> $GITHUB_OUTPUT
+              echo "✅ All dependencies are up to date!" >> summary.md
+            else
+              echo "" >> summary.md
+              echo "### Outdated Packages" >> summary.md
+              echo "" >> summary.md
+              echo '```' >> summary.md
+              cat outdated.txt >> summary.md
+              echo '```' >> summary.md
+              echo "" >> summary.md
+              echo "### Recommended Actions" >> summary.md
+              echo "" >> summary.md
+              echo "1. Review the outdated packages above" >> summary.md
+              echo "2. Check changelogs for breaking changes" >> summary.md
+              echo "3. Update \`pubspec.yaml\` with new versions" >> summary.md
+              echo "4. Run \`flutter pub get\` to install updates" >> summary.md
+              echo "5. Test thoroughly before merging" >> summary.md
+            fi
+          else
+            echo "has_updates=false" >> $GITHUB_OUTPUT
+            echo "✅ All dependencies are up to date!" > summary.md
+          fi
+
+      - name: Check for Security Vulnerabilities
+        id: security
+        run: |
+          echo "Checking for known vulnerabilities..."
+          
+          # Note: dart pub audit requires Dart 3.11+
+          # For now, we'll just flag packages with major version updates
+          echo "has_vulnerabilities=false" >> $GITHUB_OUTPUT
+          
+          if [ -f outdated.txt ]; then
+            if grep -q "major" outdated.txt; then
+              echo "" >> summary.md
+              echo "⚠️ **Security Notice:** Some packages have major version updates available." >> summary.md
+              echo "Review changelogs for security fixes and breaking changes." >> summary.md
+            fi
+          fi
+
+      - name: Generate Detailed Report
+        if: steps.outdated.outputs.has_updates == 'true'
+        run: |
+          echo "" >> summary.md
+          echo "---" >> summary.md
+          echo "" >> summary.md
+          echo "### Update Commands" >> summary.md
+          echo "" >> summary.md
+          echo "To update all dependencies to latest compatible versions:" >> summary.md
+          echo '```bash' >> summary.md
+          echo "flutter pub upgrade --major-versions" >> summary.md
+          echo "flutter pub get" >> summary.md
+          echo "flutter analyze" >> summary.md
+          echo "flutter test" >> summary.md
+          echo '```' >> summary.md
+          echo "" >> summary.md
+          echo "To update specific packages:" >> summary.md
+          echo '```bash' >> summary.md
+          echo "flutter pub upgrade <package_name> --major-versions" >> summary.md
+          echo '```' >> summary.md
+
+      - name: Create Issue for Outdated Dependencies
+        if: steps.outdated.outputs.has_updates == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('summary.md', 'utf8');
+            
+            // Check if an open issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'dependencies,automated'
+            });
+            
+            const existingIssue = issues.data.find(issue => 
+              issue.title.includes('Monthly Dependency Audit')
+            );
+            
+            if (existingIssue) {
+              // Update existing issue
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssue.number,
+                body: `## New Audit Results\n\n${summary}\n\n---\n*Updated by automated workflow*`
+              });
+              
+              console.log(`Updated existing issue #${existingIssue.number}`);
+            } else {
+              // Create new issue
+              const issue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `📦 Monthly Dependency Audit - ${new Date().toISOString().split('T')[0]}`,
+                body: summary,
+                labels: ['dependencies', 'automated', 'maintenance']
+              });
+              
+              console.log(`Created new issue #${issue.data.number}`);
+            }
+
+      - name: Upload Audit Artifacts
+        if: steps.outdated.outputs.has_updates == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit-report
+          path: |
+            outdated.json
+            outdated.txt
+            summary.md
+          retention-days: 90
+
+      - name: Post Success Summary
+        if: steps.outdated.outputs.has_updates == 'false'
+        run: |
+          echo "✅ All dependencies are up to date!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "No action required." >> $GITHUB_STEP_SUMMARY
+
+      - name: Post Audit Summary
+        if: steps.outdated.outputs.has_updates == 'true'
+        run: |
+          cat summary.md >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📝 An issue has been created with detailed information." >> $GITHUB_STEP_SUMMARY

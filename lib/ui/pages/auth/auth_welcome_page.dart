@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../theme/color_tokens.dart';
 import '../../../services/auth_service.dart';
+import '../../../utils/error_handler.dart';
 import 'email_auth_page.dart';
 import 'dart:io' show Platform;
 
@@ -34,9 +35,9 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
       await _authService.signInWithGoogle();
       // Navigation handled by AppRouter
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-      });
+      if (mounted) {
+        ErrorHandler.showErrorSnackBar(context, e);
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -58,9 +59,9 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
       await _authService.signInWithApple();
       // Navigation handled by AppRouter
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-      });
+      if (mounted) {
+        ErrorHandler.showErrorSnackBar(context, e);
+      }
     } finally {
       if (mounted) {
         setState(() {

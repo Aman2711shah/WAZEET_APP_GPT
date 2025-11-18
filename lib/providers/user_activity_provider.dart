@@ -3,14 +3,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_activity.dart';
 
-class UserActivityNotifier
-    extends StateNotifier<AsyncValue<List<UserActivity>>> {
-  UserActivityNotifier() : super(const AsyncValue.loading()) {
-    _init();
-  }
-
+class UserActivityNotifier extends Notifier<AsyncValue<List<UserActivity>>> {
   final _firestore = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
+
+  @override
+  AsyncValue<List<UserActivity>> build() {
+    _init();
+    return const AsyncValue.loading();
+  }
 
   void _init() {
     final userId = _auth.currentUser?.uid;
@@ -93,6 +94,6 @@ class UserActivityNotifier
 }
 
 final userActivityProvider =
-    StateNotifierProvider<UserActivityNotifier, AsyncValue<List<UserActivity>>>(
-      (ref) => UserActivityNotifier(),
+    NotifierProvider<UserActivityNotifier, AsyncValue<List<UserActivity>>>(
+      UserActivityNotifier.new,
     );

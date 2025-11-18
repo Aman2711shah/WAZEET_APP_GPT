@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import '../../models/service_item.dart';
 import '../../models/service_tier.dart';
 import '../../services/tier_rules.dart';
@@ -1143,9 +1144,22 @@ class _SubServiceDetailPageState extends ConsumerState<SubServiceDetailPage> {
               'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
         }
 
+        // PERFORMANCE FIX: Compress images before upload
+        Uint8List uploadBytes = file.bytes!;
+        if (extension == 'jpg' || extension == 'jpeg' || extension == 'png') {
+          uploadBytes = await FlutterImageCompress.compressWithList(
+            file.bytes!,
+            minWidth: 1600,
+            minHeight: 1600,
+            quality: 85,
+            format: CompressFormat.jpeg,
+          );
+          contentType = 'image/jpeg'; // Compressed images are always JPEG
+        }
+
         // Upload file bytes
         await storageRef.putData(
-          file.bytes!,
+          uploadBytes,
           SettableMetadata(contentType: contentType),
         );
 

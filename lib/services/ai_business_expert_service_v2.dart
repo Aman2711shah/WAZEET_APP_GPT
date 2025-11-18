@@ -4,11 +4,27 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/freezone_rec.dart';
+import '../config/app_config.dart';
 
 /// Enhanced AI Business Expert service with streaming and tool-call support
+/// Now uses configurable backend via dart-defines for consistency
 class AIBusinessExpertServiceV2 {
-  static const String _functionUrl =
-      'https://us-central1-business-setup-application.cloudfunctions.net/aiBusinessChat';
+  // Use dart-define config instead of hardcoded URL
+  static String get _functionUrl {
+    final baseUrl = const String.fromEnvironment(
+      'BACKEND_BASE_URL',
+      defaultValue: AppConfig.backendBaseUrl,
+    );
+    final chatPath = const String.fromEnvironment(
+      'BACKEND_CHAT_PATH',
+      defaultValue: '/aiBusinessChat',
+    );
+    final normalizedBase = baseUrl.endsWith('/')
+        ? baseUrl.substring(0, baseUrl.length - 1)
+        : baseUrl;
+    final normalizedPath = chatPath.startsWith('/') ? chatPath : '/$chatPath';
+    return '$normalizedBase$normalizedPath';
+  }
 
   // Retry configuration
   static const int _maxRetries = 3;

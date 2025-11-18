@@ -15,7 +15,7 @@ Smart UAE free zone discovery and company setup assistant — powered by GPT.
 ## ✨ Highlights
 
 - Find and compare UAE free zones by emirate, industry, price, visas, and more
-- AI-powered recommendations tailored to your business (OpenAI/GPT)
+- AI-powered recommendations tailored to your business (proxied via backend)
 - Firebase-backed auth, data, storage, and optional Cloud Functions
 - Polished UI with modern cards, tabs, filters, and compare mode
 - Dark mode ready, responsive layouts (Web/Mobile/Desktop)
@@ -94,7 +94,7 @@ Tip: store images under `assets/images/` and reference them here.
 - Flutter (3.9+ recommended)
 - Dart (bundled with Flutter)
 - Firebase project (for Auth/Firestore/Storage)
-- OpenAI API key (optional but recommended)
+- Backend proxy endpoint for AI (Firebase Functions or your server)
 
 ### Setup (Quick Start)
 
@@ -104,21 +104,25 @@ Tip: store images under `assets/images/` and reference them here.
 flutter pub get
 ```
 
-2) Environment variables (.env)
+2) Backend base URL (AI proxy)
 
-Create a `.env` file at the project root:
+The Flutter app never calls OpenAI directly. Point it to your backend proxy using Dart defines at run/build time:
 
-```env
-OPENAI_API_KEY=sk-...
-# Optional overrides
-# OPENAI_API_BASE=https://api.openai.com/v1
-# OPENAI_MODEL=gpt-4
+```bash
+# Debug run
+flutter run \
+   --dart-define=BACKEND_BASE_URL=https://your-backend.example.com \
+   --dart-define=BACKEND_CHAT_PATH=/api/chat
+
+# Web build
+flutter build web \
+   --dart-define=BACKEND_BASE_URL=https://your-backend.example.com \
+   --dart-define=BACKEND_CHAT_PATH=/api/chat
 ```
 
 Notes:
-- `.env` is loaded in `main()` before Firebase init.
-- Key is accessed via `AppConfig.openAiApiKey`.
-- Secrets are git-ignored; never commit real keys.
+- The client only sends prompts/messages to your backend; the backend talks to OpenAI securely.
+- No OpenAI API keys are stored or read by the Flutter client anymore.
 
 3) Firebase config
 
@@ -153,8 +157,8 @@ Start here for deeper setup and troubleshooting:
 - `lib/` — main Flutter app code
 - `lib/ui/pages/freezone_browser_page.dart` — free zone browser UI
 - `lib/ui/widgets/freezone_card.dart` — enhanced zone cards
-- `lib/services/openai_service.dart` — GPT recommendations
-- `lib/config/app_config.dart` — dotenv-backed config
+- `lib/services/openai_service.dart` — AI recommendations (via backend proxy)
+- `lib/config/app_config.dart` — backend proxy config (dart-defines)
 - `functions/` — optional Firebase Cloud Functions
 
 ## 🧪 Testing

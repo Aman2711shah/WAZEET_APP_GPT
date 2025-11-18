@@ -1,25 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class ThemeController extends ChangeNotifier {
+/// Theme mode notifier using Riverpod
+class ThemeController extends Notifier<ThemeMode> {
   static const _key = 'theme_mode'; // system|light|dark
 
-  ThemeMode _themeMode = ThemeMode.system;
-  ThemeMode get themeMode => _themeMode;
-
-  ThemeController._(this._themeMode);
-
-  static Future<ThemeController> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final value = prefs.getString(_key) ?? 'system';
-    return ThemeController._(_fromString(value));
+  @override
+  ThemeMode build() {
+    // Load initial state asynchronously
+    _loadThemeMode();
+    return ThemeMode.system;
   }
 
-  Future<void> setThemeMode(ThemeMode m) async {
-    _themeMode = m;
-    notifyListeners();
+  /// Load theme mode from shared preferences
+  Future<void> _loadThemeMode() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, _toString(m));
+    final value = prefs.getString(_key) ?? 'system';
+    state = _fromString(value);
+  }
+
+  /// Set and persist theme mode
+  Future<void> setThemeMode(ThemeMode mode) async {
+    state = mode;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, _toString(mode));
   }
 
   static String _toString(ThemeMode m) => switch (m) {
@@ -34,3 +39,8 @@ class ThemeController extends ChangeNotifier {
     _ => ThemeMode.system,
   };
 }
+
+/// Global provider for theme mode
+final themeControllerProvider = NotifierProvider<ThemeController, ThemeMode>(
+  ThemeController.new,
+);
